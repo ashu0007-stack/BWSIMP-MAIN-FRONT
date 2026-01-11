@@ -40,7 +40,7 @@ const processQueue = (error: any, token: string | null = null) => {
 ================================ */
 
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+  process.env.NEXT_PUBLIC_API_URL || "https://bwsimp-main-back-production.up.railway.app/api";
 
 const axiosInstance = axios.create({
   baseURL: API_URL,
