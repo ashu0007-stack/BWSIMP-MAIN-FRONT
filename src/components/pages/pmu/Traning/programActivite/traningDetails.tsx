@@ -430,7 +430,7 @@ export const ProgrammeTable: React.FC<Props> = ({ setActiveTab, openCalendarTab,
           </div>
         </div>
         <div className="overflow-x-auto bg-white border border-gray-200 rounded-xl shadow-sm px-6 py-3 my-6">
-            <table className="text-xs sm:text-sm md:text-[13px] text-gray-700 border-collapse">
+            <table className="text-xs sm:text-sm md:text-[13px] text-gray-700 border-collapse table-fixed">
             <thead className="bg-blue-50 text-gray-700 sticky top-0 z-10">
               <tr>
                 <th rowSpan={2} className="px-2 py-2 border border-gray-300 text-center font-semibold break-words whitespace-normal">Financial Year</th>
