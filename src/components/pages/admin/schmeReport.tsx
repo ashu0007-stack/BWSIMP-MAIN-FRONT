@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import MilestonePage from '@/components/pages/wrd/milestone/dailyprogress';
 import LengthProgressPage from '@/components/pages/wrd/Length/length';
+import { formatDate } from '@/components/lib/dateFormatter';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 import { 
   Container, 
   Typography, 
@@ -42,6 +45,7 @@ import ReportIcon from "@mui/icons-material/Assessment";
 // Import React Query hooks
 import { useRepWorks, useREPMilestones, useREPTender, useREPContract, useREPLength } from '@/hooks/wrdHooks/reports/useReport';
 import { useFileUrl } from "@/hooks/wrdHooks/useTenders";
+import { Trees } from 'lucide-react';
 
 // Types definitions
 interface Work {
@@ -56,6 +60,16 @@ interface Work {
   Zone_name?: string; // Optional for backward compatibility
   circle_name?: string; // Optional for backward compatibility
   division_name?: string; // Optional for backward compatibility
+  Area_Under_improved_Irrigation?: number;
+  total_population?: number;
+  milestones?: Milestone[];
+  equipment?: Equipment[];
+  keyPersonnel?: KeyPersonnel[];
+  tender?: TenderData | null;
+  contract?: ContractData | null;
+  lengthData?: LengthData;
+  socialData?: SocialData[];
+  environmentalData?: EnvironmentalData[];
 }
 
 interface TenderDocument {
@@ -99,7 +113,7 @@ interface ContractData {
   social_data?: SocialData[];
   environmental_data?: EnvironmentalData[];
   work_methodology_data?: any[];
-   Area_Under_improved_Irrigation: number | string;
+  Area_Under_improved_Irrigation?: number | string;
 }
 
 interface KeyPersonnel {
@@ -119,8 +133,9 @@ interface Milestone {
   milestone_number: string;
   milestone_name: string;
   component_name: string;
-  target_date: string;
-  actual_date?: string;
+  work_start_date: string;
+  work_stipulated_date: string;
+  work_actualcompletion_date?: string;
   status: string;
   achievement_percentage: number;
 }
@@ -147,7 +162,6 @@ interface SocialData {
 }
 
 interface WorkDetails extends Work {
-  Area_Under_improved_Irrigation: string;
   tender: TenderData | null;
   contract: ContractData | null;
   milestones: Milestone[];
@@ -185,7 +199,7 @@ const SuperAdminReportPage: React.FC = () => {
   
   // Find selected work from works list
   const selectedWork = useMemo(() => {
-    return works.find((w: { id: number | null; }) => w.id === selectedWorkId) || null;
+    return works.find((w: Work) => w.id === selectedWorkId) || null;
   }, [works, selectedWorkId]);
   
   // Fetch tender data for selected work
@@ -193,7 +207,7 @@ const SuperAdminReportPage: React.FC = () => {
     data: tenderData,
     isLoading: tenderLoading,
     isError: tenderError
-  } =useREPTender(selectedWorkId?.toString() || '');
+  } = useREPTender(selectedWorkId?.toString() || '');
   
   // Fetch contract data for selected work
   const { 
@@ -207,26 +221,27 @@ const SuperAdminReportPage: React.FC = () => {
     isLoading: lengthLoading,
     isError: lengthError
   } = useREPLength(selectedWorkId?.toString() || '');
+  
   // Fetch milestones for selected work
   const workId = selectedWork?.id;
-
+  
   const {
     data: milestonesData = [],
     isLoading: milestonesLoading,
     isError: milestonesError
-  } = useREPMilestones(workId);
+  } = useREPMilestones(workId?.toString() || '');
 
   // Extract equipment and personnel from contract data
   const equipmentData = useMemo(() => {
     if (!contractData) return [];
-    // Extract equipment from contract - adjust according to your API response
-    return contractData.equipment || contractData.machinery || [];
+    // Extract equipment from contract
+    return contractData.equipment || [];
   }, [contractData]);
 
   const keyPersonnelData = useMemo(() => {
     if (!contractData) return [];
-    // Extract key personnel from contract - adjust according to your API response
-    return contractData.key_personnel || contractData.personnel || [];
+    // Extract key personnel from contract
+    return contractData.key_personnel || [];
   }, [contractData]);
 
   // Combine all data for selected work
@@ -252,20 +267,14 @@ const SuperAdminReportPage: React.FC = () => {
 
   // Tab configurations
   const tabs: TabConfig[] = [
-    { id: 'summary', label: 'Summary', icon: <ReportIcon /> },
-    { id: 'tender', label: 'Tender', icon: <TenderIcon /> },
-    { id: 'contract', label: 'Contract', icon: <ContractIcon /> },
-    { id: 'environmental', label: 'Environmental' },
-    { id: 'social', label: 'Social', icon: <SocialIcon /> },
-    { id: 'milestones', label: 'Milestones', icon: <MilestoneIcon /> },
-    { id: 'length', label: 'Length' },
-  ];
-
-  // Fetch detailed data for a specific work
-  const fetchWorkDetails = async (workId: number) => {
-    setSelectedWorkId(workId);
-    setDialogOpen(true);
-  };
+  { id: 'summary', label: 'Summary', icon: <ReportIcon /> },
+  { id: 'tender', label: 'Tender', icon: <TenderIcon /> },
+  { id: 'contract', label: 'Contract', icon: <ContractIcon /> },
+  { id: 'environmental', label: 'Environmental', icon: <Trees className="w-5 h-5" /> },
+  { id: 'social', label: 'Social', icon: <SocialIcon /> },
+  { id: 'milestones', label: 'Milestones', icon: <MilestoneIcon /> },
+  { id: 'length', label: 'Length'},
+];
 
   // Handle search
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -275,14 +284,14 @@ const SuperAdminReportPage: React.FC = () => {
     if (term === '') {
       setFilteredWorks(works);
     } else {
-      const filtered = works.filter((work: { work_name: string; package_number: string; Zone_name: string; circle_name: string; division_name: string; contractor_name: string; award_status: string; }) =>
-        work.work_name?.toLowerCase().includes(term) ||
-        work.package_number?.toLowerCase().includes(term) ||
-        work.Zone_name?.toLowerCase().includes(term) ||
-        work.circle_name?.toLowerCase().includes(term) ||
-        work.division_name?.toLowerCase().includes(term) ||
-        work.contractor_name?.toLowerCase().includes(term) ||
-        work.award_status?.toLowerCase().includes(term)
+      const filtered = works.filter((work: Work) =>
+        (work.work_name?.toLowerCase().includes(term) || false) ||
+        (work.package_number?.toLowerCase().includes(term) || false) ||
+        (work.Zone_name?.toLowerCase().includes(term) || false) ||
+        (work.circle_name?.toLowerCase().includes(term) || false) ||
+        (work.division_name?.toLowerCase().includes(term) || false) ||
+        (work.contractor_name?.toLowerCase().includes(term) || false) ||
+        (work.award_status?.toLowerCase().includes(term) || false)
       );
       setFilteredWorks(filtered);
     }
@@ -290,8 +299,229 @@ const SuperAdminReportPage: React.FC = () => {
 
   // Export to Excel
   const exportToExcel = () => {
-    console.log('Exporting to Excel...', works);
-    // Implement export logic here
+    if (works.length === 0) {
+      alert('No data available to export');
+      return;
+    }
+
+    try {
+      // Create an array to hold all worksheets
+      const workbook = XLSX.utils.book_new();
+
+      // 1. Main Works Summary Sheet
+      const worksSheetData = works.map((work: Work, index: number) => ({
+        'S.No.': index + 1,
+        'Work ID': work.id,
+        'Work Name': work.work_name,
+        'Package Number': work.package_number,
+        'Zone': work.zone_name,
+        'Circle': work.circle_name || '',
+        'Division': work.division_name || '',
+        'Contractor': work.contractor_name,
+        'Award Status': work.award_status,
+        'Estimated Cost (₹)': work.work_cost,
+        'Target Length (KM)': work.target_km,
+        'Area Under Improved Irrigation': work.Area_Under_improved_Irrigation || 0,
+        'Total Population': work.total_population || 0,
+      }));
+
+      const worksSheet = XLSX.utils.json_to_sheet(worksSheetData);
+      XLSX.utils.book_append_sheet(workbook, worksSheet, 'Works Summary');
+
+      // 2. Milestones Sheet
+      const allMilestones: any[] = [];
+      works.forEach((work: Work) => {
+        work.milestones?.forEach((milestone: Milestone) => {
+          allMilestones.push({
+            'Work Name': work.work_name,
+            'Package Number': work.package_number,
+            'Milestone Number': milestone.milestone_number,
+            'Milestone Name': milestone.milestone_name,
+            'Component': milestone.component_name,
+            'Start Date': formatDate(milestone.work_start_date),
+            'Stipulated Date': formatDate(milestone.work_stipulated_date),
+            'Completion Date': formatDate(milestone.work_actualcompletion_date || ''),
+            'Status': milestone.status,
+            'Achievement %': milestone.achievement_percentage,
+          });
+        });
+      });
+
+      if (allMilestones.length > 0) {
+        const milestonesSheet = XLSX.utils.json_to_sheet(allMilestones);
+        XLSX.utils.book_append_sheet(workbook, milestonesSheet, 'Milestones');
+      }
+
+      // 3. Equipment Sheet
+      const allEquipment: any[] = [];
+      works.forEach((work: Work) => {
+        work.equipment?.forEach((item: Equipment) => {
+          const diff = item.Quantity_per_bid_document - item.Quantity_per_site;
+          allEquipment.push({
+            'Work Name': work.work_name,
+            'Package Number': work.package_number,
+            'Equipment Type': item.equipment_type,
+            'As per Bid': item.Quantity_per_bid_document,
+            'Available at Site': item.Quantity_per_site,
+            'Difference': diff,
+            'Status': diff > 0 ? 'Shortage' : diff < 0 ? 'Excess' : 'Adequate',
+          });
+        });
+      });
+
+      if (allEquipment.length > 0) {
+        const equipmentSheet = XLSX.utils.json_to_sheet(allEquipment);
+        XLSX.utils.book_append_sheet(workbook, equipmentSheet, 'Equipment');
+      }
+
+      // 4. Key Personnel Sheet
+      const allPersonnel: any[] = [];
+      works.forEach((work: Work) => {
+        work.keyPersonnel?.forEach((person: KeyPersonnel) => {
+          allPersonnel.push({
+            'Work Name': work.work_name,
+            'Package Number': work.package_number,
+            'Personnel Type': person.personnel_type,
+            'Name': person.name,
+            'Mobile': person.mobile_no,
+            'Primary Contact': person.is_primary ? 'Yes' : 'No',
+          });
+        });
+      });
+
+      if (allPersonnel.length > 0) {
+        const personnelSheet = XLSX.utils.json_to_sheet(allPersonnel);
+        XLSX.utils.book_append_sheet(workbook, personnelSheet, 'Key Personnel');
+      }
+
+      // 5. Contract Details Sheet
+      const contractDataForSheet = works
+        .filter((work: { contract: any; }) => work.contract)
+        .map((work: Work) => ({
+          'Work Name': work.work_name,
+          'Package Number': work.package_number,
+          'Contractor': work.contract?.contractor_name || '',
+          'Agreement No': work.contract?.agreement_no || '',
+          'Contract Amount': work.contract?.contract_awarded_amount || 0,
+          'Work Commencement Date': formatDate(work.contract?.work_commencement_date || ''),
+          'Work Stipulated Date': formatDate(work.contract?.work_stipulated_date || ''),
+          'Authorized Person': work.contract?.nameofauthrizeperson || '',
+          'Mobile': work.contract?.mobileno || '',
+          'Email': work.contract?.email || '',
+          'Address': work.contract?.agency_address || '',
+        }));
+
+      if (contractDataForSheet.length > 0) {
+        const contractSheet = XLSX.utils.json_to_sheet(contractDataForSheet);
+        XLSX.utils.book_append_sheet(workbook, contractSheet, 'Contract Details');
+      }
+
+      // 6. Tender Details Sheet
+      const tenderDataForSheet = works
+        .filter((work: { tender: any; }) => work.tender)
+        .map((work: Work) => ({
+          'Work Name': work.work_name,
+          'Package Number': work.package_number,
+          'Tender Ref No': work.tender?.tenderRefNo || '',
+          'Agreement No': work.tender?.agreement_no || '',
+          'Tender Authority': work.tender?.tenderAuthority || '',
+          'EMD Fee': work.tender?.emdfee || '',
+          'Bid Security': work.tender?.bid_security || '',
+          'Tender Validity': work.tender?.tenderValidity || '',
+          'Tender Status': work.tender?.tender_status || '',
+        }));
+
+      if (tenderDataForSheet.length > 0) {
+        const tenderSheet = XLSX.utils.json_to_sheet(tenderDataForSheet);
+        XLSX.utils.book_append_sheet(workbook, tenderSheet, 'Tender Details');
+      }
+
+      // 7. Progress Summary Sheet
+      const progressData = works.map((work: Work) => {
+        const targetLength = Number(work.target_km || 0);
+        const achievedLining = Number(work.lengthData?.lining_done_km || 0);
+        const achievementPercent = targetLength > 0 ? 
+          ((achievedLining / targetLength) * 100).toFixed(2) : 0;
+
+        return {
+          'Work Name': work.work_name,
+          'Package Number': work.package_number,
+          'Target Length (KM)': targetLength,
+          'Lining Done (KM)': achievedLining,
+          'Earthwork Done (KM)': work.lengthData?.earthwork_done_km || 0,
+          'Achievement %': achievementPercent,
+          'Remaining Length': (targetLength - achievedLining).toFixed(2),
+          'Total Milestones': work.milestones?.length || 0,
+          'Completed Milestones': work.milestones?.filter((m: Milestone) => 
+            m.status === 'Completed').length || 0,
+          'Area Under Improved Irrigation': work.Area_Under_improved_Irrigation || 0,
+          'Beneficiary Population': work.total_population || 0,
+        };
+      });
+
+      const progressSheet = XLSX.utils.json_to_sheet(progressData);
+      XLSX.utils.book_append_sheet(workbook, progressSheet, 'Progress Summary');
+
+      // 8. Social & Environmental Clearances Sheet
+      const clearanceData: any[] = [];
+      
+      // Social Data
+      works.forEach((work: Work) => {
+        work.socialData?.forEach((item: SocialData) => {
+          clearanceData.push({
+            'Type': 'Social',
+            'Work Name': work.work_name,
+            'Package Number': work.package_number,
+            'Particular': item.particular,
+            'Obtained': item.obtained === 'yes' ? 'Yes' : 'No',
+            'Issue Date': formatDate(item.issue_date || ''),
+            'Valid Up To': formatDate(item.valid_up_to || ''),
+            'Document': item.document ? 'Available' : 'Not Available',
+          });
+        });
+      });
+
+      // Environmental Data
+      works.forEach((work: Work) => {
+        work.environmentalData?.forEach((item: EnvironmentalData) => {
+          clearanceData.push({
+            'Type': 'Environmental',
+            'Work Name': work.work_name,
+            'Package Number': work.package_number,
+            'Clearance/Authorization': item.clearance_authorization,
+            'Obtained': item.obtained === 'yes' ? 'Yes' : 'No',
+            'Issue Date': formatDate(item.issue_date || ''),
+            'Valid Up To': formatDate(item.valid_up_to || ''),
+            'Document': item.document ? 'Available' : 'Not Available',
+          });
+        });
+      });
+
+      if (clearanceData.length > 0) {
+        const clearanceSheet = XLSX.utils.json_to_sheet(clearanceData);
+        XLSX.utils.book_append_sheet(workbook, clearanceSheet, 'Clearances');
+      }
+
+      // Generate Excel file
+      const excelBuffer = XLSX.write(workbook, { 
+        bookType: 'xlsx', 
+        type: 'array' 
+      });
+      
+      const data = new Blob([excelBuffer], { 
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      });
+      
+      // Save file
+      const fileName = `SuperAdmin_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
+      saveAs(data, fileName);
+      
+      console.log('Excel file exported successfully!');
+      
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      alert('Error exporting data to Excel');
+    }
   };
 
   // Update filtered works when works data changes
@@ -303,6 +533,12 @@ const SuperAdminReportPage: React.FC = () => {
 
   // Check if any data is still loading for selected work
   const isSelectedWorkLoading = tenderLoading || contractLoading || milestonesLoading;
+
+  // Fetch detailed data for a specific work
+  const fetchWorkDetails = (workId: number) => {
+    setSelectedWorkId(workId);
+    setDialogOpen(true);
+  };
 
   // Tab content renderer
   const renderTabContent = () => {
@@ -332,7 +568,7 @@ const SuperAdminReportPage: React.FC = () => {
         return (
           <Grid container spacing={3}>
             {/* Work Details Card */}
-            <Grid >
+            <Grid>
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
@@ -376,7 +612,7 @@ const SuperAdminReportPage: React.FC = () => {
             </Grid>
 
             {/* Contract Status Card */}
-            <Grid >
+            <Grid>
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
@@ -399,8 +635,9 @@ const SuperAdminReportPage: React.FC = () => {
                           <TableCell>₹{work.contract.contract_awarded_amount?.toLocaleString()}</TableCell>
                         </TableRow>
                         <TableRow>
-                          <TableCell><strong>Start Date:</strong></TableCell>
-                          <TableCell>{work.contract.work_commencement_date}</TableCell>
+                          <TableCell><strong>Start Date of Work:</strong></TableCell>
+                          <TableCell>  {formatDate(work.contract.work_commencement_date)} </TableCell>
+                          
                         </TableRow>
                         <TableRow>
                           <TableCell><strong>Award Status:</strong></TableCell>
@@ -422,7 +659,7 @@ const SuperAdminReportPage: React.FC = () => {
             </Grid>
 
             {/* Progress Summary Card */}
-            <Grid >
+            <Grid>
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
@@ -430,7 +667,7 @@ const SuperAdminReportPage: React.FC = () => {
                     Progress Summary
                   </Typography>
                   <Grid container spacing={3}>
-                    <Grid >
+                    <Grid>
                       <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'primary.light', color: 'white' }}>
                         <Typography variant="h4">
                           {work.milestones?.length || 0}
@@ -438,7 +675,7 @@ const SuperAdminReportPage: React.FC = () => {
                         <Typography variant="body2">Total Milestones</Typography>
                       </Paper>
                     </Grid>
-                    <Grid >
+                    <Grid>
                       <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'success.light', color: 'white' }}>
                         <Typography variant="h4">
                           {work.Area_Under_improved_Irrigation || 0}
@@ -446,8 +683,11 @@ const SuperAdminReportPage: React.FC = () => {
                         <Typography variant="body2">Area Under Improved Irrigation</Typography>
                       </Paper>
                     </Grid>
-                    <Grid >
+                    <Grid>
                       <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'warning.light', color: 'white' }}>
+                         <Typography variant="h4">
+                          {work.total_population || 0}
+                        </Typography>
                         <Typography variant="body2">People benefitting from improved irrigation infrastructure</Typography>
                       </Paper>
                     </Grid>
@@ -486,9 +726,9 @@ const SuperAdminReportPage: React.FC = () => {
                       <TableRow>
                         <TableCell><strong>Milestone Number</strong></TableCell>
                         <TableCell><strong>Name</strong></TableCell>
-                        <TableCell><strong>Component</strong></TableCell>
-                        <TableCell><strong>Target Date</strong></TableCell>
-                        <TableCell><strong>Actual Date</strong></TableCell>
+                        {/* <TableCell><strong>Component</strong></TableCell> */}
+                        <TableCell><strong>Start Date</strong></TableCell>
+                        <TableCell><strong>Stipulated Date</strong></TableCell>
                         <TableCell><strong>Status</strong></TableCell>
                         <TableCell><strong>Achievement %</strong></TableCell>
                       </TableRow>
@@ -498,9 +738,9 @@ const SuperAdminReportPage: React.FC = () => {
                         <TableRow key={index}>
                           <TableCell>{milestone.milestone_number}</TableCell>
                           <TableCell>{milestone.milestone_name}</TableCell>
-                          <TableCell>{milestone.component_name}</TableCell>
-                          <TableCell>{milestone.target_date}</TableCell>
-                          <TableCell>{milestone.actual_date || '-'}</TableCell>
+                          {/* <TableCell>{milestone.component_name}</TableCell> */}
+                          <TableCell>  {milestone.work_start_date} </TableCell>
+                          <TableCell>{milestone.work_stipulated_date}</TableCell>
                           <TableCell>
                             <Chip 
                               label={milestone.status}
@@ -708,7 +948,7 @@ const SuperAdminReportPage: React.FC = () => {
                 Contract Report
               </Typography>
               {work.contract ? (
-                <Grid>
+                <Grid container spacing={3}>
                   <Grid>
                     <Typography variant="subtitle1" gutterBottom>
                       Basic Details
@@ -728,15 +968,15 @@ const SuperAdminReportPage: React.FC = () => {
                           <TableCell>₹{work.contract.contract_awarded_amount?.toLocaleString()}</TableCell>
                         </TableRow>
                         <TableRow>
-                          <TableCell><strong>Work Commencment Date:</strong></TableCell>
+                          <TableCell><strong>Start Date of Work:</strong></TableCell>
                           <TableCell>
-                            {work.contract.work_commencement_date} 
+                            {formatDate(work.contract.work_commencement_date)} 
                           </TableCell>
                         </TableRow>
                         <TableRow>
                           <TableCell><strong>Work Stipulated Date:</strong></TableCell>
                           <TableCell>
-                             {work.contract.work_stipulated_date}
+                             {formatDate(work.contract.work_stipulated_date)}
                           </TableCell>
                         </TableRow>
                       </TableBody>
@@ -807,42 +1047,67 @@ const SuperAdminReportPage: React.FC = () => {
                       )}
                     </Box>
                     {/* Machinery / Equipment Section */}
-                    <Box mt={4}>
-                      <Typography variant="h6" gutterBottom>
-                        Machinery / Equipment
-                      </Typography>
+                  <Box mt={4}>
+  <Typography variant="h6" gutterBottom>
+    Machinery / Equipment
+  </Typography>
 
-                      {work.equipment?.length > 0 ? (
-                        <TableContainer component={Paper}>
-                          <Table size="small">
-                            <TableHead>
-                              <TableRow>
-                                <TableCell><strong>Equipment Type</strong></TableCell>
-                                <TableCell><strong>As per Bid</strong></TableCell>
-                                <TableCell><strong>Available at Site</strong></TableCell>
-                                <TableCell><strong>Difference</strong></TableCell>
-                              </TableRow>
-                            </TableHead>
-                            <TableBody>
-                              {work.equipment.map((item: Equipment, index: number) => (
-                                <TableRow key={index}>
-                                  <TableCell>{item.equipment_type}</TableCell>
-                                  <TableCell>{item.Quantity_per_bid_document}</TableCell>
-                                  <TableCell>{item.Quantity_per_site}</TableCell>
-                                  <TableCell>
-                                    {item.Quantity_per_bid_document - item.Quantity_per_site}
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </TableContainer>
-                      ) : (
-                        <Typography color="textSecondary">
-                          No Equipment Data Available
-                        </Typography>
-                      )}
-                    </Box>
+  {work.equipment?.length > 0 ? (
+    <TableContainer component={Paper}>
+      <Table size="small">
+        <TableHead>
+          <TableRow>
+            <TableCell><strong>Equipment Type</strong></TableCell>
+            <TableCell><strong>As per Bid</strong></TableCell>
+            <TableCell><strong>Available at Site</strong></TableCell>
+            <TableCell><strong>Difference</strong></TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {work.equipment.map((item: Equipment, index: number) => {
+            const difference = item.Quantity_per_bid_document - item.Quantity_per_site;
+            
+            return (
+              <TableRow key={index}>
+                <TableCell>{item.equipment_type}</TableCell>
+                <TableCell>{item.Quantity_per_bid_document}</TableCell>
+                <TableCell>{item.Quantity_per_site}</TableCell>
+                <TableCell
+                  sx={{
+                    backgroundColor: 
+                      difference > 0 
+                        ? '#ffebee' // Light red for shortage (bid > site)
+                        : difference < 0 
+                        ? '#e8f5e9' // Light green for excess (site > bid)
+                        : '#f5f5f5', // Light gray for equal
+                    color: 
+                      difference > 0 
+                        ? '#c62828' // Dark red text
+                        : difference < 0 
+                        ? '#2e7d32' // Dark green text
+                        : 'inherit',
+                    fontWeight: difference !== 0 ? 'bold' : 'normal',
+                    borderLeft: difference !== 0 ? '3px solid' : 'none',
+                    borderLeftColor: 
+                      difference > 0 
+                        ? '#d32f2f' 
+                        : '#388e3c'
+                  }}
+                >
+                  {difference}
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  ) : (
+    <Typography color="textSecondary">
+      No Equipment Data Available
+    </Typography>
+  )}
+</Box>
                   </Grid>
                 </Grid>
               ) : (
@@ -882,8 +1147,8 @@ const SuperAdminReportPage: React.FC = () => {
                               size="small"
                             />
                           </TableCell>
-                          <TableCell>{item.issue_date || '-'}</TableCell>
-                          <TableCell>{item.valid_up_to || '-'}</TableCell>
+                          <TableCell>{formatDate(item.issue_date) || '-'}</TableCell>
+                          <TableCell>{formatDate(item.valid_up_to) || '-'}</TableCell>
                           <TableCell>
                             {item.document ? (
                               <a
@@ -940,8 +1205,8 @@ const SuperAdminReportPage: React.FC = () => {
                               size="small"
                             />
                           </TableCell>
-                          <TableCell>{item.issue_date || '-'}</TableCell>
-                          <TableCell>{item.valid_up_to || '-'}</TableCell>
+                          <TableCell>{formatDate(item.issue_date) || '-'}</TableCell>
+                          <TableCell>{formatDate(item.valid_up_to) || '-'}</TableCell>
                           <TableCell>
                             {item.document ? (
                               <a
@@ -1131,7 +1396,7 @@ const SuperAdminReportPage: React.FC = () => {
                 <Tab 
                   key={tab.id}
                   label={tab.label}
-                 // icon={tab.icon}
+                 icon={tab.icon as React.ReactElement}
                   iconPosition="start"
                   sx={{ minHeight: 60 }}
                 />
