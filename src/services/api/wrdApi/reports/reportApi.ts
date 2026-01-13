@@ -65,6 +65,11 @@ export const getREPLengthById = async (workId:string | number) => {
   return data;
 };
 
+export const getREPPims = async () => {
+  const response = await axiosInstance.get(`${API_URL}/reports/reppims`);
+  return response.data; 
+}
+
 export const getFileUrl = (filePath: string) => {
   if (!filePath) return null;
   

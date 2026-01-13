@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getREPWorks, getREPMilestonesByWorkId,getREPTenderByWorkId,getREPContractById, getREPLengthById } from "@/services/api/wrdApi/reports/reportApi";
+import { getREPWorks, getREPMilestonesByWorkId,getREPTenderByWorkId,getREPContractById, getREPLengthById, getREPPims } from "@/services/api/wrdApi/reports/reportApi";
 
 export const useRepWorks = () => {
   return useQuery({
@@ -41,4 +41,9 @@ export const useREPTender = (workId: string | number) =>
   });
 
 
-  
+  export const useREPims = () => {
+  return useQuery({
+    queryKey: ["pims"],
+    queryFn: getREPPims,
+  });
+};
