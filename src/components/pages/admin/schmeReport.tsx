@@ -30,7 +30,14 @@ import {
   CircularProgress,
   Alert,
   TextField,
-  InputAdornment
+  InputAdornment,
+  Pagination,
+  Stack,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
+  SelectChangeEvent
 } from '@mui/material';
 import SearchIcon from "@mui/icons-material/Search";
 import ViewIcon from "@mui/icons-material/Visibility";
@@ -45,7 +52,7 @@ import ReportIcon from "@mui/icons-material/Assessment";
 // Import React Query hooks
 import { useRepWorks, useREPMilestones, useREPTender, useREPContract, useREPLength } from '@/hooks/wrdHooks/reports/useReport';
 import { useFileUrl } from "@/hooks/wrdHooks/useTenders";
-import { Trees } from 'lucide-react';
+import { Eye, FolderOpen, Trees } from 'lucide-react';
 
 // Types definitions
 interface Work {
@@ -184,6 +191,7 @@ interface TabConfig {
 
 const SuperAdminReportPage: React.FC = () => {
   const [filteredWorks, setFilteredWorks] = useState<Work[]>([]);
+  const [displayedWorks, setDisplayedWorks] = useState<Work[]>([]);
   const [selectedWorkId, setSelectedWorkId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<number>(0);
   const [dialogOpen, setDialogOpen] = useState<boolean>(false);
@@ -192,6 +200,12 @@ const SuperAdminReportPage: React.FC = () => {
   const [selectedWorkForMilestones, setSelectedWorkForMilestones] = useState<Work | null>(null);
   const [showLengthDetails, setShowLengthDetails] = useState<boolean>(false);
   const [selectedWorkForLength, setSelectedWorkForLength] = useState<Work | null>(null);
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [itemsPerPage, setItemsPerPage] = useState<number>(10);
+  const [totalPages, setTotalPages] = useState<number>(1);
+  
   const getFileUrl = useFileUrl();
 
   // Use React Query hooks
@@ -267,14 +281,37 @@ const SuperAdminReportPage: React.FC = () => {
 
   // Tab configurations
   const tabs: TabConfig[] = [
-  { id: 'summary', label: 'Summary', icon: <ReportIcon /> },
-  { id: 'tender', label: 'Tender', icon: <TenderIcon /> },
-  { id: 'contract', label: 'Contract', icon: <ContractIcon /> },
-  { id: 'environmental', label: 'Environmental', icon: <Trees className="w-5 h-5" /> },
-  { id: 'social', label: 'Social', icon: <SocialIcon /> },
-  { id: 'milestones', label: 'Milestones', icon: <MilestoneIcon /> },
-  { id: 'length', label: 'Length'},
-];
+    { id: 'summary', label: 'Summary', icon: <ReportIcon /> },
+    { id: 'tender', label: 'Tender', icon: <TenderIcon /> },
+    { id: 'contract', label: 'Contract', icon: <ContractIcon /> },
+    { id: 'environmental', label: 'Environmental', icon: <Trees className="w-5 h-5" /> },
+    { id: 'social', label: 'Social', icon: <SocialIcon /> },
+    { id: 'milestones', label: 'Milestones', icon: <MilestoneIcon /> },
+    { id: 'length', label: 'Length'},
+  ];
+
+  // Handle pagination
+  useEffect(() => {
+    if (filteredWorks.length > 0) {
+      // Calculate total pages
+      const totalPagesCount = Math.ceil(filteredWorks.length / itemsPerPage);
+      setTotalPages(totalPagesCount);
+      
+      // Get current items
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      const currentItems = filteredWorks.slice(startIndex, endIndex);
+      setDisplayedWorks(currentItems);
+      
+      // Reset to page 1 if current page is out of bounds
+      if (currentPage > totalPagesCount && totalPagesCount > 0) {
+        setCurrentPage(1);
+      }
+    } else {
+      setDisplayedWorks([]);
+      setTotalPages(1);
+    }
+  }, [filteredWorks, currentPage, itemsPerPage]);
 
   // Handle search
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -283,6 +320,7 @@ const SuperAdminReportPage: React.FC = () => {
     
     if (term === '') {
       setFilteredWorks(works);
+      setCurrentPage(1);
     } else {
       const filtered = works.filter((work: Work) =>
         (work.work_name?.toLowerCase().includes(term) || false) ||
@@ -294,6 +332,24 @@ const SuperAdminReportPage: React.FC = () => {
         (work.award_status?.toLowerCase().includes(term) || false)
       );
       setFilteredWorks(filtered);
+      setCurrentPage(1); // Reset to first page when searching
+    }
+  };
+
+  // Handle items per page change
+  const handleItemsPerPageChange = (event: SelectChangeEvent<number>) => {
+    const value = Number(event.target.value);
+    setItemsPerPage(value);
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
+
+  // Handle page change
+  const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+    setCurrentPage(value);
+    // Scroll to top of table
+    const tableElement = document.querySelector('.overflow-x-auto');
+    if (tableElement) {
+      tableElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
@@ -528,6 +584,7 @@ const SuperAdminReportPage: React.FC = () => {
   useEffect(() => {
     if (works.length > 0) {
       setFilteredWorks(works);
+      setCurrentPage(1);
     }
   }, [works]);
 
@@ -1048,66 +1105,66 @@ const SuperAdminReportPage: React.FC = () => {
                     </Box>
                     {/* Machinery / Equipment Section */}
                   <Box mt={4}>
-  <Typography variant="h6" gutterBottom>
-    Machinery / Equipment
-  </Typography>
+                    <Typography variant="h6" gutterBottom>
+                      Machinery / Equipment
+                    </Typography>
 
-  {work.equipment?.length > 0 ? (
-    <TableContainer component={Paper}>
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell><strong>Equipment Type</strong></TableCell>
-            <TableCell><strong>As per Bid</strong></TableCell>
-            <TableCell><strong>Available at Site</strong></TableCell>
-            <TableCell><strong>Difference</strong></TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {work.equipment.map((item: Equipment, index: number) => {
-            const difference = item.Quantity_per_bid_document - item.Quantity_per_site;
-            
-            return (
-              <TableRow key={index}>
-                <TableCell>{item.equipment_type}</TableCell>
-                <TableCell>{item.Quantity_per_bid_document}</TableCell>
-                <TableCell>{item.Quantity_per_site}</TableCell>
-                <TableCell
-                  sx={{
-                    backgroundColor: 
-                      difference > 0 
-                        ? '#ffebee' // Light red for shortage (bid > site)
-                        : difference < 0 
-                        ? '#e8f5e9' // Light green for excess (site > bid)
-                        : '#f5f5f5', // Light gray for equal
-                    color: 
-                      difference > 0 
-                        ? '#c62828' // Dark red text
-                        : difference < 0 
-                        ? '#2e7d32' // Dark green text
-                        : 'inherit',
-                    fontWeight: difference !== 0 ? 'bold' : 'normal',
-                    borderLeft: difference !== 0 ? '3px solid' : 'none',
-                    borderLeftColor: 
-                      difference > 0 
-                        ? '#d32f2f' 
-                        : '#388e3c'
-                  }}
-                >
-                  {difference}
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </TableContainer>
-  ) : (
-    <Typography color="textSecondary">
-      No Equipment Data Available
-    </Typography>
-  )}
-</Box>
+                    {work.equipment?.length > 0 ? (
+                      <TableContainer component={Paper}>
+                        <Table size="small">
+                          <TableHead>
+                            <TableRow>
+                              <TableCell><strong>Equipment Type</strong></TableCell>
+                              <TableCell><strong>As per Bid</strong></TableCell>
+                              <TableCell><strong>Available at Site</strong></TableCell>
+                              <TableCell><strong>Difference</strong></TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {work.equipment.map((item: Equipment, index: number) => {
+                              const difference = item.Quantity_per_bid_document - item.Quantity_per_site;
+                              
+                              return (
+                                <TableRow key={index}>
+                                  <TableCell>{item.equipment_type}</TableCell>
+                                  <TableCell>{item.Quantity_per_bid_document}</TableCell>
+                                  <TableCell>{item.Quantity_per_site}</TableCell>
+                                  <TableCell
+                                    sx={{
+                                      backgroundColor: 
+                                        difference > 0 
+                                          ? '#ffebee' // Light red for shortage (bid > site)
+                                          : difference < 0 
+                                          ? '#e8f5e9' // Light green for excess (site > bid)
+                                          : '#f5f5f5', // Light gray for equal
+                                      color: 
+                                        difference > 0 
+                                          ? '#c62828' // Dark red text
+                                          : difference < 0 
+                                          ? '#2e7d32' // Dark green text
+                                          : 'inherit',
+                                      fontWeight: difference !== 0 ? 'bold' : 'normal',
+                                      borderLeft: difference !== 0 ? '3px solid' : 'none',
+                                      borderLeftColor: 
+                                        difference > 0 
+                                          ? '#d32f2f' 
+                                          : '#388e3c'
+                                    }}
+                                  >
+                                    {difference}
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    ) : (
+                      <Typography color="textSecondary">
+                        No Equipment Data Available
+                      </Typography>
+                    )}
+                  </Box>
                   </Grid>
                 </Grid>
               ) : (
@@ -1288,74 +1345,171 @@ const SuperAdminReportPage: React.FC = () => {
           </Alert>
         )}
 
+        {/* Works Table with Pagination Controls */}
+        <Box sx={{ mb: 2 }}>
+          <Grid container justifyContent="space-between" alignItems="center">
+            <Grid>
+              <Typography variant="body2" color="textSecondary">
+                Total Works: {filteredWorks.length} | 
+                Showing {(currentPage - 1) * itemsPerPage + 1} to{' '}
+                {Math.min(currentPage * itemsPerPage, filteredWorks.length)} of{' '}
+                {filteredWorks.length} works
+              </Typography>
+            </Grid>
+            <Grid>
+              <FormControl size="small" sx={{ minWidth: 120 }}>
+                <InputLabel>Items per page</InputLabel>
+                <Select
+                  value={itemsPerPage}
+                  label="Items per page"
+                  onChange={handleItemsPerPageChange}
+                >
+                  <MenuItem value={5}>5</MenuItem>
+                  <MenuItem value={10}>10</MenuItem>
+                  <MenuItem value={25}>25</MenuItem>
+                  <MenuItem value={50}>50</MenuItem>
+                  <MenuItem value={100}>100</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
+        </Box>
+
         {/* Works Table */}
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow sx={{ bgcolor: 'primary.main' }}>
-                <TableCell sx={{ color: 'white' }}><strong>S.No.</strong></TableCell>
-                <TableCell sx={{ color: 'white' }}><strong>Work Name</strong></TableCell>
-                <TableCell sx={{ color: 'white' }}><strong>Package Number</strong></TableCell>
-                <TableCell sx={{ color: 'white' }}><strong>Zone</strong></TableCell>
-                <TableCell sx={{ color: 'white' }}><strong>Circle</strong></TableCell>
-                <TableCell sx={{ color: 'white' }}><strong>Division</strong></TableCell>
-                <TableCell sx={{ color: 'white' }}><strong>Contractor</strong></TableCell>
-                <TableCell sx={{ color: 'white' }}><strong>Award Status</strong></TableCell>
-                <TableCell sx={{ color: 'white' }}><strong>Estimated Cost (Cr.)</strong></TableCell>
-                <TableCell sx={{ color: 'white' }}><strong>Action</strong></TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filteredWorks.length > 0 ? (
-                filteredWorks.map((work: Work, index: number) => (
-                  <TableRow key={work.id} hover>
-                    <TableCell>{index + 1}</TableCell>
-                    <TableCell>
-                      <Typography variant="body2" fontWeight="medium">
+        <div className="overflow-x-auto rounded-xl border border-gray-200 mb-4">
+          <table className="w-full">
+            <thead className="bg-blue-600 text-white">
+              <tr>
+                <th className="p-4 text-left font-semibold whitespace-nowrap">Package Number</th>
+                <th className="p-4 text-left font-semibold whitespace-nowrap">Work Name</th>
+                <th className="p-4 text-left font-semibold whitespace-nowrap">Zone</th>
+                <th className="p-4 text-left font-semibold whitespace-nowrap">Circle</th>
+                <th className="p-4 text-left font-semibold whitespace-nowrap">Division</th>
+                <th className="p-4 text-left font-semibold whitespace-nowrap">Contractor</th>    
+                <th className="p-4 text-left font-semibold whitespace-nowrap">Estimated Cost (Cr.)</th>
+                <th className="p-4 text-left font-semibold whitespace-nowrap">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {displayedWorks.length > 0 ? (
+                displayedWorks.map((work: Work, index: number) => {
+                  const serialNumber = (currentPage - 1) * itemsPerPage + index + 1;
+                  
+                  return (
+                    <tr key={work.id} className="hover:bg-blue-50/50 transition-colors group">
+                      <td className="p-4">{work.package_number}</td>
+                      <td className="p-4 line-clamp-2 max-w-[200px]" title={work.work_name}>
                         {work.work_name}
-                      </Typography>
-                      <Typography variant="caption" color="textSecondary">
-                        {work.package_number}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>{work.package_number}</TableCell>
-                    <TableCell>{work.zone_name}</TableCell>
-                    <TableCell>{work.circle_name}</TableCell>
-                    <TableCell>{work.division_name}</TableCell>
-                    <TableCell>{work.contractor_name || '-'}</TableCell>
-                    <TableCell>
-                      <Chip 
-                        label={work.award_status}
-                        color={work.award_status === 'Awarded' ? 'success' : 'default'}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>₹{work.work_cost?.toLocaleString()}</TableCell>
-                    <TableCell>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        startIcon={<ViewIcon />}
-                        onClick={() => fetchWorkDetails(work.id)}
-                        disabled={isSelectedWorkLoading}
-                      >
-                        View Report
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
+                      </td>
+                      <td className="p-4">{work.zone_name}</td>
+                      <td className="p-4">{work.circle_name}</td>
+                      <td className="p-4">{work.division_name}</td>
+                      <td className="p-4">{work.contractor_name || '-'}</td>
+                      <td className="p-4 font-semibold text-gray-800">
+                        ₹{work.work_cost?.toLocaleString('en-IN') || '0'}
+                      </td>
+                      <td className="p-4">
+                        <button
+                          onClick={() => fetchWorkDetails(work.id)}
+                          disabled={isSelectedWorkLoading}
+                          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border border-blue-200 rounded-lg hover:from-blue-100 hover:to-blue-200 hover:border-blue-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="View Details"
+                        >
+                          {isSelectedWorkLoading ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                              <span>Loading...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Eye className="w-4 h-4" />
+                              view reports
+                            </>
+                          )}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
               ) : (
-                <TableRow>
-                  <TableCell colSpan={10} align="center" sx={{ py: 4 }}>
-                    <Typography color="textSecondary">
+                <tr>
+                  <td colSpan={9} className="p-8 text-center">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 text-gray-400 rounded-2xl mb-4">
+                      <FolderOpen className="w-8 h-8" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-700 mb-2">
                       {searchTerm ? 'No results found' : 'No works available'}
-                    </Typography>
-                  </TableCell>
-                </TableRow>
+                    </h3>
+                    <p className="text-gray-500">
+                      {searchTerm ? 'Try different search terms' : 'Add new works to get started'}
+                    </p>
+                  </td>
+                </tr>
               )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination Controls */}
+        {filteredWorks.length > itemsPerPage && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+            <Stack spacing={2}>
+              <Pagination 
+                count={totalPages}
+                page={currentPage}
+                onChange={handlePageChange}
+                color="primary"
+                size="large"
+                showFirstButton
+                showLastButton
+                siblingCount={1}
+                boundaryCount={1}
+                sx={{
+                  '& .MuiPaginationItem-root': {
+                    fontSize: '0.875rem',
+                    minWidth: '36px',
+                    height: '36px',
+                  },
+                  '& .Mui-selected': {
+                    backgroundColor: '#1976d2 !important',
+                    color: 'white',
+                  }
+                }}
+              />
+            </Stack>
+          </Box>
+        )}
+
+        {/* Quick Page Navigation */}
+        {filteredWorks.length > 0 && (
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
+            <Typography variant="body2" color="textSecondary">
+              Page {currentPage} of {totalPages}
+            </Typography>
+            
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                startIcon={<span>←</span>}
+              >
+                Previous
+              </Button>
+              
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                endIcon={<span>→</span>}
+              >
+                Next
+              </Button>
+            </Box>
+          </Box>
+        )}
       </Paper>
 
       {/* Work Details Dialog */}
@@ -1396,7 +1550,7 @@ const SuperAdminReportPage: React.FC = () => {
                 <Tab 
                   key={tab.id}
                   label={tab.label}
-                 icon={tab.icon as React.ReactElement}
+                  icon={tab.icon as React.ReactElement}
                   iconPosition="start"
                   sx={{ minHeight: 60 }}
                 />

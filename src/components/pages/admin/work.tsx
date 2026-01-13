@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
   MapPin,
@@ -20,7 +19,11 @@ import {
   Edit,
   EyeOff,
   X,
-  Calculator
+  Calculator,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight
 } from "lucide-react";
 
 // Import all hooks
@@ -161,13 +164,17 @@ interface ValidationErrors {
 const CreateWorkPackages = () => {
   // User state
   const [user, setUser] = useState<UserData | null>(null);
-  //const [userLoading, setUserLoading] = useState(true);
-
-  // Page modes - simplified to just two modes
+  
+  // Page modes
   const [activeMode, setActiveMode] = useState<"list" | "create" | "view" | "edit">("list");
 
   // Selected work for view/edit
   const [selectedWorkId, setSelectedWorkId] = useState<number | null>(null);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
 
   // Work Form Data for CREATE mode
   const [formData, setFormData] = useState({
@@ -245,20 +252,18 @@ const CreateWorkPackages = () => {
 
   // State variables for CREATE mode
   const [message, setMessage] = useState("");
-  // const [workId, setWorkId] = useState<number | null>(null);
   const [showMilestoneFields, setShowMilestoneFields] = useState(false);
 
   // States for VIEW/EDIT mode
   const [viewActiveTab, setViewActiveTab] = useState("overview");
   const [viewMessage, setViewMessage] = useState("");
-  // const [confirmDelete, setConfirmDelete] = useState(false);
 
   // Data for VIEW/EDIT mode
   const [workDetails, setWorkDetails] = useState<Work | null>(null);
   const [viewBeneficiaries, setViewBeneficiaries] = useState<Beneficiaries | null>(null);
   const [viewVillages, setViewVillages] = useState<Village[]>([]);
   const [viewComponents, setViewComponents] = useState<WorkComponent[]>([]);
-  console.log("Work details in work component", workDetails);
+  
   // Edit form states
   const [editFormData, setEditFormData] = useState({
     work_name: "",
@@ -285,12 +290,10 @@ const CreateWorkPackages = () => {
     return "";
   };
 
-
   const validateDecimalWithLimit = (value: string, fieldName: string, max?: number): string => {
     if (!value.trim()) return `${fieldName} is required`;
     if (!/^\d+(\.\d{1,2})?$/.test(value)) return `${fieldName} should be a valid number (max 2 decimals)`;
 
-    // ✅ Check 10 digit limit
     const digitCount = value.replace('.', '').length;
     if (digitCount > 10) return `${fieldName} should not exceed 10 digits`;
 
@@ -298,12 +301,10 @@ const CreateWorkPackages = () => {
     if (numValue <= 0) return `${fieldName} must be greater than 0`;
     if (max !== undefined && numValue > max) return `${fieldName} should not exceed ${max}`;
 
-    // Check if exceeds max 10-digit value
     if (numValue > 99999999.99) return `${fieldName} should not exceed 99,999,999.99`;
 
     return "";
   };
-
 
   const validateWorkCost = (value: string): string => {
     if (!value.trim()) return "Work cost is required";
@@ -320,7 +321,6 @@ const CreateWorkPackages = () => {
     const numValue = parseInt(value);
     if (numValue < 0) return `${fieldName} cannot be negative`;
 
-    // ✅ 7 digits limit (0-99,99,999)
     if (numValue > 9999999) return `${fieldName} should not exceed 99,99,999 (7 digits)`;
 
     return "";
@@ -387,7 +387,7 @@ const CreateWorkPackages = () => {
         errors.Area_Under_improved_Irrigation = "Area cannot be negative";
         isValid = false;
       }
-      if (areaValue > 9999999) { // 7 digits limit
+      if (areaValue > 9999999) {
         errors.Area_Under_improved_Irrigation = "Area should not exceed 99,99,999 ha";
         isValid = false;
       }
@@ -453,24 +453,20 @@ const CreateWorkPackages = () => {
         isValid = false;
       }
 
-      // ✅ Total Quantity Validation with 10 digit limit
       if (!component.totalQty.trim()) {
         compErrors.totalQty = "Total quantity is required";
         isValid = false;
       } else {
-        // Check if valid number
         if (!/^\d+(\.\d{1,2})?$/.test(component.totalQty)) {
           compErrors.totalQty = "Please enter a valid number (max 2 decimal places)";
           isValid = false;
         } else {
-          // Check 10 digit limit
           const digitCount = component.totalQty.replace('.', '').length;
           if (digitCount > 10) {
             compErrors.totalQty = "Total quantity should not exceed 10 digits";
             isValid = false;
           }
 
-          // Check value range
           const numValue = parseFloat(component.totalQty);
           if (numValue <= 0) {
             compErrors.totalQty = "Quantity must be greater than 0";
@@ -501,12 +497,11 @@ const CreateWorkPackages = () => {
         isValid = false;
       }
 
-      // Validate milestone quantities based on number of milestones
       if (showMilestoneFields) {
         const milestones = parseInt(component.Numberofmilestone);
         const totalQty = parseFloat(component.totalQty) || 0;
         let milestoneSum = 0;
-        const tolerance = 0.01; // 1% tolerance
+        const tolerance = 0.01;
 
         if (milestones >= 1) {
           const m1 = parseFloat(component.milestone1_qty) || 0;
@@ -523,9 +518,7 @@ const CreateWorkPackages = () => {
           milestoneSum += m3;
         }
 
-        // ✅ FIX: Validate milestone sum with tolerance
         if (totalQty > 0 && milestoneSum > 0) {
-          // Allow 1% tolerance or 0.01, whichever is larger
           const allowedTolerance = Math.max(totalQty * 0.01, 0.01);
 
           if (Math.abs(milestoneSum - totalQty) > allowedTolerance) {
@@ -534,7 +527,6 @@ const CreateWorkPackages = () => {
           }
         }
 
-        // ✅ FIX: Validate individual milestones with tolerance
         if (milestones >= 1) {
           const m1 = parseFloat(component.milestone1_qty) || 0;
           if (m1 > totalQty + tolerance) {
@@ -561,7 +553,6 @@ const CreateWorkPackages = () => {
     });
     setComponentsErrors(compErrorsList);
 
-    // Set all validation errors
     setValidationErrors(errors);
 
     return isValid;
@@ -570,23 +561,17 @@ const CreateWorkPackages = () => {
   // ✅ Use React Query Hooks
   const { data: zones, isLoading: zonesLoading } = useZones();
   const [selectedZoneId, setSelectedZoneId] = useState<any>();
-  console.log("Selected zone ID in work", selectedZoneId);
   const { data: circles, isLoading: circlesLoading } = useCirclesByZoneId(selectedZoneId);
   const [selectedCircleId, setSelectedCircleId] = useState<any>();
-  console.log("Selected circle ID in work", selectedCircleId);
   const { data: divisions, isLoading: divisionsLoading } = useDivisionByCircleId(
     selectedCircleId
   );
 
   const { data: components = [], isLoading: componentsLoading } = useComponents();
-  //const { data: allSubcomponents = [], isLoading: subcomponentsLoading } = useSubcomponents();
-
-  // ✅ FIXED: Use subcomponent_id for fetching subworkcomponents
   const { data: filteredSubcomponents = [], isLoading: filteredSubcomponentsLoading } = useSubcomponentsByComponent(
     formData.component_id ? parseInt(formData.component_id) : undefined
   );
 
-  // ✅ FIXED: Corrected hook parameter - use subcomponent_id instead of workcomponentId
   const { data: filteredSubworkcomponents = [], isLoading: filteredSubworkcomponentsLoading } = useSubworkcomponentsByworkComponentId(
     formData.subcomponent_id ? parseInt(formData.subcomponent_id) : undefined
   );
@@ -606,22 +591,17 @@ const CreateWorkPackages = () => {
   const updateBeneficiariesMutation = useUpdateBeneficiaries();
   const updateVillagesMutation = useUpdateVillages();
   const updateComponentsMutation = useUpdateComponents();
-  // const deleteWorkMutation = useDeleteWork();
 
   // ✅ Get user data from sessionStorage
   useEffect(() => {
     const getUserData = () => {
       try {
-        //setUserLoading(true);
-        console.log("🔍 Loading user data from session storage...");
-
         if (typeof window !== "undefined") {
           const userDetails = sessionStorage.getItem("userdetail");
 
           if (userDetails) {
             try {
               const parsedData = JSON.parse(userDetails);
-              console.log("📦 Raw user data from session:", parsedData);
 
               const userData: UserData = {
                 username: parsedData.full_name || "Unknown User",
@@ -637,10 +617,8 @@ const CreateWorkPackages = () => {
                 division_id: parsedData.division_id
               };
 
-              console.log("✅ Successfully loaded user:", userData);
               setUser(userData);
 
-              // Auto-fill location fields if user has them
               if (userData.zone_id) {
                 setFormData(prev => ({ ...prev, zone_id: userData.zone_id!.toString() }));
               }
@@ -655,15 +633,12 @@ const CreateWorkPackages = () => {
               setDefaultUser();
             }
           } else {
-            console.warn("⚠️ No user data found in sessionStorage");
             setDefaultUser();
           }
         }
       } catch (error) {
         console.error("❌ Error loading user data:", error);
         setDefaultUser();
-      } finally {
-        //setUserLoading(false);
       }
     };
 
@@ -680,13 +655,49 @@ const CreateWorkPackages = () => {
     getUserData();
   }, []);
 
+  // ✅ Calculate total pages when worksList changes
+  useEffect(() => {
+    if (worksList && Array.isArray(worksList)) {
+      const totalItems = worksList.length;
+      const pages = Math.ceil(totalItems / itemsPerPage);
+      setTotalPages(pages > 0 ? pages : 1);
+      
+      // If current page is greater than total pages, reset to last page
+      if (currentPage > pages && pages > 0) {
+        setCurrentPage(pages);
+      }
+    }
+  }, [worksList, itemsPerPage, currentPage]);
+
+  // ✅ Get paginated data
+  const getPaginatedWorks = () => {
+    if (!worksList || !Array.isArray(worksList)) return [];
+    
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return worksList.slice(startIndex, endIndex);
+  };
+
+  // ✅ Pagination handlers
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newItemsPerPage = parseInt(e.target.value);
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
+
   // ✅ Load work details when selectedWorkId changes
   useEffect(() => {
     if (selectedWorkId && fetchedWorkDetails) {
       setWorkDetails(fetchedWorkDetails);
       console.log("Fetched work details:", fetchedWorkDetails);
 
-      // Set edit form data
       setEditFormData({
         work_name: fetchedWorkDetails.work_name || "",
         package_number: fetchedWorkDetails.package_number || "",
@@ -703,9 +714,7 @@ const CreateWorkPackages = () => {
         award_status: fetchedWorkDetails.award_status || ""
       });
 
-      // Set beneficiaries if available
       if (fetchedWorkDetails.beneficiaries) {
-        console.log("Fetched beneficiaries:", fetchedWorkDetails.beneficiaries);
         setViewBeneficiaries({
           total_population: fetchedWorkDetails.beneficiaries.total_population || "",
           beneficiaries_male: fetchedWorkDetails.beneficiaries.beneficiaries_male || "",
@@ -714,14 +723,11 @@ const CreateWorkPackages = () => {
         });
       }
 
-      // Set villages if available
       if (fetchedWorkDetails.villages) {
         setViewVillages(fetchedWorkDetails.villages);
       }
 
-      // Set components if available - FIXED: Map to correct structure
       if (fetchedWorkDetails.components) {
-        console.log("Fetched components:", fetchedWorkDetails.components);
         const formattedComponents = fetchedWorkDetails.components.map((comp: any) => ({
           nameofcomponent: comp.nameofcomponent || comp.componentname || "",
           unitname: comp.unitname || comp.unit || "",
@@ -764,6 +770,7 @@ const CreateWorkPackages = () => {
     setActiveMode("list");
     setSelectedWorkId(null);
     setWorkDetails(null);
+    setCurrentPage(1); // Reset to first page when going back to list
     refetchWorks();
   };
 
@@ -771,7 +778,7 @@ const CreateWorkPackages = () => {
     setActiveMode("create");
     setSelectedWorkId(null);
     setWorkDetails(null);
-    handleCancel(); // Reset form
+    handleCancel();
   };
 
   const handleViewWork = (work: Work) => {
@@ -793,16 +800,12 @@ const CreateWorkPackages = () => {
     setWorkDetails(null);
   };
 
-  // ✅ CREATE MODE HANDLERS - FIXED CASCADE SELECTION
+  // ✅ CREATE MODE HANDLERS
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
 
-
-
-
-    // Clear validation error for this field
     setValidationErrors(prev => ({ ...prev, [name]: "" }));
 
     if (name === "workcomponentId") {
@@ -866,10 +869,8 @@ const CreateWorkPackages = () => {
         work_package_name: "",
       }));
     } else if (name === "work_cost") {
-      // ✅ Allow decimal numbers (allow numbers and one decimal point)
       const decimalRegex = /^\d*\.?\d*$/;
       if (value === "" || decimalRegex.test(value)) {
-        // Validate max length (including decimal point)
         if (value.length > 7) {
           setValidationErrors(prev => ({
             ...prev,
@@ -907,7 +908,6 @@ const CreateWorkPackages = () => {
     }
 
     else {
-      // Validate text fields for alphabets only
       if (["work_name", "work_package_name", "package_number", "district"].includes(name)) {
         if (value && !/^[A-Za-z0-9\s\-_]+$/.test(value)) {
           setValidationErrors(prev => ({
@@ -918,7 +918,6 @@ const CreateWorkPackages = () => {
         }
       }
 
-      // Validate numeric fields
       if (["target_km", "work_period_months", "Area_Under_improved_Irrigation", "command_area_after"].includes(name)) {
         if (value && !/^\d*\.?\d*$/.test(value)) {
           setValidationErrors(prev => ({
@@ -987,13 +986,10 @@ const CreateWorkPackages = () => {
         milestoneValues.push(m3);
       }
 
-      // ✅ FIX: Use tolerance for floating point comparison
-      const tolerance = 0.0001; // Very small tolerance
+      const tolerance = 0.0001;
 
-      // Validate sum of milestones equals total quantity WITH TOLERANCE
       if (milestoneSum > 0) {
         if (Math.abs(milestoneSum - totalQty) > tolerance) {
-          // Round to 2 decimal places for display
           const roundedSum = Math.round(milestoneSum * 100) / 100;
           const roundedTotal = Math.round(totalQty * 100) / 100;
 
@@ -1002,7 +998,6 @@ const CreateWorkPackages = () => {
             milestone_sum: `Sum of milestone quantities (${roundedSum}) must equal total quantity (${roundedTotal})`
           };
         } else {
-          // Clear sum error if corrected
           const { milestone_sum, ...rest } = updatedErrors[index];
           updatedErrors[index] = rest;
         }
@@ -1020,29 +1015,23 @@ const CreateWorkPackages = () => {
     const milestones = parseInt(component.Numberofmilestone);
 
     if (totalQty > 0 && milestones > 0) {
-      // ✅ FIX: Use precise calculation to avoid floating point errors
       const equalQty = (totalQty / milestones);
 
-      // Calculate using integers to avoid floating point issues
       if (milestones >= 1) {
-        // For single milestone, use the full amount
         updated[i].milestone1_qty = totalQty.toFixed(2);
       }
 
       if (milestones >= 2) {
-        // Distribute equally for 2 milestones
         const half = totalQty / 2;
         updated[i].milestone1_qty = half.toFixed(2);
         updated[i].milestone2_qty = half.toFixed(2);
       }
 
       if (milestones >= 3) {
-        // Distribute equally for 3 milestones
         const third = totalQty / 3;
-        // Make sure sum equals total exactly
         const m1 = third;
         const m2 = third;
-        const m3 = totalQty - m1 - m2; // This ensures exact sum
+        const m3 = totalQty - m1 - m2;
 
         updated[i].milestone1_qty = m1.toFixed(2);
         updated[i].milestone2_qty = m2.toFixed(2);
@@ -1055,12 +1044,9 @@ const CreateWorkPackages = () => {
   };
 
   const handleBeneficiariesChange = (field: keyof typeof beneficiaries, value: string) => {
-    // Clear validation error for this field
     setBeneficiariesErrors(prev => ({ ...prev, [field]: "" }));
 
-    // ✅ Add character limit for total_population
     if (field === "total_population") {
-      // Validate max length - 10 characters
       if (value.length > 8) {
         setBeneficiariesErrors(prev => ({
           ...prev,
@@ -1069,7 +1055,6 @@ const CreateWorkPackages = () => {
         return;
       }
 
-      // Validate numeric input
       if (value && !/^\d*$/.test(value)) {
         setBeneficiariesErrors(prev => ({
           ...prev,
@@ -1100,7 +1085,6 @@ const CreateWorkPackages = () => {
 
       setBeneficiaries(newBeneficiaries);
     } else {
-      // ✅ For other beneficiary fields, also add character limit
       if (value.length > 8) {
         setBeneficiariesErrors(prev => ({
           ...prev,
@@ -1109,7 +1093,6 @@ const CreateWorkPackages = () => {
         return;
       }
 
-      // Validate numeric input for other fields
       if (value && !/^\d*$/.test(value)) {
         setBeneficiariesErrors(prev => ({
           ...prev,
@@ -1123,12 +1106,10 @@ const CreateWorkPackages = () => {
   };
 
   const handleVillageChange = (i: number, field: keyof Village, value: string) => {
-    // Clear validation error for this field
     const updatedErrors = [...villagesErrors];
     updatedErrors[i] = { ...updatedErrors[i], [field]: "" };
     setVillagesErrors(updatedErrors);
 
-    // Validate based on field type
     if (["village_name", "block_name", "district_name", "gram_panchayat"].includes(field)) {
       if (value && !/^[A-Za-z\s]+$/.test(value)) {
         updatedErrors[i] = { ...updatedErrors[i], [field]: "Only alphabets and spaces allowed" };
@@ -1138,7 +1119,6 @@ const CreateWorkPackages = () => {
     }
 
     if (["census_population", "male_population", "female_population"].includes(field)) {
-      // ✅ FIRST: Check for 7-digit limit (max length)
       if (value.length > 7) {
         updatedErrors[i] = {
           ...updatedErrors[i],
@@ -1148,14 +1128,12 @@ const CreateWorkPackages = () => {
         return;
       }
 
-      // ✅ SECOND: Validate numeric input
       if (value && !/^\d*$/.test(value)) {
         updatedErrors[i] = { ...updatedErrors[i], [field]: "Only numbers allowed" };
         setVillagesErrors(updatedErrors);
         return;
       }
 
-      // ✅ THIRD: Check actual numeric value
       if (value) {
         const numValue = parseInt(value, 10);
         if (numValue > 9999999) {
@@ -1243,11 +1221,9 @@ const CreateWorkPackages = () => {
       nameofcomponent: undefined
     }]);
 
-    //setWorkId(null);
     setMessage("");
     setShowMilestoneFields(false);
 
-    // Clear all validation errors
     setValidationErrors({});
     setBeneficiariesErrors({});
     setVillagesErrors([]);
@@ -1273,7 +1249,7 @@ const CreateWorkPackages = () => {
       setMessage("❌ This work name already exists in the list. Please use a different name.");
       return;
     }
-    // Validate form before submission
+    
     if (!validateForm()) {
       setMessage("⚠️ Please fix all validation errors before submitting.");
       return;
@@ -1296,9 +1272,6 @@ const CreateWorkPackages = () => {
         return;
       }
 
-      //setWorkId(workId);
-
-      // Step 2: Add Beneficiaries
       if (beneficiaries.total_population) {
         const beneficiariesRequestData = {
           ...beneficiaries,
@@ -1312,7 +1285,6 @@ const CreateWorkPackages = () => {
         });
       }
 
-      // Step 3: Add Villages
       if (villages.length > 0 && villages[0].village_name) {
         const villagesRequestData = {
           villages: villages,
@@ -1324,7 +1296,6 @@ const CreateWorkPackages = () => {
         });
       }
 
-      // Step 4: Add Components
       if (extraComponents.length > 0 && extraComponents[0].componentname) {
         const componentsRequestData = {
           components: extraComponents.map(comp => ({
@@ -1343,7 +1314,6 @@ const CreateWorkPackages = () => {
 
       refetchWorks();
 
-      // Reset form and go back to list after successful creation
       setTimeout(() => {
         handleCancel();
         handleShowWorkList();
@@ -1351,7 +1321,6 @@ const CreateWorkPackages = () => {
 
     } catch (err: any) {
       console.error("❌ Error saving complete work package:", err);
-      // ✅ Improved duplicate entry error handling
       const errorMessage = err.message || err.response?.data?.error || err.response?.data?.message;
 
       if (errorMessage.includes('Duplicate entry') ||
@@ -1377,14 +1346,11 @@ const CreateWorkPackages = () => {
     field: keyof WorkComponent,
     value: string
   ) => {
-    // Clear validation error for this field
     const updatedErrors = [...componentsErrors];
     updatedErrors[i] = { ...updatedErrors[i], [field]: "" };
     setComponentsErrors(updatedErrors);
 
-    // ✅ Component Name Validation
     if (field === "componentname") {
-      // Check character limit
       if (value.length > 25) {
         updatedErrors[i] = {
           ...updatedErrors[i],
@@ -1394,7 +1360,6 @@ const CreateWorkPackages = () => {
         return;
       }
 
-      // Validate alphabets and spaces only
       if (value && !/^[A-Za-z\s/]*$/.test(value)) {
         updatedErrors[i] = {
           ...updatedErrors[i],
@@ -1405,9 +1370,7 @@ const CreateWorkPackages = () => {
       }
     }
 
-    // ✅ Total Quantity Validation with 10 digit limit
     if (field === "totalQty") {
-      // Allow only numbers and decimal point
       if (value && !/^\d*\.?\d*$/.test(value)) {
         updatedErrors[i] = {
           ...updatedErrors[i],
@@ -1417,9 +1380,7 @@ const CreateWorkPackages = () => {
         return;
       }
 
-      // ✅ Check 10 digit limit (excluding decimal point)
       if (value) {
-        // Remove decimal point to count only digits
         const digitCount = value.replace('.', '').length;
         if (digitCount > 10) {
           updatedErrors[i] = {
@@ -1430,7 +1391,6 @@ const CreateWorkPackages = () => {
           return;
         }
 
-        // Check decimal places (max 2)
         const decimalParts = value.split('.');
         if (decimalParts.length > 1 && decimalParts[1].length > 2) {
           updatedErrors[i] = {
@@ -1441,7 +1401,6 @@ const CreateWorkPackages = () => {
           return;
         }
 
-        // Check value range
         const numValue = parseFloat(value);
         if (numValue <= 0) {
           updatedErrors[i] = {
@@ -1452,8 +1411,7 @@ const CreateWorkPackages = () => {
           return;
         }
 
-        // Max value check (10 digits max)
-        if (numValue > 99999999.99) { // 8 digits before decimal + 2 after
+        if (numValue > 99999999.99) {
           updatedErrors[i] = {
             ...updatedErrors[i],
             [field]: "Maximum value is 99,999,999.99"
@@ -1464,7 +1422,6 @@ const CreateWorkPackages = () => {
       }
     }
 
-    // ✅ Milestone Quantities Validation (same logic)
     if (["milestone1_qty", "milestone2_qty", "milestone3_qty"].includes(field)) {
       if (value && !/^\d*\.?\d*$/.test(value)) {
         updatedErrors[i] = { ...updatedErrors[i], [field]: "Please enter a valid number" };
@@ -1472,7 +1429,6 @@ const CreateWorkPackages = () => {
         return;
       }
 
-      // ✅ Check 10 digit limit for milestone quantities too
       if (value) {
         const digitCount = value.replace('.', '').length;
         if (digitCount > 10) {
@@ -1484,7 +1440,6 @@ const CreateWorkPackages = () => {
           return;
         }
 
-        // Check decimal places
         const decimalParts = value.split('.');
         if (decimalParts.length > 1 && decimalParts[1].length > 2) {
           updatedErrors[i] = {
@@ -1497,7 +1452,6 @@ const CreateWorkPackages = () => {
       }
     }
 
-    // ✅ Unit Validation
     if (field === "unit") {
       if (value && !/^[A-Za-z]+$/.test(value)) {
         updatedErrors[i] = {
@@ -1521,7 +1475,6 @@ const CreateWorkPackages = () => {
     updated[i] = { ...updated[i], [field]: value };
     setExtraComponents(updated);
 
-    // ✅ Validate milestone sum after updating
     validateMilestoneSum(i, updated[i]);
   };
   const addComponentField = () => {
@@ -1551,7 +1504,6 @@ const CreateWorkPackages = () => {
       nameofcomponent: undefined
     }]);
 
-    // Add empty error object for new component
     setComponentsErrors([...componentsErrors, {}]);
   };
 
@@ -1560,7 +1512,6 @@ const CreateWorkPackages = () => {
     updated.splice(i, 1);
     setExtraComponents(updated);
 
-    // Remove corresponding error object
     const updatedErrors = [...componentsErrors];
     updatedErrors.splice(i, 1);
     setComponentsErrors(updatedErrors);
@@ -1577,7 +1528,6 @@ const CreateWorkPackages = () => {
       female_population: ""
     }]);
 
-    // Add empty error object for new village
     setVillagesErrors([...villagesErrors, {}]);
   };
 
@@ -1586,7 +1536,6 @@ const CreateWorkPackages = () => {
     updated.splice(i, 1);
     setVillages(updated);
 
-    // Remove corresponding error object
     const updatedErrors = [...villagesErrors];
     updatedErrors.splice(i, 1);
     setVillagesErrors(updatedErrors);
@@ -1602,22 +1551,18 @@ const CreateWorkPackages = () => {
 
   const handleEditBeneficiariesChange = (field: string, value: string) => {
     if (field === "total_population") {
-      // Clear any existing errors
       setViewMessage("");
 
-      // ✅ FIRST: Check for 7-digit limit (max length)
       if (value.length > 7) {
         setViewMessage("❌ Total population should not exceed 7 digits (99,99,999)");
         return;
       }
 
-      // ✅ SECOND: Validate numeric input
       if (value && !/^\d*$/.test(value)) {
         setViewMessage("❌ Total population should contain only numbers");
         return;
       }
 
-      // ✅ THIRD: Check actual numeric value
       if (value) {
         const numValue = parseInt(value, 10);
         if (numValue > 9999999) {
@@ -1628,7 +1573,6 @@ const CreateWorkPackages = () => {
 
       const total = parseInt(value) || 0;
 
-      // Calculate other values based on total
       const femaleCount = Math.round(total * 0.49);
       const maleCount = total - femaleCount;
       const youthCount = Math.round(total * 0.29);
@@ -1642,7 +1586,6 @@ const CreateWorkPackages = () => {
           beneficiaries_youth_15_28: youthCount.toString()
         });
       } else {
-        // If beneficiaries don't exist yet, create new object
         setViewBeneficiaries({
           total_population: value,
           beneficiaries_female: femaleCount.toString(),
@@ -1651,21 +1594,17 @@ const CreateWorkPackages = () => {
         });
       }
     } else if (field === "beneficiaries_male" || field === "beneficiaries_female" || field === "beneficiaries_youth_15_28") {
-      // ✅ OTHER FIELDS: Male, Female, Youth के लिए भी validation
       if (value) {
-        // Check for 7-digit limit
         if (value.length > 7) {
           setViewMessage(`❌ ${field.replace('_', ' ').toUpperCase()} should not exceed 7 digits (99,99,999)`);
           return;
         }
 
-        // Validate numeric input
         if (!/^\d*$/.test(value)) {
           setViewMessage(`❌ ${field.replace('_', ' ').toUpperCase()} should contain only numbers`);
           return;
         }
 
-        // Check numeric value
         const numValue = parseInt(value, 10);
         if (numValue > 9999999) {
           setViewMessage(`❌ ${field.replace('_', ' ').toUpperCase()} should not exceed 99,99,999`);
@@ -1673,18 +1612,15 @@ const CreateWorkPackages = () => {
         }
       }
 
-      // Update the field
       if (viewBeneficiaries) {
         setViewBeneficiaries({ ...viewBeneficiaries, [field]: value });
       }
     } else {
-      // For other fields, just update normally
       if (viewBeneficiaries) {
         setViewBeneficiaries({ ...viewBeneficiaries, [field]: value });
       }
     }
 
-    // Clear message if validation passed
     if (!value || /^\d*$/.test(value) && value.length <= 7) {
       const numValue = parseInt(value || '0');
       if (numValue <= 9999999) {
@@ -1698,21 +1634,17 @@ const CreateWorkPackages = () => {
   const handleEditVillageChange = (i: number, field: string, value: string) => {
     const updated = [...viewVillages];
 
-    // ✅ Validate input based on field type
     if (field === "census_population") {
-      // Check for 7-digit limit
       if (value.length > 7) {
         setViewMessage("❌ Population should not exceed 7 digits (99,99,999)");
         return;
       }
 
-      // Validate numeric input
       if (value && !/^\d*$/.test(value)) {
         setViewMessage("❌ Population should contain only numbers");
         return;
       }
 
-      // Check numeric value
       if (value) {
         const numValue = parseInt(value, 10);
         if (numValue > 9999999) {
@@ -1723,7 +1655,6 @@ const CreateWorkPackages = () => {
 
       const total = parseInt(value) || 0;
 
-      // Calculate male and female populations
       const femaleCount = Math.round(total * 0.49);
       const maleCount = total - femaleCount;
 
@@ -1734,19 +1665,17 @@ const CreateWorkPackages = () => {
         male_population: maleCount.toString()
       };
     } else if (["village_name", "block_name", "district_name", "gram_panchayat"].includes(field)) {
-      // Validate text fields (only alphabets and spaces)
       if (value && !/^[A-Za-z\s]+$/.test(value)) {
         setViewMessage("❌ Only alphabets and spaces allowed for text fields");
         return;
       }
       updated[i] = { ...updated[i], [field]: value };
     } else {
-      // For other fields (male_population, female_population), update normally
       updated[i] = { ...updated[i], [field]: value };
     }
 
     setViewVillages(updated);
-    setViewMessage(""); // Clear any previous messages
+    setViewMessage("");
   };
 
   const handleEditComponentChange = (i: number, field: string, value: string) => {
@@ -1757,7 +1686,6 @@ const CreateWorkPackages = () => {
         return;
       }
 
-      // ✅ Check 10 digit limit
       if (value) {
         const digitCount = value.replace('.', '').length;
         if (digitCount > 10) {
@@ -1765,7 +1693,6 @@ const CreateWorkPackages = () => {
           return;
         }
 
-        // Check decimal places
         const decimalParts = value.split('.');
         if (decimalParts.length > 1 && decimalParts[1].length > 2) {
           setViewMessage("❌ Maximum 2 decimal places allowed");
@@ -1775,14 +1702,12 @@ const CreateWorkPackages = () => {
 
       updated[i] = { ...updated[i], [field]: value };
 
-      // Also update the other quantity field for consistency
       if (field === "total_qty") {
         updated[i].totalQty = value;
       } else if (field === "totalQty") {
         updated[i].total_qty = value;
       }
     }
-    // Validate based on field type
     if (field === "nameofcomponent" || field === "componentname") {
       if (value && !/^[A-Za-z\s]+$/.test(value)) {
         setViewMessage("❌ Only alphabets and spaces allowed for component name");
@@ -1790,7 +1715,6 @@ const CreateWorkPackages = () => {
       }
       updated[i] = { ...updated[i], [field]: value };
 
-      // Also update the other name field for consistency
       if (field === "nameofcomponent") {
         updated[i].componentname = value;
       } else if (field === "componentname") {
@@ -1804,7 +1728,6 @@ const CreateWorkPackages = () => {
       }
       updated[i] = { ...updated[i], [field]: value };
 
-      // Also update the other unit field for consistency
       if (field === "unitname") {
         updated[i].unit = value;
       } else if (field === "unit") {
@@ -1818,7 +1741,6 @@ const CreateWorkPackages = () => {
       }
       updated[i] = { ...updated[i], [field]: value };
 
-      // Also update the other quantity field for consistency
       if (field === "total_qty") {
         updated[i].totalQty = value;
       } else if (field === "totalQty") {
@@ -1903,23 +1825,6 @@ const CreateWorkPackages = () => {
     }
   };
 
-  // ✅ DELETE WORK
-  // const handleDeleteWork = async () => {
-  //   if (!selectedWorkId) return;
-
-  //   try {
-  //     setViewMessage("🔄 Deleting work...");
-  //     await deleteWorkMutation.mutateAsync(selectedWorkId);
-  //     setViewMessage("✅ Work deleted successfully!");
-  //     setTimeout(() => {
-  //       handleShowWorkList();
-  //       refetchWorks();
-  //     }, 2000);
-  //   } catch (err: any) {
-  //     setViewMessage(`❌ Error: ${err.response?.data?.error || "Failed to delete work"}`);
-  //   }
-  // };
-
   // ✅ FORMAT FUNCTIONS
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-IN', {
@@ -1933,76 +1838,202 @@ const CreateWorkPackages = () => {
     return `₹${Number(amount).toLocaleString('en-IN')}`;
   };
 
+  // ✅ Pagination Component
+  const renderPagination = () => {
+    const paginatedWorks = getPaginatedWorks();
+    const totalItems = worksList?.length || 0;
+    
+    if (totalItems === 0) return null;
+    
+    const startItem = (currentPage - 1) * itemsPerPage + 1;
+    const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+    
+    // Generate page numbers to show
+    const pageNumbers = [];
+    const maxPageButtons = 5;
+    
+    if (totalPages <= maxPageButtons) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      let startPage = Math.max(1, currentPage - Math.floor(maxPageButtons / 2));
+      let endPage = startPage + maxPageButtons - 1;
+      
+      if (endPage > totalPages) {
+        endPage = totalPages;
+        startPage = Math.max(1, endPage - maxPageButtons + 1);
+      }
+      
+      for (let i = startPage; i <= endPage; i++) {
+        pageNumbers.push(i);
+      }
+    }
+    
+    return (
+      <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 bg-white border-t border-gray-200 rounded-b-xl">
+        <div className="mb-4 sm:mb-0">
+          <p className="text-sm text-gray-700">
+            Showing <span className="font-medium">{startItem}</span> to{" "}
+            <span className="font-medium">{endItem}</span> of{" "}
+            <span className="font-medium">{totalItems}</span> work packages
+          </p>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <div className="flex items-center mr-4">
+            <label className="text-sm text-gray-700 mr-2">Rows per page:</label>
+            <select
+              value={itemsPerPage}
+              onChange={handleItemsPerPageChange}
+              className="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+          </div>
+          
+          <button
+            onClick={() => handlePageChange(1)}
+            disabled={currentPage === 1}
+            className={`p-2 rounded-lg ${currentPage === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'}`}
+          >
+            <ChevronsLeft className="w-4 h-4" />
+          </button>
+          
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className={`p-2 rounded-lg ${currentPage === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'}`}
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          
+          <div className="flex items-center space-x-1">
+            {pageNumbers.map(page => (
+              <button
+                key={page}
+                onClick={() => handlePageChange(page)}
+                className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium ${
+                  currentPage === page
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+            
+            {totalPages > maxPageButtons && currentPage < totalPages - Math.floor(maxPageButtons / 2) && (
+              <>
+                <span className="px-2 text-gray-500">...</span>
+                <button
+                  onClick={() => handlePageChange(totalPages)}
+                  className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium ${
+                    currentPage === totalPages
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  {totalPages}
+                </button>
+              </>
+            )}
+          </div>
+          
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className={`p-2 rounded-lg ${currentPage === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'}`}
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+          
+          <button
+            onClick={() => handlePageChange(totalPages)}
+            disabled={currentPage === totalPages}
+            className={`p-2 rounded-lg ${currentPage === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'}`}
+          >
+            <ChevronsRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   // ✅ RENDER WORK LIST
   const renderWorkList = () => {
+    const paginatedWorks = getPaginatedWorks();
+    
     return (
       <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-
-
         <div className="p-6">
-
-
           {worksLoading ? (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
               <p className="text-gray-600">Loading work packages...</p>
             </div>
           ) : worksList.length > 0 ? (
-            <div className="overflow-x-auto rounded-xl border">
-              <table className="w-full">
-                <thead className="bg-blue-600 text-white">
-                  <tr>
-                    <th className="p-3 text-left font-semibold text-sm">Package Name</th>
-                    <th className="p-3 text-left font-semibold text-sm">Name of Work</th>
-                    <th className="p-3 text-left font-semibold text-sm">Division</th>
-                    <th className="p-4 text-left font-semibold" style={{ whiteSpace: 'nowrap' }}>Estimated Cost (₹ Cr.)</th>
-                    <th className="p-3 text-left font-semibold text-sm">Status of Work</th>
-                    <th className="p-3 text-left font-semibold text-sm">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {(worksList as Work[]).map((work: Work) => (
-                    <tr key={work.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                          {work.package_number || "N/A"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-gray-900">{work.work_name}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {work.division_name || "N/A"}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {work.work_cost || "N/A"}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${work.award_status === "Awarded"
-                          ? "bg-green-100 text-green-800"
-                          : work.award_status === "In Progress"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : work.award_status === "Completed"
-                              ? "bg-blue-100 text-blue-800"
-                              : "bg-red-100 text-red-800"
-                          }`}>
-                          {work.award_status || "Not Awarded"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => handleViewWork(work)}
-                          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mr-2"
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          View
-                        </button>
-                      </td>
+            <>
+              <div className="overflow-x-auto rounded-xl border mb-4">
+                <table className="w-full">
+                  <thead className="bg-blue-600 text-white">
+                    <tr>
+                      <th className="p-3 text-left font-semibold text-sm">Package Name</th>
+                      <th className="p-3 text-left font-semibold text-sm">Name of Work</th>
+                      <th className="p-3 text-left font-semibold text-sm">Division</th>
+                      <th className="p-4 text-left font-semibold" style={{ whiteSpace: 'nowrap' }}>Estimated Cost (₹ Cr.)</th>
+                      <th className="p-3 text-left font-semibold text-sm">Status of Work</th>
+                      <th className="p-3 text-left font-semibold text-sm">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {paginatedWorks.map((work: Work) => (
+                      <tr key={work.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                            {work.package_number || "N/A"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 line-clamp-3 max-w-[200px]" title={work.work_name}>
+                          {work.work_name}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {work.division_name || "N/A"}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {work.work_cost || "N/A"}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${work.award_status === "Awarded"
+                            ? "bg-green-100 text-green-800"
+                            : work.award_status === "In Progress"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : work.award_status === "Completed"
+                                ? "bg-blue-100 text-blue-800"
+                                : "bg-red-100 text-red-800"
+                            }`}>
+                            {work.award_status || "Not Awarded"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button
+                            onClick={() => handleViewWork(work)}
+                            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mr-2"
+                          >
+                            <Eye className="w-4 h-4 mr-2" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              
+              {renderPagination()}
+            </>
           ) : (
             <div className="text-center py-12 bg-gray-50 rounded-xl border border-gray-200">
               <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -2056,7 +2087,6 @@ const CreateWorkPackages = () => {
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900">Project Implementation Unit</h3>
-                  {/* <p className="text-gray-600">Select the work location hierarchy</p> */}
                 </div>
               </div>
 
@@ -2572,9 +2602,6 @@ const CreateWorkPackages = () => {
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900">Milestones</h3>
-                  {/* <p className="text-gray-600">
-                    Add components and milestones for this work package
-                  </p> */}
                 </div>
               </div>
 
@@ -2611,7 +2638,6 @@ const CreateWorkPackages = () => {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      {/* Basic component fields */}
                       <div className="space-y-2">
                         <label className="block text-sm font-medium text-gray-700">Name *</label>
                         <input
@@ -2656,9 +2682,6 @@ const CreateWorkPackages = () => {
                         <div className="flex items-center justify-between">
                           <label className="block text-sm font-medium text-gray-700">
                             Total Quantity *
-                            {/* <span className="text-xs text-gray-500 ml-2">
-        (Max 10 digits including decimal)
-      </span> */}
                           </label>
                           {showMilestoneFields && parseInt(comp.Numberofmilestone) > 0 && comp.totalQty && (
                             <button
@@ -2681,23 +2704,7 @@ const CreateWorkPackages = () => {
                             step="0.01"
                             min="0.01"
                           />
-                          {/* Character/Digit Counter */}
-                          {/* <div className={`absolute right-2 top-1/2 transform -translate-y-1/2 px-2 py-1 rounded text-xs font-medium ${comp.totalQty && comp.totalQty.toString().replace('.', '').length > 10 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}`}>
-      {comp.totalQty ? comp.totalQty.toString().replace('.', '').length : 0}/8 digits
-    </div> */}
                         </div>
-                        {/* {componentsErrors[i]?.totalQty ? (
-    <p className="text-red-500 text-sm mt-1 flex items-center">
-      <AlertCircle className="w-3 h-3 mr-1" />
-      {componentsErrors[i]?.totalQty}
-    </p>
-  ) : (
-    <p className="text-xs text-gray-500 mt-1">
-      • Maximum: 10 digits (e.g., 1234567.89)
-      <br />
-      • Decimals allowed (2 decimal places max)
-    </p>
-  )} */}
                       </div>
 
                       <div className="space-y-2">
@@ -2719,14 +2726,10 @@ const CreateWorkPackages = () => {
                         />
                       </div>
 
-                      {/* Conditional milestone fields */}
                       {showMilestoneFields && parseInt(comp.Numberofmilestone) >= 1 && (
                         <div className="space-y-2">
                           <label className="block text-sm font-medium text-gray-700">
                             Milestone 1 Quantity *
-                            {/* <span className="text-xs text-gray-500 ml-2">
-        (Max 8 digits)
-      </span> */}
                           </label>
                           <div className="relative">
                             <input
@@ -2739,10 +2742,6 @@ const CreateWorkPackages = () => {
                               min="0.01"
                               max={comp.totalQty || undefined}
                             />
-                            {/* Character Counter */}
-                            {/* <div className={`absolute right-2 top-1/2 transform -translate-y-1/2 px-2 py-1 rounded text-xs font-medium ${comp.milestone1_qty && comp.milestone1_qty.toString().replace('.', '').length > 10 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}`}>
-        {comp.milestone1_qty ? comp.milestone1_qty.toString().replace('.', '').length : 0}/10
-      </div> */}
                           </div>
                           {componentsErrors[i]?.milestone1_qty && (
                             <p className="text-red-500 text-sm mt-1 flex items-center">
@@ -2802,7 +2801,6 @@ const CreateWorkPackages = () => {
                       )}
                     </div>
 
-                    {/* ✅ Milestone sum validation message */}
                     {componentsErrors[i]?.milestone_sum && (
                       <div className="mt-4 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
                         <div className="flex items-center">
@@ -2820,7 +2818,6 @@ const CreateWorkPackages = () => {
                       </div>
                     )}
 
-                    {/* Milestone calculation guide */}
                     {showMilestoneFields && parseInt(comp.Numberofmilestone) > 0 && comp.totalQty && (
                       <div className="mt-4 bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg">
                         <div className="flex items-center">
@@ -2841,7 +2838,6 @@ const CreateWorkPackages = () => {
                       </div>
                     )}
 
-                    {/* Message when no period selected */}
                     {!showMilestoneFields && (
                       <div className="mt-4">
                         <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg">
@@ -2920,7 +2916,7 @@ const CreateWorkPackages = () => {
     );
   };
 
-  // ✅ RENDER VIEW/EDIT WORK DETAILS (same as before, just update back button handler)
+  // ✅ RENDER VIEW/EDIT WORK DETAILS
   const renderWorkDetails = () => {
     if (!workDetails) return null;
 
@@ -2947,23 +2943,13 @@ const CreateWorkPackages = () => {
 
               <div className="flex gap-3">
                 {activeMode === "view" ? (
-                  <>
-                    {/* <button
-                      onClick={() => window.print()}
-                      className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                    >
-                      <Printer className="w-4 h-4 mr-2" />
-                      Print
-                    </button> */}
-
-                    <button
-                      onClick={handleEditWork}
-                      className="flex items-center px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
-                    >
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit Work
-                    </button>
-                  </>
+                  <button
+                    onClick={handleEditWork}
+                    className="flex items-center px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit Work
+                  </button>
                 ) : (
                   <button
                     onClick={handleCancelEdit}
@@ -3039,7 +3025,6 @@ const CreateWorkPackages = () => {
                 </div>
 
                 <div className="space-y-6">
-                  {/* Basic Information */}
                   <div className="bg-gray-50 rounded-xl p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -3172,11 +3157,6 @@ const CreateWorkPackages = () => {
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Total Population *
-                        {/* {activeMode === "edit" && (
-                          <span className="text-xs text-gray-500 ml-2">
-                            (Auto-calculates male/female/youth)
-                          </span>
-                        )} */}
                       </label>
                       {activeMode === "edit" ? (
                         <input
@@ -3191,11 +3171,6 @@ const CreateWorkPackages = () => {
                           {viewBeneficiaries?.total_population || "0"}
                         </div>
                       )}
-                      {/* {activeMode === "edit" && (
-                        <p className="text-xs text-gray-500 mt-2">
-                          • Formula: 49% female, 51% male, 29% youth (15-28 years)
-                        </p>
-                      )} */}
                     </div>
 
                     <div>
@@ -3255,22 +3230,6 @@ const CreateWorkPackages = () => {
                       )}
                     </div>
                   </div>
-
-                  {/* {activeMode === "edit" && (
-                    <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
-                      <div className="flex items-center">
-                        <AlertCircle className="w-5 h-5 text-blue-600 mr-3" />
-                        <div>
-                          <p className="font-medium text-blue-800">Auto-Calculation Info</p>
-                          <p className="text-sm text-blue-700 mt-1">
-                            • Enter Total Population to automatically calculate other fields
-                            <br />
-                            • Male: 51%, Female: 49%, Youth (15-28): 29% of total population
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )} */}
                 </div>
               </div>
             )}
@@ -3371,11 +3330,6 @@ const CreateWorkPackages = () => {
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                               Total Population *
-                              {/* {activeMode === "edit" && (
-                                <span className="text-xs text-gray-500 ml-2">
-                                  (Auto-calculates male/female)
-                                </span>
-                              )} */}
                             </label>
                             {activeMode === "edit" ? (
                               <input
@@ -3424,14 +3378,6 @@ const CreateWorkPackages = () => {
                             )}
                           </div>
                         </div>
-
-                        {/* {activeMode === "edit" && (
-                          <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
-                            <p className="text-sm text-blue-700">
-                              <span className="font-medium">Note:</span> Enter Total Population to automatically calculate Male (51%) and Female (49%) populations
-                            </p>
-                          </div>
-                        )} */}
                       </div>
                     ))
                   ) : (

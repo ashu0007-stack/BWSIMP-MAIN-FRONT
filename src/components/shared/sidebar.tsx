@@ -119,19 +119,19 @@ export const Sidebar: FC<any> = ({ setActiveTab, activeTab }) => {
       { id: "addUser", label: "Add User", icon: UserPlus, roles: [1] },
       { id: "dms", label: "Document Upload", icon: FileText, roles: [1] },
       {
-                id: "reports",
-                label: "Reports",
-                type: "dropdown",
-                icon: FarmerFieldSchool,
-                roles: [1],
-                children: [
-                    { id: "schemes", label: "Schemes", icon: CircleDot, roles: [1] },
-                    { id: "pim", label: "PIM", icon: ListChecks, roles: [1] },
-                ]
-            }
+        id: "reports",
+        label: "Reports",
+        type: "dropdown",
+        icon: FarmerFieldSchool,
+        roles: [1],
+        children: [
+          { id: "schemes", label: "Schemes", icon: CircleDot, roles: [1] },
+          { id: "pim", label: "PIM", icon: ListChecks, roles: [1] },
+        ]
+      }
     ],
- 
- DOA: [
+
+    DOA: [
       { id: "dashboard", label: "Dashboard", icon: HomeIcon, roles: [1, 2, 3, 4] },
       {
         id: "CRADEMO",
@@ -141,7 +141,7 @@ export const Sidebar: FC<any> = ({ setActiveTab, activeTab }) => {
         roles: [1, 2, 3, 4, 5], // Admin, Manager, Field Officer
         children: [
           { id: "demonstration", label: "CRA Demonstration", icon: Presentation, roles: [1, 2, 3, 4, 5] },
-          { id: "costofCultivation", label: "Cost of Cultivation", icon: IndianRupee , roles: [1, 2, 3,4, 5] },
+          { id: "costofCultivation", label: "Cost of Cultivation", icon: IndianRupee, roles: [1, 2, 3, 4, 5] },
         ],
       },
       {
@@ -175,7 +175,7 @@ export const Sidebar: FC<any> = ({ setActiveTab, activeTab }) => {
       { id: "addUser", label: "Add User", icon: UserPlus, roles: [1] },
       { id: "dms", label: "Document Upload", icon: FileText, roles: [1, 2, 3, 4, 5] },
     ],
- 
+
 
     WRD: [
       { id: "dashboard", label: "Dashboard", icon: HomeIcon, roles: [1, 2, 3, 5, 6] },
@@ -267,11 +267,11 @@ export const Sidebar: FC<any> = ({ setActiveTab, activeTab }) => {
       { id: "reports", label: "Reports", icon: PieChart, roles: [1, 2, 3, 4, 5] },
     ],
     PMU: [
-            // { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={20} /> },
-            { id: "programes", label: "Programs / Activities", icon: ClipboardList, roles: [1, 2, 3, 5, 6] },
-            { id: "conduct", label: "Program Conduct", icon: ClipboardList, roles: [1, 2, 3, 5, 6] },
-            { id: "TrainingSummary", label: "TrainingSummary", icon: ClipboardList, roles: [1, 2, 3, 5, 6] },
-           
+      // { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={20} /> },
+      { id: "programes", label: "Programs / Activities", icon: ClipboardList, roles: [1, 2, 3, 5, 6] },
+      { id: "conduct", label: "Program Conduct", icon: ClipboardList, roles: [1, 2, 3, 5, 6] },
+      { id: "TrainingSummary", label: "TrainingSummary", icon: ClipboardList, roles: [1, 2, 3, 5, 6] },
+
     ]
   };
 
@@ -378,6 +378,9 @@ export const Sidebar: FC<any> = ({ setActiveTab, activeTab }) => {
             </p>
             <p className="text-gray-300 text-xs">
               {profile?.role_name || "Role"} | {profile?.level_name || "Level"}
+            </p>
+            <p className="text-gray-300 text-xs">
+              {profile?.division_name || profile?.circle_name || profile?.zone_name}
             </p>
           </div>
         </div>

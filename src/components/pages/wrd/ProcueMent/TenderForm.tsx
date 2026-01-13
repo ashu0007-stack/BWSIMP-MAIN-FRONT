@@ -3064,24 +3064,19 @@ const TenderModule: React.FC = () => {
                     <table className="w-full">
                         <thead className="bg-blue-600 text-white">
                         <tr>
-                          <th className="p-4 text-left font-semibold">Division Name</th>
-                          <th className="p-4 text-left font-semibold">Name of Work</th>
-                          <th className="p-4 text-left font-semibold">Tender Reference No</th>
-                          <th className="p-4 text-left font-semibold">Work Order</th>
-                          <th className="p-4 text-left font-semibold">Status</th>
-                          <th className="p-4 text-left font-semibold">Work Cost</th>
-                          <th className="p-4 text-left font-semibold">Actions</th>
+                          <th className="p-4 text-left font-semibold whitespace-nowrap">Division Name</th>
+                          <th className="p-4 text-left font-semibold whitespace-nowrap">Name of Work</th>
+                          <th className="p-4 text-left font-semibold whitespace-nowrap">Tender Reference No</th>
+                          <th className="p-4 text-left font-semibold whitespace-nowrap">Work Order</th>
+                          <th className="p-4 text-left font-semibold whitespace-nowrap">Status</th>
+                          <th className="p-4 text-left font-semibold whitespace-nowrap">Work Cost</th>
+                          <th className="p-4 text-left font-semibold whitespace-nowrap">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                         {paginatedTenders.map((t: Tender) => (
                           <tr key={t.id} className="hover:bg-gray-50/50 transition-colors group">
-                            <td className="p-4">
-                              <div className="flex items-center gap-3">
-                                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><Building className="w-4 h-4" /></div>
-                                <span className="font-medium text-gray-800">{t.division_name}</span>
-                              </div>
-                            </td>
+                            <td className="p-4">{t.division_name}</td>
                             <td className="p-4">
                               <div
                                 className="font-medium text-gray-800 line-clamp-3 max-w-[200px]"

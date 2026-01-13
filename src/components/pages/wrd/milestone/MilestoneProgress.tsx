@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { X, Calendar, AlertCircle } from "lucide-react";
 
 interface MilestoneData {
   id: number;
@@ -44,7 +44,7 @@ export default function AddProgressForm({
   packageMilestones = [],
 }: AddProgressFormProps) {
   const [formData, setFormData] = useState({
-    progressDate: new Date().toISOString().split('T')[0],
+    progressDate: "",
     fortnight: "First",
     remark: "",
   });
@@ -52,21 +52,100 @@ export default function AddProgressForm({
   const [quantities, setQuantities] = useState<Record<number, number | string>>({});
   const [milestoneTargets, setMilestoneTargets] = useState<Record<number, number>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  // 🔹 Get current date and set default
+  const getCurrentDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
+
+  // 🔹 Determine fortnight from date (1-15 or 16-31)
+  const getFortnightFromDate = (dateString: string) => {
+    if (!dateString) return "First";
+    
+    const date = new Date(dateString);
+    const day = date.getDate();
+    
+    if (day >= 1 && day <= 15) {
+      return "First";
+    } else if (day >= 16 && day <= 31) {
+      return "Second";
+    }
+    return "First";
+  };
+
+  // 🔹 Get max date (can't select future dates)
+  const getMaxDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
+
+  // 🔹 Get min date for the month (1st of current month)
+  const getMinDate = () => {
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    return firstDay.toISOString().split('T')[0];
+  };
+
+  // 🔹 Validate date and fortnight
+  const validateDateAndFortnight = (dateString: string, fortnight: string) => {
+    const errors: string[] = [];
+    
+    if (!dateString) {
+      errors.push("Please select a date");
+      return errors;
+    }
+    
+    const selectedDate = new Date(dateString);
+    const today = new Date();
+    const day = selectedDate.getDate();
+    
+    // Check if date is in future
+    if (selectedDate > today) {
+      errors.push("Cannot select future dates");
+    }
+    
+    // Check if date is within current month
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    if (selectedDate.getMonth() !== currentMonth || selectedDate.getFullYear() !== currentYear) {
+      errors.push("Progress can only be added for current month");
+    }
+    
+    // Check if fortnight matches date
+    const expectedFortnight = getFortnightFromDate(dateString);
+    if (fortnight !== expectedFortnight) {
+      errors.push(`Date ${dateString} belongs to ${expectedFortnight === "First" ? "1-15" : "16-31"} fortnight, not ${fortnight === "First" ? "1-15" : "16-31"}`);
+    }
+    
+    return errors;
+  };
 
   // 🔹 Initialize quantities with empty string for all components
   useEffect(() => {
-    if (components && components.length > 0) {
+    if (showModal && components && components.length > 0) {
       console.log("🔄 Initializing quantities for components:", components.length);
+      
+      // Set default date to today
+      const today = getCurrentDate();
+      const defaultFortnight = getFortnightFromDate(today);
+      
+      setFormData(prev => ({
+        ...prev,
+        progressDate: today,
+        fortnight: defaultFortnight
+      }));
+      
       const initialQuantities: Record<number, number | string> = {};
       components.forEach(comp => {
-        initialQuantities[comp.id] = ""; // Empty string से शुरू करें
+        initialQuantities[comp.id] = "";
       });
       setQuantities(initialQuantities);
       
-      // Debug log
-      console.log("📋 Initial quantities set:", initialQuantities);
+      console.log("📋 Form initialized with:", { today, defaultFortnight });
     }
-  }, [components]);
+  }, [components, showModal]);
 
   // 🔹 Set milestone targets from API
   useEffect(() => {
@@ -89,112 +168,140 @@ export default function AddProgressForm({
     }
   }, [packageMilestones, selectedMilestone]);
 
+  // 🔹 Handle date change
+  const handleDateChange = (date: string) => {
+    const fortnight = getFortnightFromDate(date);
+    const errors = validateDateAndFortnight(date, fortnight);
+    
+    setValidationErrors(errors);
+    setFormData({
+      ...formData,
+      progressDate: date,
+      fortnight: fortnight
+    });
+    
+    console.log("📅 Date changed:", { date, fortnight, errors });
+  };
+
+  // 🔹 Handle fortnight change
+  const handleFortnightChange = (fortnight: string) => {
+    if (!formData.progressDate) {
+      setValidationErrors(["Please select date first"]);
+      return;
+    }
+    
+    const errors = validateDateAndFortnight(formData.progressDate, fortnight);
+    setValidationErrors(errors);
+    
+    if (errors.length === 0) {
+      setFormData({
+        ...formData,
+        fortnight: fortnight
+      });
+    }
+  };
+
   if (!showModal) return null;
 
- // AddProgressForm.tsx में handleSubmit function को ये update करें:
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setIsSubmitting(true);
-  
-  try {
-    console.log("🚀 Form submission started");
-    console.log("🔍 Current quantities state:", quantities);
+  // 🔹 Handle form submission
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    // 🔹 VALIDATION
-    let hasValidQuantity = false;
-    const validationErrors: string[] = [];
-    const formattedComponents: any[] = [];
+    // Validate date and fortnight
+    const dateErrors = validateDateAndFortnight(formData.progressDate, formData.fortnight);
+    if (dateErrors.length > 0) {
+      setValidationErrors(dateErrors);
+      alert("Date Validation Errors:\n" + dateErrors.join("\n"));
+      return;
+    }
     
-    components.forEach(comp => {
-      const rawQty = quantities[comp.id];
-      const qty = typeof rawQty === 'string' 
-        ? (rawQty === '' ? 0 : parseFloat(rawQty) || 0)
-        : (rawQty || 0);
+    setIsSubmitting(true);
+    
+    try {
+      console.log("🚀 Form submission started");
       
-      const targetQty = getMilestoneTargetQty(comp.id);
+      // 🔹 VALIDATION: Check if at least one quantity > 0
+      let hasValidQuantity = false;
+      const quantityErrors: string[] = [];
+      const formattedComponents: any[] = [];
       
-      console.log(`📊 Component ${comp.id} (${comp.name}):`, {
-        rawQty,
-        parsedQty: qty,
-        targetQty,
-        type: typeof rawQty
-      });
-      
-      // हर component को भेजें, चाहे quantity 0 हो या न हो
-      formattedComponents.push({
-        componentId: comp.id,
-        quantity: qty,  // 0 भी भेजें
-        fieldName: comp.field_name,
-        unit: comp.unitname,
-      });
-      
-      if (qty > 0) {
-        hasValidQuantity = true;
+      components.forEach(comp => {
+        const rawQty = quantities[comp.id];
+        const qty = typeof rawQty === 'string' 
+          ? (rawQty === '' ? 0 : parseFloat(rawQty) || 0)
+          : (rawQty || 0);
         
-        // Check if quantity exceeds target
-        if (qty > targetQty) {
-          validationErrors.push(
-            `Quantity for ${comp.name} (${qty}) exceeds target (${targetQty})`
-          );
+        const targetQty = getMilestoneTargetQty(comp.id);
+        
+        // हर component को भेजें
+        formattedComponents.push({
+          componentId: comp.id,
+          quantity: qty,
+          fieldName: comp.field_name,
+          unit: comp.unitname,
+        });
+        
+        if (qty > 0) {
+          hasValidQuantity = true;
+          
+          // Check if quantity exceeds target
+          if (qty > targetQty) {
+            quantityErrors.push(
+              `${comp.name}: ${qty} exceeds target ${targetQty}`
+            );
+          }
+        }
+      });
+      
+      if (!hasValidQuantity) {
+        alert("❌ Please enter progress quantity greater than 0 for at least one component!");
+        setIsSubmitting(false);
+        return;
+      }
+      
+      if (quantityErrors.length > 0) {
+        const confirmProceed = confirm(
+          "Some quantities exceed target:\n" + 
+          quantityErrors.join("\n") + 
+          "\n\nDo you want to proceed anyway?"
+        );
+        if (!confirmProceed) {
+          setIsSubmitting(false);
+          return;
         }
       }
-    });
-    
-    if (!hasValidQuantity) {
-      alert("❌ Please enter progress quantity greater than 0 for at least one component!");
+      
+      // 🔹 Prepare data
+      const data = {
+        ...formData,
+        packageNumber: selectedPackage,
+        milestoneNumber: selectedMilestone,
+        components: formattedComponents,
+        // Format fortnight as "1-15" or "16-31" for backend
+        fortnight: formData.fortnight === "First" ? "1-15" : "16-31"
+      };
+      
+      console.log("📦 Final payload to be sent:", JSON.stringify(data, null, 2));
+      
+      await onAddProgress(data);
+      
+      // Reset form
+      const resetQuantities: Record<number, number | string> = {};
+      components.forEach(comp => {
+        resetQuantities[comp.id] = "";
+      });
+      setQuantities(resetQuantities);
+      setValidationErrors([]);
+      
+      console.log("✅ Form submitted successfully");
+      
+    } catch (error) {
+      console.error("❌ Error in form submission:", error);
+      alert("Failed to submit form. Please check console for details.");
+    } finally {
       setIsSubmitting(false);
-      return;
     }
-    
-    if (validationErrors.length > 0) {
-      alert("Validation Errors:\n" + validationErrors.join("\n"));
-      setIsSubmitting(false);
-      return;
-    }
-    
-    // 🔹 Validate progress date
-    if (!formData.progressDate) {
-      alert("Please select a progress date!");
-      setIsSubmitting(false);
-      return;
-    }
-    
-    const data = {
-      ...formData,
-      packageNumber: selectedPackage,
-      milestoneNumber: selectedMilestone,
-      components: formattedComponents, // ✅ सभी components भेजें
-    };
-    
-    console.log("📦 Final payload to be sent:", JSON.stringify(data, null, 2));
-    console.log("📤 Sending to onAddProgress...");
-    
-    await onAddProgress(data);
-    
-    // Reset form
-    setFormData({
-      progressDate: new Date().toISOString().split('T')[0],
-      fortnight: "First",
-      remark: "",
-    });
-    
-    // Reset quantities to empty
-    const resetQuantities: Record<number, number | string> = {};
-    components.forEach(comp => {
-      resetQuantities[comp.id] = "";
-    });
-    setQuantities(resetQuantities);
-    
-    // Modal बंद न करें, success message दिखाएँ
-    console.log("✅ Form submitted successfully");
-    
-  } catch (error) {
-    console.error("❌ Error in form submission:", error);
-    alert("Failed to submit form. Please check console for details.");
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+  };
 
   const getMilestonePercentage = (component: Component) => {
     switch (selectedMilestone) {
@@ -211,9 +318,6 @@ const handleSubmit = async (e: React.FormEvent) => {
   };
 
   const handleQuantityChange = (componentId: number, value: string) => {
-    console.log(`✏️ Quantity change for component ${componentId}:`, value);
-    
-    // Allow empty string or valid number
     if (value === "" || /^\d*\.?\d*$/.test(value)) {
       setQuantities(prev => ({
         ...prev,
@@ -223,7 +327,6 @@ const handleSubmit = async (e: React.FormEvent) => {
   };
 
   const handleQuantityBlur = (componentId: number, value: string) => {
-    // Convert empty string to 0 on blur
     if (value === "") {
       setQuantities(prev => ({
         ...prev,
@@ -244,6 +347,14 @@ const handleSubmit = async (e: React.FormEvent) => {
     }
     return value;
   };
+
+  // 🔹 Get fortnight display text
+  const getFortnightDisplay = () => {
+    return formData.fortnight === "First" ? "1-15" : "16-31";
+  };
+
+  // 🔹 Check if date is valid for submission
+  const isDateValid = validationErrors.length === 0 && formData.progressDate;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -271,40 +382,132 @@ const handleSubmit = async (e: React.FormEvent) => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-          {/* Basic Info */}
+          
+          {/* Fortnight Information Banner */}
+          <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <Calendar className="w-5 h-5 text-blue-600 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-blue-800">Fortnight Progress Entry</h4>
+                <p className="text-sm text-blue-700 mt-1">
+                  Progress is recorded in 15-day periods:
+                  <span className="font-bold ml-2">
+                    {getFortnightDisplay()} of {formData.progressDate ? new Date(formData.progressDate).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }) : "current month"}
+                  </span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Date and Fortnight Selection */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            {/* Date Selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Progress Date *
               </label>
-              <input
-                type="date"
-                required
-                value={formData.progressDate}
-                onChange={(e) =>
-                  setFormData({ ...formData, progressDate: e.target.value })
-                }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                disabled={isSubmitting}
-              />
+              <div className="relative">
+                <input
+                  type="date"
+                  required
+                  value={formData.progressDate}
+                  onChange={(e) => handleDateChange(e.target.value)}
+                  min={getMinDate()}
+                  max={getMaxDate()}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    validationErrors.length > 0 ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  disabled={isSubmitting}
+                />
+                <Calendar className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Select date within current month
+              </p>
             </div>
+
+            {/* Fortnight Selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Fortnight
+                Fortnight *
               </label>
-              <select
-                value={formData.fortnight}
-                onChange={(e) =>
-                  setFormData({ ...formData, fortnight: e.target.value })
-                }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                disabled={isSubmitting}
-              >
-                <option value="First">First Fortnight</option>
-                <option value="Second">Second Fortnight</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={formData.fortnight}
+                  onChange={(e) => handleFortnightChange(e.target.value)}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    validationErrors.length > 0 ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  disabled={isSubmitting || !formData.progressDate}
+                >
+                  <option value="First">1-15 (First Half)</option>
+                  <option value="Second">16-31 (Second Half)</option>
+                </select>
+                <div className="absolute right-3 top-2.5">
+                  {formData.fortnight === "First" ? (
+                    <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">
+                      1st Half
+                    </span>
+                  ) : (
+                    <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                      2nd Half
+                    </span>
+                  )}
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Auto-set based on date
+              </p>
             </div>
           </div>
+
+          {/* Validation Errors */}
+          {validationErrors.length > 0 && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h4 className="font-medium text-red-800 mb-1">Date Validation Error</h4>
+                  <ul className="text-sm text-red-700 space-y-1">
+                    {validationErrors.map((error, index) => (
+                      <li key={index}>• {error}</li>
+                    ))}
+                  </ul>
+                  <p className="text-xs text-red-600 mt-2">
+                    Please select a valid date within current month and matching fortnight.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Current Selection Summary */}
+          {isDateValid && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-green-800">
+                    ✅ Ready to add progress for:
+                  </p>
+                  <p className="text-green-700 mt-1">
+                    <span className="font-bold">{getFortnightDisplay()}</span> of{' '}
+                    <span className="font-bold">
+                      {new Date(formData.progressDate).toLocaleDateString('en-IN', {
+                        month: 'long',
+                        year: 'numeric'
+                      })}
+                    </span>
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-green-600">Selected Date:</p>
+                  <p className="font-medium text-green-800">
+                    {new Date(formData.progressDate).toLocaleDateString('en-IN')}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Components Table */}
           <div className="mb-6">
@@ -315,13 +518,11 @@ const handleSubmit = async (e: React.FormEvent) => {
               <button
                 type="button"
                 onClick={() => {
-                  // Reset all quantities to empty
                   const resetQuantities: Record<number, number | string> = {};
                   components.forEach(comp => {
                     resetQuantities[comp.id] = "";
                   });
                   setQuantities(resetQuantities);
-                  console.log("🧹 Cleared all quantities");
                 }}
                 className="text-sm text-red-600 hover:text-red-800"
                 disabled={isSubmitting}
@@ -329,16 +530,6 @@ const handleSubmit = async (e: React.FormEvent) => {
                 Clear All
               </button>
             </div>
-            
-            {/* Debug Section */}
-            {/* <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-sm text-yellow-800 font-medium">
-                🔍 Debug: Enter quantity in any field and check console logs
-              </p>
-              <p className="text-xs text-yellow-600 mt-1">
-                Selected Milestone: {selectedMilestone} | Components: {components.length}
-              </p>
-            </div> */}
             
             <div className="overflow-x-auto border rounded-lg">
               <table className="w-full">
@@ -350,9 +541,6 @@ const handleSubmit = async (e: React.FormEvent) => {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                       Unit
                     </th>
-                    {/* <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Milestone %
-                    </th> */}
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                       Target Qty
                     </th>
@@ -363,7 +551,6 @@ const handleSubmit = async (e: React.FormEvent) => {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {components.map((component) => {
-                    const milestonePercent = getMilestonePercentage(component);
                     const targetQty = getMilestoneTargetQty(component.id);
                     const currentValue = quantities[component.id] || "";
                     const displayValue = getDisplayValue(currentValue);
@@ -377,16 +564,10 @@ const handleSubmit = async (e: React.FormEvent) => {
                           <div className="font-medium text-gray-900">
                             {component.name}
                           </div>
-                          <div className="text-xs text-gray-500">ID: {component.id}</div>
                         </td>
                         <td className="px-4 py-3 text-gray-700">
                           {component.unitname}
                         </td>
-                        {/* <td className="px-4 py-3">
-                          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                            {(milestonePercent * 100).toFixed(1)}%
-                          </span>
-                        </td> */}
                         <td className="px-4 py-3 text-gray-700">
                           {targetQty.toLocaleString()}
                         </td>
@@ -416,7 +597,7 @@ const handleSubmit = async (e: React.FormEvent) => {
                             </div>
                             {parsedQty > targetQty && (
                               <div className="text-xs text-red-600 mt-1">
-                                ⚠️ Exceeds target by {(parsedQty - targetQty).toFixed(2)}
+                                ⚠️ Exceeds target
                               </div>
                             )}
                           </div>
@@ -433,7 +614,7 @@ const handleSubmit = async (e: React.FormEvent) => {
               <div className="flex justify-between items-center">
                 <div>
                   <span className="text-sm font-medium text-gray-700">
-                    Components with quantity &gt; 0: 
+                    Components with progress: 
                   </span>
                   <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm">
                     {Object.values(quantities).filter(val => {
@@ -481,7 +662,7 @@ const handleSubmit = async (e: React.FormEvent) => {
             <button
               type="submit"
               className="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !isDateValid}
             >
               {isSubmitting ? (
                 <>
@@ -489,37 +670,27 @@ const handleSubmit = async (e: React.FormEvent) => {
                   Saving...
                 </>
               ) : (
-                'Save Progress'
+                `Save Progress for ${getFortnightDisplay()}`
               )}
             </button>
           </div>
           
-          {/* Debug Info */}
-          {/* <div className="mt-6 p-4 bg-gray-100 rounded-lg border border-gray-300">
-            <h4 className="font-bold mb-2 text-sm text-gray-700">Debug Information:</h4>
-            <div className="text-xs space-y-1">
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <span className="font-medium">Package:</span> {selectedPackage}
-                </div>
-                <div>
-                  <span className="font-medium">Milestone:</span> {selectedMilestone}
-                </div>
-                <div>
-                  <span className="font-medium">Progress Date:</span> {formData.progressDate}
-                </div>
-                <div>
-                  <span className="font-medium">Fortnight:</span> {formData.fortnight}
-                </div>
-              </div>
-              <div className="mt-2">
-                <span className="font-medium">Current Quantities State:</span>
-                <pre className="mt-1 p-2 bg-gray-800 text-gray-100 rounded text-xs overflow-auto max-h-20">
-                  {JSON.stringify(quantities, null, 2)}
-                </pre>
+          {/* Fortnight Rules Info */}
+          <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <h4 className="font-medium text-yellow-800 mb-1">Fortnight Rules</h4>
+                <ul className="text-sm text-yellow-700 space-y-1">
+                  <li>• <strong>1-15 Fortnight:</strong> Progress for dates 1st to 15th of month</li>
+                  <li>• <strong>16-31 Fortnight:</strong> Progress for dates 16th to 31st of month</li>
+                  <li>• Only current month's progress can be added</li>
+                  <li>• Date automatically determines fortnight</li>
+                  <li>• Progress for each fortnight is recorded separately</li>
+                </ul>
               </div>
             </div>
-          </div> */}
+          </div>
         </form>
       </div>
     </div>
