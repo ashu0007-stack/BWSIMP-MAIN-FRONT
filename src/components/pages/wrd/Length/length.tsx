@@ -13,12 +13,14 @@ import {
   PieChart,
   Pie,
   Cell,
+  BarChart,     
+  Bar         
 } from "recharts";
 import AddProgressForm from "./AddProgressForm";
 import { useWorks, usePackageProgress, useAddProgressEntry } from "@/hooks/wrdHooks/useLength";
 import jsPDF from "jspdf";
 
-import { Eye } from "lucide-react";
+import { Eye,Download,ChevronDown } from "lucide-react";
 
 
 interface ProgressEntry {
@@ -48,38 +50,20 @@ interface LengthwiseItem {
   target: number;
 }
 
-
-const formatDate = (dateString: string | null) => {
-  if (!dateString) return "-";
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-IN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-  } catch (error) {
-    return "-";
-  }
-};
-
 interface LengthDetailPageProps {
-  workId?: number;
+  workId?: number | string ;
   packageNumber?: string;
   workName?: string;
   contractorName?: string;
   onClose?: () => void;
 }
 
-
 export default function LengthProgressPage({
-  workId, 
   packageNumber, 
   workName, 
   contractorName,
-  onClose}:LengthDetailPageProps ) {
-
-  
+  onClose}
+  :LengthDetailPageProps ) {
 
   const [selectedPackage, setSelectedPackage] =useState<string | null>(packageNumber || null);
   const [showForm, setShowForm] = useState(false);
@@ -114,9 +98,7 @@ export default function LengthProgressPage({
            [5].includes(user.role_id); // Example: role_id 5,6 for operators, 1,2 for admins
   };
 
- const progressEntries: ProgressEntry[] = useMemo(() => {
-  return packageData?.progress ?? [];
-}, [packageData?.progress]);
+  const progressEntries: ProgressEntry[] = packageData?.progress || [];
   const targetKm: number = packageData?.target_km || 0;
   
   const lengthwiseData: LengthwiseItem[] = useMemo(() => {
@@ -1156,6 +1138,134 @@ projectDetails.forEach((detail, index) => {
     document.addEventListener("click", closeMenu);
     return () => document.removeEventListener("click", closeMenu);
   }, []);
+  // Bar chart data preparation
+const barChartData = useMemo(() => {
+const data = [];
+  
+  // Earthwork aur lining ka comparison
+  data.push({
+    name: 'Earthwork',
+    completed: totalEarthwork,
+    target: targetKm,
+    remaining: targetKm - totalEarthwork,
+    percentage: ((totalEarthwork / targetKm) * 100).toFixed(1)
+  });
+  
+  data.push({
+    name: 'Lining',
+    completed: totalLining,
+    target: targetKm,
+    remaining: targetKm - totalLining,
+    percentage: ((totalLining / targetKm) * 100).toFixed(1)
+  });
+  
+  return data;
+}, [totalEarthwork, totalLining, targetKm]);
+
+// Monthly progress bar chart ke liye data
+const monthlyProgressData = useMemo(() => {
+  if (!progressEntries || progressEntries.length === 0) return [];
+  
+  // Group by month
+  const monthlyMap: {[key: string]: {earthwork: number, lining: number}} = {};
+  
+  progressEntries.forEach(entry => {
+    if (!entry.date) return;
+    
+    const date = new Date(entry.date);
+    const monthYear = `${date.getMonth()+1}/${date.getFullYear()}`;
+    const monthName = date.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' });
+    
+    if (!monthlyMap[monthYear]) {
+      monthlyMap[monthYear] = { earthwork: 0, lining: 0 };
+    }
+    
+    monthlyMap[monthYear].earthwork += entry.earthwork_done_km || 0;
+    monthlyMap[monthYear].lining += entry.lining_done_km || 0;
+  });
+  
+  // Convert to array and sort by date
+  return Object.entries(monthlyMap)
+    .map(([key, value]) => {
+      const [month, year] = key.split('/');
+      const date = new Date(parseInt(year), parseInt(month)-1, 1);
+      const monthLabel = date.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' });
+      
+      return {
+        month: monthLabel,
+        earthwork: parseFloat(value.earthwork.toFixed(2)),
+        lining: parseFloat(value.lining.toFixed(2)),
+        total: parseFloat((value.earthwork + value.lining).toFixed(2))
+      };
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.month);
+      const dateB = new Date(b.month);
+      return dateA.getTime() - dateB.getTime();
+    });
+}, [progressEntries]);
+
+// Cumulative progress bar chart
+const cumulativeProgressData = useMemo(() => {
+  if (!progressEntries || progressEntries.length === 0) return [];
+  
+  // Sort entries by date
+  const sortedEntries = [...progressEntries].sort((a, b) => {
+    const dateA = a.date ? new Date(a.date).getTime() : 0;
+    const dateB = b.date ? new Date(b.date).getTime() : 0;
+    return dateA - dateB;
+  });
+  
+  let cumulativeEarthwork = 0;
+  let cumulativeLining = 0;
+  
+  return sortedEntries.map((entry, index) => {
+    cumulativeEarthwork += entry.earthwork_done_km || 0;
+    cumulativeLining += entry.lining_done_km || 0;
+    
+    return {
+      entry: `Entry ${index + 1}`,
+      date: entry.date ? new Date(entry.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : `#${index + 1}`,
+      earthwork: parseFloat(cumulativeEarthwork.toFixed(2)),
+      lining: parseFloat(cumulativeLining.toFixed(2)),
+      total: parseFloat((cumulativeEarthwork + cumulativeLining).toFixed(2))
+    };
+  });
+}, [progressEntries]);
+
+// Kilometer-wise progress bar chart
+const kilometerWiseBarData = useMemo(() => {
+  const data = [];
+  const validTargetKm = typeof targetKm === 'number' ? targetKm : 0;
+  
+  // 1 KM intervals mein data prepare karein
+  for (let km = 0; km <= validTargetKm; km += 1) {
+    let earthworkInThisKm = 0;
+    let liningInThisKm = 0;
+    
+    const entriesInThisKm = progressEntries.filter((e) => {
+      const start = typeof e.start_km === 'number' ? e.start_km : parseFloat(e.start_km);
+      const end = typeof e.end_km === 'number' ? e.end_km : parseFloat(e.end_km);
+      return km >= start && km < end;
+    });
+    
+    entriesInThisKm.forEach(entry => {
+      earthworkInThisKm += typeof entry.earthwork_done_km === 'number' ? entry.earthwork_done_km : 0;
+      liningInThisKm += typeof entry.lining_done_km === 'number' ? entry.lining_done_km : 0;
+    });
+    
+    if (earthworkInThisKm > 0 || liningInThisKm > 0) {
+      data.push({
+        kilometer: `KM ${km}-${km+1}`,
+        earthwork: parseFloat(earthworkInThisKm.toFixed(2)),
+        lining: parseFloat(liningInThisKm.toFixed(2)),
+        total: parseFloat((earthworkInThisKm + liningInThisKm).toFixed(2))
+      });
+    }
+  }
+  
+  return data;
+}, [progressEntries, targetKm]);
 
   return (
     <div className="p-6 space-y-6">
@@ -1206,10 +1316,10 @@ projectDetails.forEach((detail, index) => {
             <table className="w-full border-collapse shadow-sm">
               <thead>
                  <tr className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-                  <th className="border p-2">Package No.</th>
+                  <th className="border p-2 whitespace-nowrap">Package No.</th>
                   <th className="border p-2">Work Name</th>
-                  <th className="border p-2">Agency Name</th>
-                  <th className="border p-2">Target KM</th>
+                  <th className="border p-2 whitespace-nowrap">Agency Name</th>
+                  <th className="border p-2 whitespace-nowrap">Target KM</th>
                   <th className="border p-2">Action</th>
                 </tr>
               </thead>
@@ -1224,10 +1334,11 @@ projectDetails.forEach((detail, index) => {
                       <button
                         className="relative flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 text-white px-4 py-2 rounded-xl hover:shadow-lg transition-all duration-300 group overflow-hidden"
                         onClick={() => setSelectedPackage(w.package_number)}
+                         title="View Details"
                       >
-                        <div className="relative z-10 flex items-center gap-2">
-                          <Eye className="w-5 h-5" />
-                          <span className="font-medium">View Progress</span>
+                        <div className="relative z-5 flex items-center gap-2">
+                          <Eye className="w-3 h-3" />
+                          {/* <span>View Progress</span> */}
                         </div>
                         <div className="absolute inset-0 bg-gradient-to-r from-red-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                       </button>
@@ -1280,7 +1391,9 @@ projectDetails.forEach((detail, index) => {
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  Download Lengthwise Report ▾
+                  <Download className="w-4 h-4" />
+                  Download
+                  <ChevronDown className="w-4 h-4" />
                 </button>
                 {showDownloadOptions && (
                   <div className="absolute right-0 mt-2 w-56 bg-white border rounded-lg shadow-xl z-10 overflow-hidden">
