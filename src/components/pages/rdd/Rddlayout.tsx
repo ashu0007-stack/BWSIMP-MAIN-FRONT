@@ -4,9 +4,9 @@ import { Sidebar } from "@/components/shared/sidebar";
 import RddDashboard from "./rddashboard";
 import DataEntryForm from "./dataentry";
 //import DataEntryTable from "./DataEntryTable";
-import { UserDetails } from "../admin/userDetails";
+import { UserDetails } from "../admin/usermanagement/userDetails";
 import MgReport from "./mgreport";
-import { UserCreate } from "../admin/userCreate";
+import { UserCreate } from "../admin/usermanagement/userCreate";
 
 export default function RddLayout() {
   const [activeTab, setActiveTab] = useState("dashboard");

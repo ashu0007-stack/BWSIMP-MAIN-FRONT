@@ -10,8 +10,8 @@ import { Finance } from "./Finance/finance";
 import { TrainingReportTable } from "./Training/TrainingReports/TrainingReportPage";
 import { OfficialParticipant } from "./Training/TargetGroups/Official/officialParticipant";
 import { FarmerParticipant } from "./Training/TargetGroups/Farmer/farmerParticipant";
-import { UserCreate } from "../admin/userCreate";
-import { UserDetails } from "../admin/userDetails";
+import { UserCreate } from "../admin/usermanagement/userCreate";
+import { UserDetails } from "../admin/usermanagement/userDetails";
 import { Sidebar } from "@/components/shared/sidebar";
 import { CostofCultivation } from "./CraDemonstration/CostofCultivation/CostofCultivation";
 export default function DoaLayout() {

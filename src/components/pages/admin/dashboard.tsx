@@ -1,12 +1,12 @@
 import { act, useState } from "react";
 import Link from "next/link";
-import CreateWorkPackages from "./work";
-import DmsPage from "./DmsPage";
+import CreateWorkPackages from "./work/work";
+import DmsPage from "./dms/DmsPage";
 import { Sidebar } from "@/components/shared/sidebar";
-import { UserCreate } from "./userCreate";
-import { UserDetails } from "./userDetails";
-import SuperAdminReportPage from "./schmeReport";
-import PIMSuperAdminPage from "./pimReports";
+import { UserCreate } from "./usermanagement/userCreate";
+import { UserDetails } from "./usermanagement/userDetails";
+import SuperAdminReportPage from "./reports/schmeReport";
+import PIMSuperAdminPage from "./reports/pimReports";
 
 export default function SuperAdminDashboard() {
   const [activeTab, setActiveTab] = useState<string>("home");

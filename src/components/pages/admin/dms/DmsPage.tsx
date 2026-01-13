@@ -1,7 +1,7 @@
 // DmsPage.tsx
 import React, { useState, useEffect, useRef } from "react";
 import { Upload, Trash2, FileText, File, Download, Eye, X, CloudUpload, Search, Folder, Calendar, User, Share, Settings } from "lucide-react";
-import { useDms, useUser } from '../../../hooks/useDms';
+import { useDms, useUser } from '../../../../hooks/useDms';
 import Select from 'react-select';
 
 // Interfaces
