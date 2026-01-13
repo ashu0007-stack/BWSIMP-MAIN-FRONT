@@ -3,6 +3,18 @@ import { useAddSessionDetails } from "@/hooks/doaHooks/useSesstionDetails";
 import React, { FC } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
+import {
+  Calendar,
+  Users,
+  User,
+  BookOpen,
+  MessageSquare,
+  AlertTriangle,
+  CheckCircle,
+  Target,
+  FileText,
+  XCircle
+} from "lucide-react";
 
 export type SessionFormValues = {
   ffs_id: number;
@@ -25,12 +37,8 @@ interface SessionFormProps {
 }
 
 export const SessionForm: FC<SessionFormProps> = ({ setShowForm }) => {
-
-
-
   const { mutate: addSession } = useAddSessionDetails();
   const { data: ffsDetail, isLoading: ffsDetailLoading } = useFfsDetails();
-
 
   const {
     register,
@@ -38,226 +46,320 @@ export const SessionForm: FC<SessionFormProps> = ({ setShowForm }) => {
     formState: { errors },
   } = useForm<SessionFormValues>();
 
-
   const handleTrainingDetailsSubmit = (data: SessionFormValues) => {
-    console.log('submit data', data)
+    console.log('submit data', data);
     addSession(data, {
       onSuccess: (response) => {
         console.log('submit data', response);
-        toast.success("Session successfully add");
+        toast.success("Session successfully added");
         setShowForm(false);
       },
       onError: (errors) => {
-        console.log(errors)
-        toast.success("Failed to save record");
+        console.log(errors);
+        toast.error("Failed to save record");
       }
-    })
+    });
   };
 
+  /* ================= REUSABLE COMPONENTS ================= */
+  const TextInput = ({
+    name,
+    label,
+    type = "text",
+    required = true,
+    placeholder = "",
+    icon
+  }: {
+    name: keyof SessionFormValues;
+    label: string;
+    type?: string;
+    required?: boolean;
+    placeholder?: string;
+    icon?: React.ReactNode;
+  }) => (
+    <div>
+      <label className="text-sm font-medium text-gray-700 mb-1 block">
+        {label}
+      </label>
+      <div className="relative">
+        {icon && (
+          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+            {icon}
+          </div>
+        )}
+        <input
+          type={type}
+          {...register(name, required ? { required: `${label} is required` } : {})}
+          placeholder={placeholder}
+          className={`w-full p-2 pl-10 border rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
+            errors[name] ? "border-red-500" : "border-gray-300"
+          }`}
+        />
+      </div>
+      {errors[name] && (
+        <p className="text-red-500 text-sm mt-1">
+          {(errors[name]?.message as string)}
+        </p>
+      )}
+    </div>
+  );
+
+  const SelectInput = ({
+    name,
+    label,
+    options,
+    icon
+  }: {
+    name: keyof SessionFormValues;
+    label: string;
+    options: { value: string | number; label: string }[];
+    icon?: React.ReactNode;
+  }) => (
+    <div>
+      <label className="text-sm font-medium text-gray-700 mb-1 block">
+        {label}
+      </label>
+      <div className="relative">
+        {icon && (
+          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+            {icon}
+          </div>
+        )}
+        <select
+          {...register(name, { required: `${label} is required` })}
+          className={`w-full p-2 pl-10 border rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
+            errors[name] ? "border-red-500" : "border-gray-300"
+          }`}
+        >
+          <option value="">Select {label}</option>
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      {errors[name] && (
+        <p className="text-red-500 text-sm mt-1">
+          {(errors[name]?.message as string)}
+        </p>
+      )}
+    </div>
+  );
+
+  const CheckboxInput = ({
+    name,
+    label,
+    icon
+  }: {
+    name: keyof SessionFormValues;
+    label: string;
+    icon?: React.ReactNode;
+  }) => (
+    <label className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+      <input
+        type="checkbox"
+        {...register(name)}
+        className="h-5 w-5 text-green-600 rounded focus:ring-green-500"
+      />
+      <div className="flex items-center space-x-2">
+        {icon && <span className="text-gray-500">{icon}</span>}
+        <span className="text-sm font-medium text-gray-700">{label}</span>
+      </div>
+    </label>
+  );
+
+  const Section: FC<{
+    title: string;
+    icon: React.ReactNode;
+    children: React.ReactNode;
+  }> = ({ title, icon, children }) => (
+    <div className="border border-gray-200 rounded-xl p-6 bg-white shadow-sm">
+      <h3 className="text-lg font-semibold text-green-800 flex items-center gap-2 mb-6 pb-3 border-b">
+        <span className="text-green-700">{icon}</span>
+        {title}
+      </h3>
+      <div className="space-y-6">
+        {children}
+      </div>
+    </div>
+  );
+
   return (
-    <div className="bg-white p-6 sm:p-8 rounded-lg shadow-md max-w-5xl mx-auto">
-      <h2 className="text-2xl font-bold text-center text-gray-800 mb-6 border-b pb-3">
-        Session Training Form
-      </h2>
+    <div className="p-4 bg-white shadow-md rounded-xl mt-4 border border-gray-100 max-w-6xl mx-auto">
+      {/* Header */}
+      <div className="bg-green-700 px-6 py-4 rounded-xl mb-6">
+        <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+          <BookOpen size={28} />
+          Session Training Form
+        </h1>
+        <p className="text-green-100 mt-1">
+          Fill in the details for the new training session
+        </p>
+      </div>
 
-      <form
-        onSubmit={handleSubmit(handleTrainingDetailsSubmit)}
-        className="grid grid-cols-1 md:grid-cols-2 gap-6"
-      >
-        {/* Select FFS */}
-        <div>
-          <label className="font-semibold text-gray-700 mb-1 block">Select FFS</label>
-          <select
-            {...register("ffs_id", { required: "FFS is required" })}
-            className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-500"
-          >
-            <option value="">Select FFS</option>
-            {ffsDetailLoading ? (
-              <option>Loading...</option>
-            ) : (
-              ffsDetail?.map((ffs: any) => (
-                <option key={ffs.ffsId} value={ffs.ffsId}>
-                  {ffs.ffsTitle}
-                </option>
-              ))
-            )}
-          </select>
-          {errors.ffs_id && <p className="text-red-500 text-sm">{errors.ffs_id.message}</p>}
-        </div>
+      <form onSubmit={handleSubmit(handleTrainingDetailsSubmit)} className="space-y-8">
+        {/* BASIC SESSION INFORMATION */}
+        <Section title="Session Information" icon={<Calendar size={20} />}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <SelectInput
+              name="ffs_id"
+              label="FFS Program"
+              icon={<Target size={18} />}
+              options={
+                ffsDetailLoading
+                  ? [{ value: "", label: "Loading..." }]
+                  : ffsDetail?.map((ffs: any) => ({
+                      value: ffs.ffsId,
+                      label: ffs.ffsTitle
+                    })) || []
+              }
+            />
+            
+            <TextInput
+              name="session_date"
+              label="Session Date"
+              type="date"
+              icon={<Calendar size={18} />}
+              required
+            />
+            
+            <TextInput
+              name="session_topic"
+              label="Session Topic"
+              placeholder="Enter session topic"
+              icon={<BookOpen size={18} />}
+              required
+            />
+          </div>
+        </Section>
 
-        {/* Session Date */}
-        <div>
-          <label className="font-semibold text-gray-700 mb-1 block">
-            Session Date
-          </label>
-          <input
-            type="date"
-            {...register("session_date", { required: "Session date is required" })}
-            className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-500"
-          />
-          {errors.session_date && (
-            <p className="text-red-500 text-sm">{errors.session_date.message}</p>
-          )}
-        </div>
+        {/* TRAINING DETAILS */}
+        <Section title="Training Details" icon={<Users size={20} />}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <TextInput
+              name="resource_person"
+              label="Resource Person"
+              placeholder="Enter resource person name"
+              icon={<User size={18} />}
+              required
+            />
+            
+            <TextInput
+              name="training_methods"
+              label="Training Methods"
+              placeholder="Enter training methods used"
+              icon={<FileText size={18} />}
+              required
+            />
+            
+            {/* <TextInput
+              name="farmers_attended_male"
+              label="Male Farmers Attended"
+              type="number"
+              placeholder="Enter number of male farmers"
+              icon={<Users size={18} />}
+              required
+            /> */}
+            
+            {/* <TextInput
+              name="farmers_attended_female"
+              label="Female Farmers Attended"
+              type="number"
+              placeholder="Enter number of female farmers"
+              icon={<Users size={18} />}
+              required
+            /> */}
+          </div>
+        </Section>
 
-        {/* Session Topic */}
-        <div>
-          <label className="font-semibold text-gray-700 mb-1 block">
-            Session Topic
-          </label>
-          <input
-            type="text"
-            {...register("session_topic", { required: "Topic is required" })}
-            placeholder="Enter Session Topic"
-            className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-500"
-          />
-          {errors.session_topic && (
-            <p className="text-red-500 text-sm">{errors.session_topic.message}</p>
-          )}
-        </div>
+        {/* SESSION COMPONENTS */}
+        {/* <Section title="Session Components" icon={<CheckCircle size={20} />}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <CheckboxInput
+              name="agro_ecosystem"
+              label="Agro Ecosystem"
+              icon={<CheckCircle size={16} />}
+            />
+            
+            <CheckboxInput
+              name="special_topic_planned"
+              label="Special Topic Planned"
+              icon={<CheckCircle size={16} />}
+            />
+            
+            <CheckboxInput
+              name="group_dynamics"
+              label="Group Dynamics"
+              icon={<CheckCircle size={16} />}
+            />
+            
+            <CheckboxInput
+              name="feedback_collected"
+              label="Feedback Collected"
+              icon={<CheckCircle size={16} />}
+            />
+          </div>
+        </Section> */}
 
-        {/* Resource Person */}
-        <div>
-          <label className="font-semibold text-gray-700 mb-1 block">
-            Resource Person
-          </label>
-          <input
-            type="text"
-            {...register("resource_person", {
-              required: "Resource person is required",
-            })}
-            placeholder="Enter Resource Person Name"
-            className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-500"
-          />
-          {errors.resource_person && (
-            <p className="text-red-500 text-sm">{errors.resource_person.message}</p>
-          )}
-        </div>
+        {/* ISSUES & CORRECTIVE ACTIONS */}
+        {/* <Section title="Issues & Corrective Actions" icon={<AlertTriangle size={20} />}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Issues & Challenges
+              </label>
+              <div className="relative">
+                <div className="absolute left-3 top-3 text-gray-400">
+                  <AlertTriangle size={18} />
+                </div>
+                <textarea
+                  {...register("issues_challenges")}
+                  placeholder="Describe any issues or challenges faced during the session"
+                  rows={4}
+                  className="w-full p-3 pl-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Corrective Actions
+              </label>
+              <div className="relative">
+                <div className="absolute left-3 top-3 text-gray-400">
+                  <CheckCircle size={18} />
+                </div>
+                <textarea
+                  {...register("corrective_actions")}
+                  placeholder="Describe corrective actions taken"
+                  rows={4}
+                  className="w-full p-3 pl-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none"
+                />
+              </div>
+            </div>
+          </div>
+        </Section> */}
 
-        {/* Training Methods */}
-        <div>
-          <label className="font-semibold text-gray-700 mb-1 block">
-            Training Methods
-          </label>
-          <input
-            type="text"
-            {...register("training_methods", {
-              required: "Training method is required",
-            })}
-            placeholder="Enter Training Method"
-            className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-500"
-          />
-          {errors.training_methods && (
-            <p className="text-red-500 text-sm">{errors.training_methods.message}</p>
-          )}
-        </div>
-
-        {/* Farmers Male */}
-        {/* <div>
-          <label className="font-semibold text-gray-700 mb-1 block">
-            Farmers (Male)
-          </label>
-          <input
-            type="number"
-            {...register("farmers_attended_male", {
-              required: "Please enter number of male farmers",
-              min: { value: 0, message: "Number cannot be negative" },
-            })}
-            placeholder="Number of Male Farmers"
-            className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-500"
-          />
-          {errors.farmers_attended_male && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.farmers_attended_male.message}
-            </p>
-          )}
-        </div> */}
-
-        {/* Farmers Female */}
-        {/* <div>
-          <label className="font-semibold text-gray-700 mb-1 block">
-            Farmers (Female)
-          </label>
-          <input
-            type="number"
-            {...register("farmers_attended_female", {
-              required: "Please enter number of female farmers",
-              min: { value: 0, message: "Number cannot be negative" },
-            })}
-            placeholder="Number of Female Farmers"
-            className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-500"
-          />
-          {errors.farmers_attended_female && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.farmers_attended_female.message}
-            </p>
-          )}
-        </div> */}
-
-        {/* Checkboxes */}
-        {/* <div className="col-span-1 md:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-3 mt-2">
-          <label className="flex items-center font-semibold text-gray-700">
-            <input type="checkbox" {...register("agro_ecosystem")} className="mr-2" />
-            Agro Ecosystem
-          </label>
-          <label className="flex items-center font-semibold text-gray-700">
-            <input type="checkbox" {...register("special_topic_planned")} className="mr-2" />
-            Special Topic
-          </label>
-          <label className="flex items-center font-semibold text-gray-700">
-            <input type="checkbox" {...register("group_dynamics")} className="mr-2" />
-            Group Dynamics
-          </label>
-          <label className="flex items-center font-semibold text-gray-700">
-            <input type="checkbox" {...register("feedback_collected")} className="mr-2" />
-            Feedback Collected
-          </label>
-        </div> */}
-
-        {/* Issues */}
-        {/* <div>
-          <label className="font-semibold text-gray-700 mb-1 block">
-            Issues / Challenges
-          </label>
-          <textarea
-            {...register("issues_challenges")}
-            placeholder="Enter any issues or challenges"
-            className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-500"
-            rows={3}
-          />
-        </div> */}
-
-        {/* Corrective Actions */}
-        {/* <div>
-          <label className="font-semibold text-gray-700 mb-1 block">
-            Corrective Actions
-          </label>
-          <textarea
-            {...register("corrective_actions")}
-            placeholder="Enter corrective actions taken"
-            className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-green-500"
-            rows={3}
-          />
-        </div> */}
-
-        {/* Buttons */}
-        <div className="col-span-1 md:col-span-2 flex flex-col sm:flex-row justify-end gap-3 mt-6">
-          <button
-            type="submit"
-            className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-all"
-          >
-            Submit
-          </button>
+        {/* ACTION BUTTONS */}
+        <div className="flex justify-end gap-4 pt-6 border-t">
           <button
             type="button"
             onClick={() => setShowForm(false)}
-            className="bg-red-600 text-white px-6 py-2 rounded-md hover:bg-red-700 transition-all"
+            className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2 font-medium"
           >
+            <XCircle size={18} />
             Cancel
+          </button>
+          <button
+            type="submit"
+            className="px-6 py-3 bg-green-700 text-white rounded-lg hover:bg-green-800 transition-colors flex items-center gap-2 font-medium shadow-sm"
+          >
+            <CheckCircle size={18} />
+            Submit Session
           </button>
         </div>
       </form>
     </div>
   );
 };
-
