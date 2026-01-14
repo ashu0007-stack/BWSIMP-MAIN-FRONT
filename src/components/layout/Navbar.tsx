@@ -35,9 +35,6 @@ export default function Navbar() {
                   priority
                 />
               </div>
-              <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-blue-700 text-[10px] px-2 py-0.5 rounded-full">
-                Partner
-              </span>
             </div>
 
             {/* WRD */}
@@ -51,9 +48,6 @@ export default function Navbar() {
                   priority
                 />
               </div>
-              <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-emerald-600 text-[10px] px-2 py-0.5 rounded-full">
-                WRD
-              </span>
             </div>
 
           </div>
