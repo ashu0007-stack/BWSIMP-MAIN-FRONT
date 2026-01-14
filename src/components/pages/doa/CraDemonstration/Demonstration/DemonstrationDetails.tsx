@@ -409,7 +409,7 @@ export const DemonstrationDetails: FC<any> = ({ onAddNew, setActiveTab, setSelec
           </button>
         </div>
 
-        <table className="min-w-[1200px] w-full text-xs text-gray-700 border-collapse">
+        <table className=" w-full text-xs text-gray-700 border-collapse">
           <thead className="bg-green-100 sticky top-0 z-10">
             <tr>
               <th className="border px-2 py-1">FY</th>
