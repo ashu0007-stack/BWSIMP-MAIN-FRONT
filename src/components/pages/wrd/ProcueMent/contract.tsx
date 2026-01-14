@@ -357,11 +357,11 @@ function ContractsList({
             <table className="w-full">
               <thead className="bg-blue-600 text-white">
                 <tr>
-                  <th className="p-4 text-left font-semibold">Tender Ref. No</th>
-                  <th className="p-4 text-left font-semibold">Name of Work</th>
-                  <th className="p-4 text-left font-semibold">Contractor Name</th>
-                  <th className="p-4 text-left font-semibold">Agreement Amount (Cr.)</th>
-                  <th className="p-4 text-left font-semibold">Actions</th>
+                  <th className="p-4 text-left font-semibold whitespace-nowrap">Tender Ref. No</th>
+                  <th className="p-4 text-left font-semibold whitespace-nowrap">Name of Work</th>
+                  <th className="p-4 text-left font-semibold whitespace-nowrap">Contractor Name</th>
+                  <th className="p-4 text-left font-semibold whitespace-nowrap">Agreement Amount (Cr.)</th>
+                  <th className="p-4 text-left font-semibold whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
               <tbody>
