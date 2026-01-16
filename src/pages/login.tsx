@@ -1,4 +1,4 @@
-import {NavHeader} from "@/components/shared/Header/NavHeader";
+import NavHeader from "@/components/shared/Header/NavHeader";
 import { useLogin } from "@/hooks/useAuth";
 import { NextPage } from "next";
 import { useForm, SubmitHandler } from "react-hook-form";
