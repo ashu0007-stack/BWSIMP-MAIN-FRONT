@@ -1,54 +1,82 @@
-import Link from 'next/link'
-import { useRouter } from 'next/router'
-import React, { FC } from 'react'
-export const NavHeader: FC = () => {
-    const router = useRouter();
-    const scrollToSection = (id: string) => {
-        if (router.pathname !== "/landing") {
-            router
-                .push(`/landing#${id}`, undefined, { scroll: false })
-                .then(() => {
-                    setTimeout(() => {
-                        const el = document.getElementById(id);
-                        if (el) el.scrollIntoView({ behavior: "smooth" });
-                    }, 300);
-                });
-            return;
-        }
-        const el = document.getElementById(id);
-        if (el) {
-            el.scrollIntoView({ behavior: "smooth" });
-        }
-    };
-    return (
-        <nav className='bg-gradient-to-r from-blue-900 to-blue-800 text-white flex items-center justify-between px-4 py-3 shadow-xl fixed top-[100px] left-0 w-full z-40'>
-            <div className="flex gap-4 ml-4">
-                <Link href="/" className="hover:text-blue-200 font-medium transition-colors text-sm">
-                    Home
-                </Link>
-                <button
-                    onClick={() => scrollToSection("overview")}
-                    className="hover:text-blue-200 font-medium transition-colors text-sm">
-                    Overview
-                </button>
-                <button
-                    onClick={() => scrollToSection("aboutProject")}
-                    className="hover:text-blue-200 font-medium transition-colors text-sm">
-                    About Project
-                </button>
-                <button
-                    onClick={() => scrollToSection("gallery-media")}
-                    className="hover:text-blue-200 font-medium transition-colors text-sm">
-                    Gallery / Media
-                </button>
-            </div>
-            <div className="mr-4">
-                <button
-                    onClick={() => router.push("/login")}
-                    className="bg-white text-blue-900 hover:bg-blue-50 px-4 py-2 rounded-lg font-semibold shadow-md transition-all duration-300 hover:shadow-lg text-sm" >
-                    Login
-                </button>
-            </div>
-        </nav>
-    );
-};
+import Link from "next/link";
+import { useRouter } from "next/router";
+import React, { useState } from "react";
+
+export default function NavHeader() {
+  const router = useRouter();
+  const [activeMenu, setActiveMenu] = useState<string>("home");
+
+  const scrollToSection = (id: string) => {
+    setActiveMenu(id);
+
+    if (router.pathname !== "/landing") {
+      router
+        .push(`/landing#${id}`, undefined, { scroll: false })
+        .then(() => {
+          setTimeout(() => {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: "smooth" });
+          }, 300);
+        });
+      return;
+    }
+
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const menuClass = (id: string) =>
+    `text-white text-sm uppercase tracking-wide transition border-b-2
+     ${
+       activeMenu === id
+         ? "font-bold border-white"
+         : "font-semibold border-transparent hover:border-white"
+     }`;
+
+  return (
+    <nav className="fixed top-[100px] left-0 w-full z-40 bg-[#0B2C5D] border-b border-blue-300">
+      <div className="px-4 py-2 flex items-center justify-between">
+
+        {/* LEFT MENU */}
+        <div className="flex gap-8 text-center leading-tight">
+          <Link
+            href="/"
+            onClick={() => setActiveMenu("home")}
+            className={menuClass("home")}
+          >
+            Home
+          </Link>
+
+          <button
+            onClick={() => scrollToSection("overview")}
+            className={menuClass("overview")}
+          >
+            Overview
+          </button>
+
+          <button
+            onClick={() => scrollToSection("aboutProject")}
+            className={menuClass("aboutProject")}
+          >
+            About Project
+          </button>
+
+          <button
+            onClick={() => scrollToSection("gallery-media")}
+            className={menuClass("gallery-media")}
+          >
+            Gallery / Media
+          </button>
+        </div>
+
+        {/* RIGHT LOGIN */}
+        <button
+          onClick={() => router.push("/login")}
+          className="bg-white text-[#0B2C5D] px-5 py-1.5 text-sm font-bold border border-blue-200 rounded hover:bg-blue-50 transition"
+        >
+          Login
+        </button>
+      </div>
+    </nav>
+  );
+}
