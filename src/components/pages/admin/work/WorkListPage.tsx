@@ -303,102 +303,82 @@ const WorkListPage: React.FC<WorkListPageProps> = ({ onViewWork, onCreateWork, o
               </button>
             </div>
           </div>
+        </div>
 
-          {worksLoading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading work packages...</p>
-            </div>
-          ) : filteredWorks.length > 0 ? (
-            <>
-              <div className="overflow-x-auto rounded-xl border mb-4">
-                <table className="w-full">
-                  <thead className="bg-blue-600 text-white">
-                    <tr>
-                      <th className="p-4 text-left font-semibold whitespace-nowrap">
-                        Package Details
-                      </th>
-                      <th className="p-4 text-left font-semibold whitespace-nowrap">
-                        Work Name
-                      </th>
-                      <th className="p-4 text-left font-semibold whitespace-nowrap">
-                        Division
-                      </th>
-                      <th className="p-4 text-left font-semibold whitespace-nowrap">
-                        Estimated Cost(Cr.)
-                      </th>
-                      <th className="p-4 text-left font-semibold whitespace-nowrap">
-                        Status
-                      </th>
-                      <th className="p-4 text-left font-semibold whitespace-nowrap">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {paginatedWorks.map((work: Work) => (
-                      <tr key={work.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="flex flex-col">
-                            <span className="font-medium text-gray-900">{work.package_number || "N/A"}</span>
-                            <span className="text-sm text-gray-500 mt-1">
-                              Created: {formatDate(work.created_at || "")}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-col">
-                            <span className="font-medium text-gray-900 line-clamp-2" title={work.work_name}>
-                              {work.work_name}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-col">
-                            <span className="text-gray-900">{work.division_name || "N/A"}</span>
-                            <div className="text-sm text-gray-500">
-                              {work.circle_name && <span>{work.circle_name}, </span>}
-                              {work.zone_name && <span>{work.zone_name}</span>}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-col">
-                            <span className="font-medium text-gray-900">{formatCurrency(work.work_cost || "0")}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <StatusBadge status={work.award_status || ""} />
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => onViewWork(work.id)}
-                              className="inline-flex items-center px-3 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-sm"
-                              title="View Details"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              
-              {renderPagination()}
-            </>
-          ) : (
-            <div className="text-center py-12 bg-gray-50 rounded-xl border border-gray-200">
-              <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {searchTerm || statusFilter !== "all" ? "No matching work packages found" : "No work packages found"}
-              </h3>
-              <p className="text-gray-600 mb-6">
-                {searchTerm || statusFilter !== "all" 
-                  ? "Try adjusting your search or filter criteria" 
-                  : "Create your first work package to get started"}
+        {/* Government Data Table */}
+        <div className="bg-white border border-gray-300 rounded shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left text-gray-700">
+              <thead className="bg-gray-100 text-gray-800">
+                <tr>
+                  <th className="px-6 py-4 font-semibold border-b border-gray-300">Package Details</th>
+                  <th className="px-6 py-4 font-semibold border-b border-gray-300">Work Name</th>
+                  <th className="px-6 py-4 font-semibold border-b border-gray-300">Division & Location</th>
+                  <th className="px-6 py-4 font-semibold border-b border-gray-300">Estimated Cost</th>
+                  <th className="px-6 py-4 font-semibold border-b border-gray-300">Status</th>
+                  <th className="px-6 py-4 font-semibold border-b border-gray-300">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {getPaginatedWorks().map((work: Work) => (
+                  <tr key={work.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="font-medium text-gray-900">{work.package_number || "N/A"}</div>
+                      <div className="flex items-center gap-1 text-xs text-gray-600 mt-1">
+                        <Calendar size={14} /> 
+                        {formatDate(work.created_at || "")}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="font-medium text-gray-900" title={work.work_name}>
+                        {work.work_name || "N/A"}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <div className="font-medium">{work.division_name || "N/A"}</div>
+                      <div className="text-gray-600 mt-1">
+                        {work.circle_name && <span>{work.circle_name}</span>}
+                        {work.zone_name && <span> • {work.zone_name}</span>}
+                        {work.district_name && <span> • {work.district_name}</span>}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <div className="font-medium text-gray-900">{formatCurrency(work.work_cost || "0")}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <StatusBadge status={work.award_status || ""} />
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => onViewWork(work.id)}
+                          className="text-[#003087] hover:text-[#00205b] flex items-center gap-1 text-sm font-medium"
+                          title="View Details"
+                        >
+                          <Eye size={16} /> View
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {filteredWorks.length === 0 && (
+            <div className="py-16 text-center text-gray-600">
+              <Package className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+              <p className="text-lg font-medium">
+                {searchTerm || statusFilter !== 'all' || districtFilter !== 'all' 
+                  ? "No matching work packages found"
+                  : "No work packages found"
+                }
+              </p>
+              <p className="mt-1 text-gray-500">
+                {searchTerm || statusFilter !== 'all' || districtFilter !== 'all' 
+                  ? 'Try adjusting your search or filters'
+                  : 'Create your first work package to get started'
+                }
               </p>
               {(!searchTerm && statusFilter === 'all' && districtFilter === 'all') && (
                 <button

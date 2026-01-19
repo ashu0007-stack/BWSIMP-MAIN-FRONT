@@ -17,6 +17,16 @@ import {
   ArrowLeft,
   X,
   Calculator,
+  Building,
+  Shield,
+  FileCheck,
+  Target,
+  Clock,
+  Hash,
+  Award,
+  CheckSquare,
+  Square,
+  Eye
 } from "lucide-react";
 
 import {
@@ -50,14 +60,13 @@ import {
   SpurData 
 } from "@/components/shared/work";
 
-
 interface CreateWorkPageProps {
   user: UserData | null;
   onBackToList: () => void;
 }
 
 const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) => {
-  // Work Form Data
+  // All your existing state variables remain the same
   const [formData, setFormData] = useState<WorkFormData>({
     zone_id: "",
     circle_id: "",
@@ -81,20 +90,14 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
     has_spurs: 0
   });
 
-  // Validation Errors State
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
-
-  // Beneficiaries data
   const [beneficiaries, setBeneficiaries] = useState<Beneficiaries>({
     total_population: "",
     beneficiaries_youth_15_28: "",
     beneficiaries_female: "",
     beneficiaries_male: ""
   });
-
   const [beneficiariesErrors, setBeneficiariesErrors] = useState<ValidationErrors>({});
-
-  // Villages data
   const [villages, setVillages] = useState<Village[]>([
     {
       village_name: "",
@@ -106,10 +109,7 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
       female_population: ""
     }
   ]);
-
   const [villagesErrors, setVillagesErrors] = useState<ValidationErrors[]>([]);
-
-  // Components data
   const [extraComponents, setExtraComponents] = useState<WorkComponent[]>([
     {
       componentname: "",
@@ -126,9 +126,7 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
       nameofcomponent: undefined
     },
   ]);
-
   const [componentsErrors, setComponentsErrors] = useState<ValidationErrors[]>([]);
-
   const [hasSpurs, setHasSpurs] = useState<boolean>(false);
   const [spursData, setSpursData] = useState<SpurData[]>([
     {
@@ -138,38 +136,34 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
     }
   ]);
   const [spursErrors, setSpursErrors] = useState<ValidationErrors[]>([]);
-
-  // State variables
   const [message, setMessage] = useState("");
   const [showMilestoneFields, setShowMilestoneFields] = useState(false);
   const [selectedZoneId, setSelectedZoneId] = useState<string>("");
   const [selectedCircleId, setSelectedCircleId] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<'basic' | 'beneficiaries' | 'villages' | 'components' | 'spurs'>('basic');
+  const [showValidationSummary, setShowValidationSummary] = useState(false);
 
-  // React Query Hooks
+  // All your existing React Query hooks remain the same
   const { data: zones, isLoading: zonesLoading } = useZones();
   const { data: circles, isLoading: circlesLoading } = useCirclesByZoneId(selectedZoneId);
   const { data: divisions, isLoading: divisionsLoading } = useDivisionByCircleId(selectedCircleId);
-
   const { data: components = [], isLoading: componentsLoading } = useComponents();
   const { data: filteredSubcomponents = [], isLoading: filteredSubcomponentsLoading } = useSubcomponentsByComponent(
     formData.component_id ? parseInt(formData.component_id) : undefined
   );
-
   const { data: filteredSubworkcomponents = [], isLoading: filteredSubworkcomponentsLoading } = useSubworkcomponentsByworkComponentId(
     formData.subcomponent_id ? parseInt(formData.subcomponent_id) : undefined
   );
-
   const { data: worksList = [], refetch: refetchWorks } = useWorks();
 
-  // Mutation hooks
+  // All your existing mutation hooks remain the same
   const createWorkMutation = useCreateWork();
   const addBeneficiariesMutation = useAddBeneficiaries();
   const addVillagesMutation = useAddVillages();
   const addComponentsMutation = useAddComponentsAndMilestones();
   const addSpursMutation = useAddSpurs();
 
-
-  // Set user data on component mount
+  // All your existing useEffect hooks remain the same
   useEffect(() => {
     if (user) {
       setFormData(prev => ({
@@ -184,7 +178,7 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
     }
   }, [user]);
 
-  // Validation Functions
+  // All your existing validation functions remain exactly the same
   const validateText = (value: string, fieldName: string): string => {
     if (!value.trim()) return `${fieldName} is required`;
     if (!/^[A-Za-z\s]+$/.test(value)) return `${fieldName} should contain only alphabets`;
@@ -236,7 +230,7 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
     return "";
   };
 
-  // Main Validation Function for Form
+  // Main Validation Function for Form - EXACTLY THE SAME
   const validateForm = (): boolean => {
     const errors: ValidationErrors = {};
     let isValid = true;
@@ -502,13 +496,11 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
     setSpursErrors(spurErrorsList);
   }
 
-    
-
     setValidationErrors(errors);
     return isValid;
   };
 
-  // Function to validate milestone sum
+  // All your existing helper functions remain exactly the same
   const validateMilestoneSum = (index: number, component: WorkComponent) => {
     const updatedErrors = [...componentsErrors];
     const milestones = parseInt(component.Numberofmilestone);
@@ -558,44 +550,39 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
     setComponentsErrors(updatedErrors);
   };
 
-  // Add auto-calculate function for milestones
- const autoCalculateMilestones = (i: number, component: WorkComponent) => {
-  const updated = [...extraComponents];
-  const totalQty = parseFloat(component.totalQty) || 0;
-  const milestones = parseInt(component.Numberofmilestone);
+  const autoCalculateMilestones = (i: number, component: WorkComponent) => {
+    const updated = [...extraComponents];
+    const totalQty = parseFloat(component.totalQty) || 0;
+    const milestones = parseInt(component.Numberofmilestone);
 
-  if (totalQty > 0 && milestones > 0) {
-    if (milestones === 1) {
-      // For 1 milestone, put entire quantity in milestone 1
-      updated[i].milestone1_qty = totalQty.toFixed(2);
-      updated[i].milestone2_qty = "";
-      updated[i].milestone3_qty = "";
+    if (totalQty > 0 && milestones > 0) {
+      if (milestones === 1) {
+        updated[i].milestone1_qty = totalQty.toFixed(2);
+        updated[i].milestone2_qty = "";
+        updated[i].milestone3_qty = "";
+      }
+      else if (milestones === 2) {
+        const half = totalQty / 2;
+        updated[i].milestone1_qty = half.toFixed(2);
+        updated[i].milestone2_qty = half.toFixed(2);
+        updated[i].milestone3_qty = "";
+      }
+      else if (milestones === 3) {
+        const third = totalQty / 3;
+        const m1 = third;
+        const m2 = third;
+        const m3 = totalQty - m1 - m2;
+
+        updated[i].milestone1_qty = m1.toFixed(2);
+        updated[i].milestone2_qty = m2.toFixed(2);
+        updated[i].milestone3_qty = m3.toFixed(2);
+      }
+
+      setExtraComponents(updated);
+      validateMilestoneSum(i, updated[i]);
     }
-    else if (milestones === 2) {
-      // For 2 milestones, split 50-50
-      const half = totalQty / 2;
-      updated[i].milestone1_qty = half.toFixed(2);
-      updated[i].milestone2_qty = half.toFixed(2);
-      updated[i].milestone3_qty = "";
-    }
-    else if (milestones === 3) {
-      // For 3 milestones, split 33-33-34
-      const third = totalQty / 3;
-      const m1 = third;
-      const m2 = third;
-      const m3 = totalQty - m1 - m2;
+  };
 
-      updated[i].milestone1_qty = m1.toFixed(2);
-      updated[i].milestone2_qty = m2.toFixed(2);
-      updated[i].milestone3_qty = m3.toFixed(2);
-    }
-
-    setExtraComponents(updated);
-    validateMilestoneSum(i, updated[i]);
-  }
-};
-
-  // Check for duplicate work name
   const checkForDuplicateWorkName = (workName: string) => {
     if (!worksList || worksList.length === 0) return false;
 
@@ -607,7 +594,6 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
     return !!existingWork;
   };
 
-  // Get user data for API
   const getUserDataForAPI = () => {
     if (user) {
       const apiData = {
@@ -625,7 +611,7 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
     };
   };
 
-  // Handle form changes
+  // All your existing handler functions remain exactly the same
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -784,7 +770,6 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
     }
   };
 
-  // Handle beneficiaries changes
   const handleBeneficiariesChange = (field: keyof Beneficiaries, value: string) => {
     setBeneficiariesErrors(prev => ({ ...prev, [field]: "" }));
 
@@ -847,7 +832,6 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
     }
   };
 
-  // Handle village changes
   const handleVillageChange = (i: number, field: keyof Village, value: string) => {
     const updatedErrors = [...villagesErrors];
     updatedErrors[i] = { ...updatedErrors[i], [field]: "" };
@@ -910,7 +894,6 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
     setVillages(updated);
   };
 
-  // Handle component changes
   const handleComponentChange = (
     i: number,
     field: keyof WorkComponent,
@@ -1057,13 +1040,11 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
 
     setExtraComponents(updated);
     
-    // Validate milestone sum if milestone-related fields change
     if (["totalQty", "milestone1_qty", "milestone2_qty", "milestone3_qty", "Numberofmilestone"].includes(field)) {
       validateMilestoneSum(i, updated[i]);
     }
   };
 
-  // Add component field
   const addComponentField = () => {
     const months = parseInt(formData.work_period_months) || 0;
     let numMilestones = 0;
@@ -1094,7 +1075,6 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
     setComponentsErrors([...componentsErrors, {}]);
   };
 
-  // Remove component field
   const removeComponentField = (i: number) => {
     const updated = [...extraComponents];
     updated.splice(i, 1);
@@ -1105,7 +1085,6 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
     setComponentsErrors(updatedErrors);
   };
 
-  // Add village field
   const addVillageField = () => {
     setVillages([...villages, {
       village_name: "",
@@ -1120,7 +1099,6 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
     setVillagesErrors([...villagesErrors, {}]);
   };
 
-  // Remove village field
   const removeVillageField = (i: number) => {
     const updated = [...villages];
     updated.splice(i, 1);
@@ -1131,7 +1109,6 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
     setVillagesErrors(updatedErrors);
   };
 
-  // Reset form
   const handleCancel = () => {
     setFormData({
       zone_id: user?.zone_id?.toString() || "",
@@ -1204,9 +1181,10 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
     setBeneficiariesErrors({});
     setVillagesErrors([]);
     setComponentsErrors([]);
+    setActiveTab('basic');
+    setShowValidationSummary(false);
   };
 
-  // Save all data
   const handleSubmitAll = async () => {
     if (!user) {
       setMessage("⚠️ Please wait, user data is loading...");
@@ -1284,7 +1262,6 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
           spurs: spursData,
           user_data: getUserDataForAPI()
         };
-        // You'll need to create a mutation hook for spurs
         await addSpursMutation.mutateAsync({
           workId,
           data: spursRequestData
@@ -1321,18 +1298,45 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
     }
   };
 
-  // Render CREATE form
+  // ONLY THE RENDER/UI PART IS CHANGED BELOW
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gray-100 flex flex-col">
+      {/* Government Header */}
+      <header className="bg-[#003087] text-white border-b-4 border-[#FF9933]">
+        <div className="max-w-[1800px] mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 p-2 rounded">
+                <Shield className="w-8 h-8" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold">Work Package Creation System</h1>
+                <p className="text-sm opacity-90">{user ? `Logged in as: ${user.username}` : 'Please log in'}</p>
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onBackToList}
+            className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded transition-colors"
+          >
+            <Eye className="w-5 h-5" />
+            View Works List
+          </button>
+        </div>
+      </header>
+
       {/* Message Banner */}
       {message && (
         <div className="sticky top-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-200 shadow-md">
-          <div className="max-w-7xl mx-auto px-6 py-3">
-            <div className={`p-4 rounded-lg border flex items-center justify-between ${message.includes("✅") || message.includes("successfully")
-              ? "bg-green-50 border-green-200 text-green-800"
-              : message.includes("⚠️")
-                ? "bg-yellow-50 border-yellow-200 text-yellow-800"
-                : "bg-red-50 border-red-200 text-red-800"
+          <div className="max-w-[1800px] mx-auto px-4 py-3">
+            <div className={`p-4 rounded-lg border flex items-center justify-between ${
+              message.includes("✅") || message.includes("successfully")
+                ? "bg-green-50 border-green-200 text-green-800"
+                : message.includes("⚠️")
+                  ? "bg-yellow-50 border-yellow-200 text-yellow-800"
+                  : "bg-red-50 border-red-200 text-red-800"
               }`}>
               <div className="flex items-center">
                 {message.includes("✅") || message.includes("successfully") ? (
@@ -1355,40 +1359,119 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
         </div>
       )}
 
-      <div className="p-6">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
+      <main className="flex-1 max-w-[1800px] mx-auto w-full px-4 py-6">
+        {/* Form Container */}
+        <div className="bg-white border border-gray-300 rounded shadow-sm overflow-hidden">
+          {/* Form Header Banner */}
+          <div className="bg-gradient-to-r from-[#003087] to-[#0056b3] text-white p-6 border-b border-[#FF9933]">
             <div className="flex items-center justify-between">
               <div>
-                <button
-                  onClick={onBackToList}
-                 className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-                >
-                  ⬅ Back
-                </button>
-                <h1 className="text-3xl font-bold text-gray-900">Create New Work Package</h1>
-                <p className="text-gray-600 mt-1">
-                  {user ? `Define all work package information in one go (Created by: ${user.username})` : 'Please log in to create work packages'}
+                <h2 className="text-2xl font-bold mb-2">Create New Work Package</h2>
+                <p className="opacity-90">
+                  Define complete work package information including location, components, villages, and beneficiaries
                 </p>
+              </div>
+              <div className="bg-white/20 p-3 rounded-lg">
+                <FileCheck className="w-8 h-8" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-            {/* Work Form */}
-            <div className="p-8">
-              <div className="space-y-8">
+          {/* Navigation Tabs */}
+          <div className="border-b border-gray-300">
+            <div className="flex">
+              <button
+                type="button"
+                onClick={() => setActiveTab('basic')}
+                className={`flex items-center gap-2 px-6 py-4 font-medium ${
+                  activeTab === 'basic'
+                    ? 'border-b-2 border-[#003087] text-[#003087] bg-blue-50'
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                }`}
+              >
+                <Building className="w-4 h-4" />
+                Basic Information
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('beneficiaries')}
+                className={`flex items-center gap-2 px-6 py-4 font-medium ${
+                  activeTab === 'beneficiaries'
+                    ? 'border-b-2 border-[#003087] text-[#003087] bg-blue-50'
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                }`}
+              >
+                <Users className="w-4 h-4" />
+                Beneficiaries
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('villages')}
+                className={`flex items-center gap-2 px-6 py-4 font-medium ${
+                  activeTab === 'villages'
+                    ? 'border-b-2 border-[#003087] text-[#003087] bg-blue-50'
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                }`}
+              >
+                <Home className="w-4 h-4" />
+                Villages ({villages.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('components')}
+                className={`flex items-center gap-2 px-6 py-4 font-medium ${
+                  activeTab === 'components'
+                    ? 'border-b-2 border-[#003087] text-[#003087] bg-blue-50'
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                }`}
+              >
+                <Package className="w-4 h-4" />
+                Components ({extraComponents.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('spurs')}
+                className={`flex items-center gap-2 px-6 py-4 font-medium ${
+                  activeTab === 'spurs'
+                    ? 'border-b-2 border-[#003087] text-[#003087] bg-blue-50'
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                }`}
+              >
+                <MapPin className="w-4 h-4" />
+                Spurs ({spursData.length})
+              </button>
+            </div>
+          </div>
+
+          {/* Form Content */}
+        <form className="p-6 space-y-8"onSubmit={(e) => {e.preventDefault(); handleSubmitAll();}}>
+            {/* Validation Summary */}
+            {showValidationSummary && Object.keys(validationErrors).length > 0 && (
+              <div className="p-4 bg-red-50 border border-red-300 rounded">
+                <div className="flex items-center gap-2 mb-3">
+                  <AlertCircle className="w-5 h-5 text-red-700" />
+                  <h3 className="text-lg font-semibold text-red-800">Form Validation Errors</h3>
+                </div>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {Object.entries(validationErrors).map(([field, error]) => (
+                    <div key={field} className="border-l-4 border-red-700 pl-3">
+                      <h4 className="font-medium text-red-700 capitalize">{field.replace(/([A-Z])/g, ' $1')}:</h4>
+                      <p className="text-red-600 text-sm">{error}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Basic Information Tab */}
+            {activeTab === 'basic' && (
+              <div className="space-y-6">
                 {/* Location Section */}
-                <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200">
-                  <div className="flex items-center mb-6">
-                    <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center mr-4">
-                      <MapPin className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-semibold text-gray-900">Project Implementation Unit</h3>
-                      <p className="text-gray-600">Select the geographical location for this work</p>
-                    </div>
+                <section className="bg-gray-50 border border-gray-300 rounded p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <MapPin className="w-5 h-5 text-[#003087]" />
+                    <h2 className="text-lg font-semibold text-gray-800">Project Implementation Unit</h2>
+                    <span className="text-red-500">*</span>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1398,8 +1481,9 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                         name="zone_id"
                         value={formData.zone_id}
                         onChange={(e) => { handleChange(e); setSelectedZoneId(e.target.value) }}
-                        className={`w-full px-4 py-3 border rounded-xl ${validationErrors.zone_id ? 'border-red-500' : 'border-gray-300'
-                          }`}
+                        className={`w-full px-4 py-3 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                          validationErrors.zone_id ? 'border-red-500' : 'border-gray-400'
+                        }`}
                         disabled={zonesLoading}
                       >
                         <option value="">
@@ -1412,10 +1496,10 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                         ))}
                       </select>
                       {validationErrors.zone_id && (
-                        <p className="text-red-500 text-sm mt-1 flex items-center">
-                          <AlertCircle className="w-3 h-3 mr-1" />
+                        <div className="flex items-center gap-1 mt-2 text-red-600 text-sm">
+                          <AlertCircle className="w-4 h-4" />
                           {validationErrors.zone_id}
-                        </p>
+                        </div>
                       )}
                     </div>
 
@@ -1426,7 +1510,9 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                         value={formData.circle_id}
                         onChange={(e) => { handleChange(e); setSelectedCircleId(e.target.value) }}
                         disabled={!formData.zone_id || circlesLoading}
-                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white disabled:bg-gray-100 ${validationErrors.circle_id ? 'border-red-500' : 'border-gray-300'}`}
+                        className={`w-full px-4 py-3 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                          validationErrors.circle_id ? 'border-red-500' : 'border-gray-400'
+                        }`}
                       >
                         <option value="">
                           {!formData.zone_id ? "Select zone first" : circlesLoading ? "Loading circles..." : "Select Circle"}
@@ -1438,10 +1524,10 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                         ))}
                       </select>
                       {validationErrors.circle_id && (
-                        <p className="text-red-500 text-sm mt-1 flex items-center">
-                          <AlertCircle className="w-3 h-3 mr-1" />
+                        <div className="flex items-center gap-1 mt-2 text-red-600 text-sm">
+                          <AlertCircle className="w-4 h-4" />
                           {validationErrors.circle_id}
-                        </p>
+                        </div>
                       )}
                     </div>
 
@@ -1452,38 +1538,34 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                         value={formData.division_id}
                         onChange={handleChange}
                         disabled={!formData.circle_id || divisionsLoading}
-                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white disabled:bg-gray-100 ${validationErrors.division_id ? 'border-red-500' : 'border-gray-300'}`}
+                        className={`w-full px-4 py-3 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                          validationErrors.division_id ? 'border-red-500' : 'border-gray-400'
+                        }`}
                       >
                         <option value="">
                           {!formData.circle_id ? "Select circle first" : divisionsLoading ? "Loading divisions..." : "Select Division"}
                         </option>
-                        {divisions?.data
-                          .map((d: Division) => (
-                            <option key={d.division_id} value={d.division_id}>
-                              {d.division_name}
-                            </option>
-                          ))}
+                        {divisions?.data?.map((d: Division) => (
+                          <option key={d.division_id} value={d.division_id}>
+                            {d.division_name}
+                          </option>
+                        ))}
                       </select>
                       {validationErrors.division_id && (
-                        <p className="text-red-500 text-sm mt-1 flex items-center">
-                          <AlertCircle className="w-3 h-3 mr-1" />
+                        <div className="flex items-center gap-1 mt-2 text-red-600 text-sm">
+                          <AlertCircle className="w-4 h-4" />
                           {validationErrors.division_id}
-                        </p>
+                        </div>
                       )}
                     </div>
                   </div>
-                </div>
+                </section>
 
                 {/* Work Details Section */}
-                <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200">
-                  <div className="flex items-center mb-6">
-                    <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center mr-4">
-                      <FileText className="w-5 h-5 text-green-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-semibold text-gray-900">Work Information</h3>
-                      <p className="text-gray-600">Define work specifications and components</p>
-                    </div>
+                <section className="bg-gray-50 border border-gray-300 rounded p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <FileText className="w-5 h-5 text-[#003087]" />
+                    <h2 className="text-lg font-semibold text-gray-800">Work Information</h2>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1493,7 +1575,9 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                         name="component_id"
                         value={formData.component_id}
                         onChange={handleChange}
-                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white ${validationErrors.component_id ? 'border-red-500' : 'border-gray-300'}`}
+                        className={`w-full px-4 py-3 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                          validationErrors.component_id ? 'border-red-500' : 'border-gray-400'
+                        }`}
                         disabled={componentsLoading}
                       >
                         <option value="">{componentsLoading ? "Loading components..." : "Select Component"}</option>
@@ -1504,10 +1588,10 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                         ))}
                       </select>
                       {validationErrors.component_id && (
-                        <p className="text-red-500 text-sm mt-1 flex items-center">
-                          <AlertCircle className="w-3 h-3 mr-1" />
+                        <div className="flex items-center gap-1 mt-2 text-red-600 text-sm">
+                          <AlertCircle className="w-4 h-4" />
                           {validationErrors.component_id}
-                        </p>
+                        </div>
                       )}
                     </div>
 
@@ -1518,7 +1602,7 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                         value={formData.subcomponent_id}
                         onChange={handleChange}
                         disabled={!formData.component_id || filteredSubcomponentsLoading}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white disabled:bg-gray-100"
+                        className="w-full px-4 py-3 border border-gray-400 rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
                       >
                         <option value="">
                           {!formData.component_id ? "Select component first" : filteredSubcomponentsLoading ? "Loading subcomponents..." : "Select SubComponent"}
@@ -1538,7 +1622,9 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                         value={formData.workcomponentId}
                         onChange={handleChange}
                         disabled={!formData.subcomponent_id || filteredSubworkcomponentsLoading}
-                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white disabled:bg-gray-100 ${validationErrors.workcomponentId ? 'border-red-500' : 'border-gray-300'}`}
+                        className={`w-full px-4 py-3 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                          validationErrors.workcomponentId ? 'border-red-500' : 'border-gray-400'
+                        }`}
                       >
                         <option value="">
                           {!formData.subcomponent_id
@@ -1555,15 +1641,15 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                         ))}
                       </select>
                       {validationErrors.workcomponentId && (
-                        <p className="text-red-500 text-sm mt-1 flex items-center">
-                          <AlertCircle className="w-3 h-3 mr-1" />
+                        <div className="flex items-center gap-1 mt-2 text-red-600 text-sm">
+                          <AlertCircle className="w-4 h-4" />
                           {validationErrors.workcomponentId}
-                        </p>
+                        </div>
                       )}
                     </div>
 
                     <div className="space-y-2">
-                      <label className=" text-sm font-medium text-gray-700 flex items-center">
+                      <label className="text-sm font-medium text-gray-700 flex items-center">
                         <Ruler className="w-4 h-4 mr-2 text-gray-500" />
                         Length of Work (KM) *
                       </label>
@@ -1573,19 +1659,20 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                         value={formData.target_km}
                         readOnly
                         onChange={handleChange}
-                        placeholder="Enter distance in kilometers"
-                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white ${validationErrors.target_km ? 'border-red-500' : 'border-gray-300'}`}
+                        className={`w-full px-4 py-3 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                          validationErrors.target_km ? 'border-red-500' : 'border-gray-400'
+                        }`}
                       />
                       {validationErrors.target_km && (
-                        <p className="text-red-500 text-sm mt-1 flex items-center">
-                          <AlertCircle className="w-3 h-3 mr-1" />
+                        <div className="flex items-center gap-1 mt-2 text-red-600 text-sm">
+                          <AlertCircle className="w-4 h-4" />
                           {validationErrors.target_km}
-                        </p>
+                        </div>
                       )}
                     </div>
 
                     <div className="space-y-2">
-                      <label className=" text-sm font-medium text-gray-700 flex items-center">
+                      <label className="text-sm font-medium text-gray-700 flex items-center">
                         <Calendar className="w-4 h-4 mr-2 text-gray-500" />
                         Period of Completion (months) *
                       </label>
@@ -1593,25 +1680,27 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                         name="work_period_months"
                         value={formData.work_period_months}
                         onChange={handleChange}
-                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white ${validationErrors.work_period_months ? 'border-red-500' : 'border-gray-300'}`}
+                        className={`w-full px-4 py-3 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                          validationErrors.work_period_months ? 'border-red-500' : 'border-gray-400'
+                        }`}
                       >
-                          <option value="">Select Period</option>
-                          <option value="12">12 months (1 milestone)</option>
-                          <option value="16">16 months (1 milestone for flood)</option>
-                          <option value="24">24 months (2 milestones)</option>
-                          <option value="32">32 months (2 milestones for flood)</option>
-                          <option value="36">36 months (3 milestones)</option>
+                        <option value="">Select Period</option>
+                        <option value="12">12 months (1 milestone)</option>
+                        <option value="16">16 months (1 milestone)</option>
+                        <option value="24">24 months (2 milestones)</option>
+                        <option value="32">32 months (2 milestones)</option>
+                        <option value="36">36 months (3 milestones)</option>
                       </select>
                       {validationErrors.work_period_months && (
-                        <p className="text-red-500 text-sm mt-1 flex items-center">
-                          <AlertCircle className="w-3 h-3 mr-1" />
+                        <div className="flex items-center gap-1 mt-2 text-red-600 text-sm">
+                          <AlertCircle className="w-4 h-4" />
                           {validationErrors.work_period_months}
-                        </p>
+                        </div>
                       )}
                     </div>
 
                     <div className="space-y-2">
-                      <label className=" text-sm font-medium text-gray-700 flex items-center">
+                      <label className="text-sm font-medium text-gray-700 flex items-center">
                         <Package className="w-4 h-4 mr-2 text-gray-500" />
                         Package Number *
                       </label>
@@ -1621,19 +1710,20 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                         value={formData.package_number}
                         readOnly
                         onChange={handleChange}
-                        placeholder="e.g., WSMC-P-1"
-                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white ${validationErrors.package_number ? 'border-red-500' : 'border-gray-300'}`}
+                        className={`w-full px-4 py-3 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                          validationErrors.package_number ? 'border-red-500' : 'border-gray-400'
+                        }`}
                       />
                       {validationErrors.package_number && (
-                        <p className="text-red-500 text-sm mt-1 flex items-center">
-                          <AlertCircle className="w-3 h-3 mr-1" />
+                        <div className="flex items-center gap-1 mt-2 text-red-600 text-sm">
+                          <AlertCircle className="w-4 h-4" />
                           {validationErrors.package_number}
-                        </p>
+                        </div>
                       )}
                     </div>
 
                     <div className="space-y-2">
-                      <label className=" text-sm font-medium text-gray-700 flex items-center">
+                      <label className="text-sm font-medium text-gray-700 flex items-center">
                         <IndianRupee className="w-4 h-4 mr-2 text-gray-500" />
                         Estimated Cost (in Cr.) *
                       </label>
@@ -1642,14 +1732,15 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                         name="work_cost"
                         value={formData.work_cost}
                         onChange={handleChange}
-                        placeholder="Please enter a valid amount (e.g., 123.45)"
-                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white ${validationErrors.work_cost ? 'border-red-500' : 'border-gray-300'}`}
+                        className={`w-full px-4 py-3 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                          validationErrors.work_cost ? 'border-red-500' : 'border-gray-400'
+                        }`}
                       />
                       {validationErrors.work_cost && (
-                        <p className="text-red-500 text-sm mt-1 flex items-center">
-                          <AlertCircle className="w-3 h-3 mr-1" />
+                        <div className="flex items-center gap-1 mt-2 text-red-600 text-sm">
+                          <AlertCircle className="w-4 h-4" />
                           {validationErrors.work_cost}
-                        </p>
+                        </div>
                       )}
                     </div>
 
@@ -1662,953 +1753,783 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                         name="Area_Under_improved_Irrigation"
                         value={formData.Area_Under_improved_Irrigation}
                         onChange={handleChange}
-                        placeholder="Area Under improved Irrigation Services (ha) Targeted"
-                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white ${validationErrors.Area_Under_improved_Irrigation ? 'border-red-500' : 'border-gray-300'}`}
+                        className={`w-full px-4 py-3 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                          validationErrors.Area_Under_improved_Irrigation ? 'border-red-500' : 'border-gray-400'
+                        }`}
                       />
                       {validationErrors.Area_Under_improved_Irrigation && (
-                        <p className="text-red-500 text-sm mt-1 flex items-center">
-                          <AlertCircle className="w-3 h-3 mr-1" />
+                        <div className="flex items-center gap-1 mt-2 text-red-600 text-sm">
+                          <AlertCircle className="w-4 h-4" />
                           {validationErrors.Area_Under_improved_Irrigation}
-                        </p>
+                        </div>
                       )}
                     </div>
+                  </div>
+                </section>
+              </div>
+            )}
 
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-700">
-                        People benefitting from improved irrigation infrastructure *
-                      </label>
-                      <input
-                        type="number"
-                        value={beneficiaries.total_population}
-                        onChange={(e) => handleBeneficiariesChange("total_population", e.target.value)}
-                        placeholder="Enter total population"
-                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white ${beneficiariesErrors.total_population ? 'border-red-500' : 'border-gray-300'}`}
-                      />
-                      {beneficiariesErrors.total_population && (
-                        <p className="text-red-500 text-sm mt-1 flex items-center">
-                          <AlertCircle className="w-3 h-3 mr-1" />
-                          {beneficiariesErrors.total_population}
-                        </p>
-                      )}
-                    </div>
+            {/* Beneficiaries Tab */}
+            {activeTab === 'beneficiaries' && (
+              <section className="bg-gray-50 border border-gray-300 rounded p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <Users className="w-5 h-5 text-[#003087]" />
+                  <h2 className="text-lg font-semibold text-gray-800">Beneficiaries Information</h2>
+                </div>
 
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-700">
-                        <span className="flex items-center">
-                          <Users className="w-4 h-4 mr-2 text-gray-500" />
-                          Male Beneficiaries
-                        </span>
-                      </label>
-                      <input
-                        type="number"
-                        value={beneficiaries.beneficiaries_male}
-                        onChange={(e) => handleBeneficiariesChange("beneficiaries_male", e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-blue-50"
-                        readOnly
-                      />
-                    </div>
+                <div className="bg-blue-50 border border-blue-300 rounded p-4 mb-6">
+                  <h4 className="font-semibold text-blue-800 mb-2">Auto-calculation Rules:</h4>
+                  <ul className="text-sm text-blue-700 space-y-1">
+                    <li>• Enter Total Population to auto-calculate other fields</li>
+                    <li>• Female: 49% of total population (rounded)</li>
+                    <li>• Male: Remaining population after female calculation</li>
+                    <li>• Youth (15-28 years): 29% of total population (rounded)</li>
+                  </ul>
+                </div>
 
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-700">
-                        <span className="flex items-center">
-                          <Users className="w-4 h-4 mr-2 text-gray-500" />
-                          Female Beneficiaries
-                        </span>
-                      </label>
-                      <input
-                        type="number"
-                        value={beneficiaries.beneficiaries_female}
-                        onChange={(e) => handleBeneficiariesChange("beneficiaries_female", e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-pink-50"
-                        readOnly
-                      />
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Total Population *
+                    </label>
+                    <input
+                      type="number"
+                      value={beneficiaries.total_population}
+                      onChange={(e) => handleBeneficiariesChange("total_population", e.target.value)}
+                      className={`w-full px-4 py-3 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                        beneficiariesErrors.total_population ? 'border-red-500' : 'border-gray-400'
+                      }`}
+                    />
+                    {beneficiariesErrors.total_population && (
+                      <div className="flex items-center gap-1 mt-2 text-red-600 text-sm">
+                        <AlertCircle className="w-4 h-4" />
+                        {beneficiariesErrors.total_population}
+                      </div>
+                    )}
+                  </div>
 
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-700">
-                        <span className="flex items-center">
-                          <Users className="w-4 h-4 mr-2 text-gray-500" />
-                          Youth (15-28 years)
-                        </span>
-                      </label>
-                      <input
-                        type="number"
-                        value={beneficiaries.beneficiaries_youth_15_28}
-                        onChange={(e) => handleBeneficiariesChange("beneficiaries_youth_15_28", e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-green-50"
-                        readOnly
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      <span className="flex items-center">
+                        <Users className="w-4 h-4 mr-2 text-gray-500" />
+                        Male Beneficiaries
+                      </span>
+                    </label>
+                    <input
+                      type="number"
+                      value={beneficiaries.beneficiaries_male}
+                      onChange={(e) => handleBeneficiariesChange("beneficiaries_male", e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-400 rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] bg-blue-50"
+                      readOnly
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      <span className="flex items-center">
+                        <Users className="w-4 h-4 mr-2 text-gray-500" />
+                        Female Beneficiaries
+                      </span>
+                    </label>
+                    <input
+                      type="number"
+                      value={beneficiaries.beneficiaries_female}
+                      onChange={(e) => handleBeneficiariesChange("beneficiaries_female", e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-400 rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] bg-pink-50"
+                      readOnly
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      <span className="flex items-center">
+                        <Users className="w-4 h-4 mr-2 text-gray-500" />
+                        Youth (15-28 years)
+                      </span>
+                    </label>
+                    <input
+                      type="number"
+                      value={beneficiaries.beneficiaries_youth_15_28}
+                      onChange={(e) => handleBeneficiariesChange("beneficiaries_youth_15_28", e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-400 rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] bg-green-50"
+                      readOnly
+                    />
                   </div>
                 </div>
 
-                {/* Villages Section */}
-                <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200">
-                  <div className="flex items-center mb-6">
-                    <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center mr-4">
-                      <Home className="w-5 h-5 text-orange-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-semibold text-gray-900">Villages Covered</h3>
-                      <p className="text-gray-600">Add villages covered by this Package</p>
+                {beneficiaries.total_population && (
+                  <div className="mt-6 bg-green-50 border border-green-300 rounded p-4">
+                    <h4 className="font-semibold text-green-800 mb-2">Population Summary:</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-green-900">{beneficiaries.total_population}</div>
+                        <div className="text-sm text-green-700">Total Population</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-blue-900">{beneficiaries.beneficiaries_male}</div>
+                        <div className="text-sm text-blue-700">Male</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-pink-900">{beneficiaries.beneficiaries_female}</div>
+                        <div className="text-sm text-pink-700">Female</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-yellow-900">{beneficiaries.beneficiaries_youth_15_28}</div>
+                        <div className="text-sm text-yellow-700">Youth</div>
+                      </div>
                     </div>
                   </div>
+                )}
+              </section>
+            )}
 
-                  <div className="space-y-6">
-                    {villages.map((village, i) => (
-                      <div key={i} className="bg-white rounded-2xl p-6 border border-gray-200">
-                        <div className="flex items-center justify-between mb-4">
-                          <h4 className="text-lg font-semibold text-gray-900">
-                            Village : {i + 1}
-                          </h4>
-                          {villages.length > 1 && (
-                            <button
-                              onClick={() => removeVillageField(i)}
-                              className="flex items-center px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200"
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Remove
-                            </button>
+            {/* Villages Tab */}
+            {activeTab === 'villages' && (
+              <section className="bg-gray-50 border border-gray-300 rounded p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <Home className="w-5 h-5 text-[#003087]" />
+                    <h2 className="text-lg font-semibold text-gray-800">Villages Covered</h2>
+                  </div>
+                  <button
+                    onClick={addVillageField}
+                     type="button" 
+                    className="flex items-center gap-2 px-4 py-2 bg-[#003087] text-white rounded hover:bg-[#00205b] transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Village
+                  </button>
+                </div>
+
+                <div className="bg-yellow-50 border border-yellow-300 rounded p-3 mb-4">
+                  <p className="text-yellow-700 text-sm">
+                    <strong>Auto-calculation:</strong> Enter total population to auto-calculate male/female populations (49% female, remaining male)
+                  </p>
+                </div>
+
+                <div className="space-y-6">
+                  {villages.map((village, i) => (
+                    <div key={i} className="bg-white border border-gray-300 rounded p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <Hash className="w-4 h-4 text-[#003087]" />
+                          <h3 className="text-lg font-semibold text-gray-800">Village {i + 1}</h3>
+                        </div>
+                        {villages.length > 1 && (
+                          <button
+                            onClick={() => removeVillageField(i)}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Remove
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="space-y-2">
+                          <label className="block text-sm font-medium text-gray-700">District Name *</label>
+                          <input
+                            type="text"
+                            value={village.district_name}
+                            onChange={(e) => handleVillageChange(i, "district_name", e.target.value)}
+                            className={`w-full px-3 py-2 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                              villagesErrors[i]?.district_name ? 'border-red-500' : 'border-gray-400'
+                            }`}
+                          />
+                          {villagesErrors[i]?.district_name && (
+                            <div className="flex items-center gap-1 mt-1 text-red-600 text-sm">
+                              <AlertCircle className="w-4 h-4" />
+                              {villagesErrors[i]?.district_name}
+                            </div>
                           )}
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                          <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-700">District Name *</label>
-                            <input
-                              type="text"
-                              placeholder="District name"
-                              value={village.district_name}
-                              onChange={(e) => handleVillageChange(i, "district_name", e.target.value)}
-                              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 ${villagesErrors[i]?.district_name ? 'border-red-500' : 'border-gray-300'}`}
-                            />
-                            {villagesErrors[i]?.district_name && (
-                              <p className="text-red-500 text-sm mt-1 flex items-center">
-                                <AlertCircle className="w-3 h-3 mr-1" />
-                                {villagesErrors[i]?.district_name}
-                              </p>
+                        <div className="space-y-2">
+                          <label className="block text-sm font-medium text-gray-700">Block Name *</label>
+                          <input
+                            type="text"
+                            value={village.block_name}
+                            onChange={(e) => handleVillageChange(i, "block_name", e.target.value)}
+                            className={`w-full px-3 py-2 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                              villagesErrors[i]?.block_name ? 'border-red-500' : 'border-gray-400'
+                            }`}
+                          />
+                          {villagesErrors[i]?.block_name && (
+                            <div className="flex items-center gap-1 mt-1 text-red-600 text-sm">
+                              <AlertCircle className="w-4 h-4" />
+                              {villagesErrors[i]?.block_name}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="block text-sm font-medium text-gray-700">Gram Panchayat *</label>
+                          <input
+                            type="text"
+                            value={village.gram_panchayat}
+                            onChange={(e) => handleVillageChange(i, "gram_panchayat", e.target.value)}
+                            className={`w-full px-3 py-2 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                              villagesErrors[i]?.gram_panchayat ? 'border-red-500' : 'border-gray-400'
+                            }`}
+                          />
+                          {villagesErrors[i]?.gram_panchayat && (
+                            <div className="flex items-center gap-1 mt-1 text-red-600 text-sm">
+                              <AlertCircle className="w-4 h-4" />
+                              {villagesErrors[i]?.gram_panchayat}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="block text-sm font-medium text-gray-700">Village Name *</label>
+                          <input
+                            type="text"
+                            value={village.village_name}
+                            onChange={(e) => handleVillageChange(i, "village_name", e.target.value)}
+                            className={`w-full px-3 py-2 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                              villagesErrors[i]?.village_name ? 'border-red-500' : 'border-gray-400'
+                            }`}
+                          />
+                          {villagesErrors[i]?.village_name && (
+                            <div className="flex items-center gap-1 mt-1 text-red-600 text-sm">
+                              <AlertCircle className="w-4 h-4" />
+                              {villagesErrors[i]?.village_name}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="block text-sm font-medium text-gray-700">Total Population</label>
+                          <input
+                            type="number"
+                            value={village.census_population}
+                            onChange={(e) => handleVillageChange(i, "census_population", e.target.value)}
+                            className={`w-full px-3 py-2 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                              villagesErrors[i]?.census_population ? 'border-red-500' : 'border-gray-400'
+                            }`}
+                          />
+                          {villagesErrors[i]?.census_population && (
+                            <div className="flex items-center gap-1 mt-1 text-red-600 text-sm">
+                              <AlertCircle className="w-4 h-4" />
+                              {villagesErrors[i]?.census_population}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="block text-sm font-medium text-gray-700">Male Population</label>
+                          <input
+                            type="number"
+                            value={village.male_population}
+                            className="w-full px-3 py-2 border border-gray-400 rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] bg-blue-50"
+                            readOnly
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="block text-sm font-medium text-gray-700">Female Population</label>
+                          <input
+                            type="number"
+                            value={village.female_population}
+                            className="w-full px-3 py-2 border border-gray-400 rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] bg-pink-50"
+                            readOnly
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Components Tab */}
+            {activeTab === 'components' && (
+              <section className="bg-gray-50 border border-gray-300 rounded p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <Package className="w-5 h-5 text-[#003087]" />
+                    <h2 className="text-lg font-semibold text-gray-800">Components & Milestones</h2>
+                  </div>
+                  <button
+                    onClick={addComponentField}
+                     type="button" 
+                    className="flex items-center gap-2 px-4 py-2 bg-[#003087] text-white rounded hover:bg-[#00205b] transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Component
+                  </button>
+                </div>
+
+                {!showMilestoneFields && (
+                  <div className="bg-yellow-50 border border-yellow-300 rounded p-3 mb-4">
+                    <p className="text-yellow-700 text-sm">
+                      <strong>Note:</strong> Please select "Period of Completion" in Basic Information tab to enable milestone fields
+                    </p>
+                  </div>
+                )}
+
+                <div className="space-y-6">
+                  {extraComponents.map((comp, i) => (
+                    <div key={i} className="bg-white border border-gray-300 rounded p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <Hash className="w-4 h-4 text-[#003087]" />
+                          <h3 className="text-lg font-semibold text-gray-800">Component {i + 1}</h3>
+                          {showMilestoneFields && comp.Numberofmilestone !== "0" && (
+                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                              comp.Numberofmilestone === "1" ? "bg-blue-100 text-blue-800" :
+                              comp.Numberofmilestone === "2" ? "bg-green-100 text-green-800" :
+                              "bg-purple-100 text-purple-800"
+                            }`}>
+                              {comp.Numberofmilestone} Milestone(s)
+                            </span>
+                          )}
+                        </div>
+                        {extraComponents.length > 1 && (
+                          <button
+                            onClick={() => removeComponentField(i)}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Remove
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                        <div className="space-y-2">
+                          <label className="block text-sm font-medium text-gray-700">Name *</label>
+                          <input
+                            type="text"
+                            value={comp.componentname}
+                            onChange={(e) => handleComponentChange(i, "componentname", e.target.value)}
+                            className={`w-full px-3 py-2 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                              componentsErrors[i]?.componentname ? 'border-red-500' : 'border-gray-400'
+                            }`}
+                          />
+                          {componentsErrors[i]?.componentname && (
+                            <div className="flex items-center gap-1 mt-1 text-red-600 text-sm">
+                              <AlertCircle className="w-4 h-4" />
+                              {componentsErrors[i]?.componentname}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="block text-sm font-medium text-gray-700">Unit *</label>
+                          <input
+                            type="text"
+                            value={comp.unit}
+                            onChange={(e) => handleComponentChange(i, "unit", e.target.value)}
+                            className={`w-full px-3 py-2 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                              componentsErrors[i]?.unit ? 'border-red-500' : 'border-gray-400'
+                            }`}
+                          />
+                          {componentsErrors[i]?.unit && (
+                            <div className="flex items-center gap-1 mt-1 text-red-600 text-sm">
+                              <AlertCircle className="w-4 h-4" />
+                              {componentsErrors[i]?.unit}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="block text-sm font-medium text-gray-700">Total Quantity *</label>
+                            {comp.totalQty && !componentsErrors[i]?.totalQty && (
+                              <button
+                                type="button"
+                                onClick={() => autoCalculateMilestones(i, comp)}
+                                className="text-xs text-blue-600 hover:text-blue-800 flex items-center"
+                              >
+                                <Calculator className="w-3 h-3 mr-1" />
+                                Auto-calc
+                              </button>
+                            )}
+                          </div>
+                          <input
+                            type="number"
+                            value={comp.totalQty}
+                            onChange={(e) => handleComponentChange(i, "totalQty", e.target.value)}
+                            className={`w-full px-3 py-2 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                              componentsErrors[i]?.totalQty ? 'border-red-500' : 'border-gray-400'
+                            }`}
+                          />
+                          {componentsErrors[i]?.totalQty && (
+                            <div className="flex items-center gap-1 mt-1 text-red-600 text-sm">
+                              <AlertCircle className="w-4 h-4" />
+                              {componentsErrors[i]?.totalQty}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="block text-sm font-medium text-gray-700">No of Milestones</label>
+                          <input
+                            type="text"
+                            readOnly
+                            value={
+                              !showMilestoneFields ? "Select period first" :
+                              comp.Numberofmilestone === "1" ?
+                                formData.work_period_months === "12" ? "1 (12 months)" :
+                                formData.work_period_months === "16" ? "1 (16 months)" : "1 milestone" :
+                              comp.Numberofmilestone === "2" ?
+                                formData.work_period_months === "24" ? "2 (24 months)" :
+                                formData.work_period_months === "32" ? "2 (32 months)" : "2 milestones" :
+                              comp.Numberofmilestone === "3" ? "3 (36 months)" :
+                              "0"
+                            }
+                            className="w-full px-3 py-2 border border-gray-400 rounded bg-gray-50 text-gray-700 cursor-not-allowed"
+                          />
+                        </div>
+                      </div>
+
+                      {showMilestoneFields && parseInt(comp.Numberofmilestone) > 0 && (
+                        <div className="mt-6 border-t pt-6">
+                          <h4 className="text-lg font-semibold text-gray-800 mb-4">Milestone Quantities</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {parseInt(comp.Numberofmilestone) >= 1 && (
+                              <div className="space-y-2">
+                                <label className="block text-sm font-medium text-gray-700">Milestone 1 Quantity *</label>
+                                <input
+                                  type="number"
+                                  value={comp.milestone1_qty}
+                                  onChange={(e) => handleComponentChange(i, "milestone1_qty", e.target.value)}
+                                  className={`w-full px-3 py-2 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                                    componentsErrors[i]?.milestone1_qty ? 'border-red-500' : 'border-gray-400'
+                                  }`}
+                                />
+                                {componentsErrors[i]?.milestone1_qty && (
+                                  <div className="flex items-center gap-1 mt-1 text-red-600 text-sm">
+                                    <AlertCircle className="w-4 h-4" />
+                                    {componentsErrors[i]?.milestone1_qty}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {parseInt(comp.Numberofmilestone) >= 2 && (
+                              <div className="space-y-2">
+                                <label className="block text-sm font-medium text-gray-700">Milestone 2 Quantity *</label>
+                                <input
+                                  type="number"
+                                  value={comp.milestone2_qty}
+                                  onChange={(e) => handleComponentChange(i, "milestone2_qty", e.target.value)}
+                                  className={`w-full px-3 py-2 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                                    componentsErrors[i]?.milestone2_qty ? 'border-red-500' : 'border-gray-400'
+                                  }`}
+                                />
+                                {componentsErrors[i]?.milestone2_qty && (
+                                  <div className="flex items-center gap-1 mt-1 text-red-600 text-sm">
+                                    <AlertCircle className="w-4 h-4" />
+                                    {componentsErrors[i]?.milestone2_qty}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {parseInt(comp.Numberofmilestone) >= 3 && (
+                              <div className="space-y-2">
+                                <label className="block text-sm font-medium text-gray-700">Milestone 3 Quantity *</label>
+                                <input
+                                  type="number"
+                                  value={comp.milestone3_qty}
+                                  onChange={(e) => handleComponentChange(i, "milestone3_qty", e.target.value)}
+                                  className={`w-full px-3 py-2 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                                    componentsErrors[i]?.milestone3_qty ? 'border-red-500' : 'border-gray-400'
+                                  }`}
+                                />
+                                {componentsErrors[i]?.milestone3_qty && (
+                                  <div className="flex items-center gap-1 mt-1 text-red-600 text-sm">
+                                    <AlertCircle className="w-4 h-4" />
+                                    {componentsErrors[i]?.milestone3_qty}
+                                  </div>
+                                )}
+                              </div>
                             )}
                           </div>
 
-                          <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-700">Block Name *</label>
-                            <input
-                              type="text"
-                              placeholder="Block name"
-                              value={village.block_name}
-                              onChange={(e) => handleVillageChange(i, "block_name", e.target.value)}
-                              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 ${villagesErrors[i]?.block_name ? 'border-red-500' : 'border-gray-300'}`}
-                            />
-                            {villagesErrors[i]?.block_name && (
-                              <p className="text-red-500 text-sm mt-1 flex items-center">
-                                <AlertCircle className="w-3 h-3 mr-1" />
-                                {villagesErrors[i]?.block_name}
-                              </p>
-                            )}
-                          </div>
+                          {componentsErrors[i]?.milestone_sum && (
+                            <div className="mt-4 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
+                              <div className="flex items-center">
+                                <AlertCircle className="w-5 h-5 mr-2 text-red-500" />
+                                <div>
+                                  <p className="font-medium">Milestone Quantity Error</p>
+                                  <p className="text-sm mt-1">{componentsErrors[i]?.milestone_sum}</p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
-                          <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-700">Gram Panchayat *</label>
-                            <input
-                              type="text"
-                              placeholder="Gram panchayat"
-                              value={village.gram_panchayat}
-                              onChange={(e) => handleVillageChange(i, "gram_panchayat", e.target.value)}
-                              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 ${villagesErrors[i]?.gram_panchayat ? 'border-red-500' : 'border-gray-300'}`}
-                            />
-                            {villagesErrors[i]?.gram_panchayat && (
-                              <p className="text-red-500 text-sm mt-1 flex items-center">
-                                <AlertCircle className="w-3 h-3 mr-1" />
-                                {villagesErrors[i]?.gram_panchayat}
-                              </p>
-                            )}
-                          </div>
+            {/* Spurs Tab */}
+            {activeTab === 'spurs' && (
+              <section className="bg-gray-50 border border-gray-300 rounded p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <MapPin className="w-5 h-5 text-[#003087]" />
+                  <h2 className="text-lg font-semibold text-gray-800">Spurs Information</h2>
+                </div>
 
-                          <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-700">Village Name *</label>
-                            <input
-                              type="text"
-                              placeholder="Village name"
-                              value={village.village_name}
-                              onChange={(e) => handleVillageChange(i, "village_name", e.target.value)}
-                              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 ${villagesErrors[i]?.village_name ? 'border-red-500' : 'border-gray-300'}`}
-                            />
-                            {villagesErrors[i]?.village_name && (
-                              <p className="text-red-500 text-sm mt-1 flex items-center">
-                                <AlertCircle className="w-3 h-3 mr-1" />
-                                {villagesErrors[i]?.village_name}
-                              </p>
-                            )}
-                          </div>
+                <div className="mb-6">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={hasSpurs}
+                      onChange={(e) => setHasSpurs(e.target.checked)}
+                      className="h-5 w-5 text-[#003087] border-gray-400 rounded focus:ring-[#003087]"
+                    />
+                    <span className="ml-3 text-lg font-medium text-gray-900">
+                      This work package has spurs
+                    </span>
+                  </label>
+                  <p className="text-gray-600 text-sm mt-2 ml-8">
+                    Spurs are small branch channels from the main canal.
+                  </p>
+                </div>
 
-                          <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-700">Total Population</label>
+                {hasSpurs && (
+                  <div className="space-y-6">
+                    <div className="bg-white rounded border border-gray-300 p-6">
+                      <div className="mb-4">
+                        <label className="block text-lg font-medium text-gray-900 mb-2">
+                          How many spurs are in this work package? *
+                        </label>
+                        <div className="flex items-center gap-4">
+                          <div className="relative flex-1">
                             <input
                               type="number"
-                              placeholder="Total population"
-                              value={village.census_population}
-                              onChange={(e) => handleVillageChange(i, "census_population", e.target.value)}
-                              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 ${villagesErrors[i]?.census_population ? 'border-red-500' : 'border-gray-300'}`}
+                              min="1"
+                              max="100"
+                              value={spursData.length}
+                              onChange={(e) => {
+                                const newCount = parseInt(e.target.value) || 0;
+                                if (newCount >= 1 && newCount <= 100) {
+                                  const currentSpurs = [...spursData];
+                                  const newSpurs: SpurData[] = [];
+                                  
+                                  for (let j = 0; j < newCount; j++) {
+                                    if (j < currentSpurs.length) {
+                                      newSpurs.push(currentSpurs[j]);
+                                    } else {
+                                      newSpurs.push({
+                                        spur_name: `Spur ${j + 1}`,
+                                        location_km: "",
+                                        is_new: ""
+                                      });
+                                    }
+                                  }
+                                  
+                                  setSpursData(newSpurs);
+                                }
+                              }}
+                              className="w-full px-4 py-3 border border-gray-400 rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
                             />
-                            {villagesErrors[i]?.census_population && (
-                              <p className="text-red-500 text-sm mt-1 flex items-center">
-                                <AlertCircle className="w-3 h-3 mr-1" />
-                                {villagesErrors[i]?.census_population}
-                              </p>
-                            )}
+                            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                              <span className="text-gray-500">spurs</span>
+                            </div>
                           </div>
-
-                          <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-700">Male Population</label>
-                            <input
-                              type="number"
-                              value={village.male_population}
-                              onChange={(e) => handleVillageChange(i, "male_population", e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-blue-50"
-                              readOnly
-                            />
-                          </div>
-
-                          <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-700">Female Population</label>
-                            <input
-                              type="number"
-                              value={village.female_population}
-                              onChange={(e) => handleVillageChange(i, "female_population", e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-pink-50"
-                              readOnly
-                            />
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (spursData.length < 100) {
+                                  setSpursData([
+                                    ...spursData,
+                                    {
+                                      spur_name: `Spur ${spursData.length + 1}`,
+                                      location_km: "",
+                                      is_new: ""
+                                    }
+                                  ]);
+                                }
+                              }}
+                              className="px-4 py-3 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors flex items-center"
+                            >
+                              <Plus className="w-4 h-4 mr-2" />
+                              Add 1
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (spursData.length > 1) {
+                                  const updated = [...spursData];
+                                  updated.pop();
+                                  setSpursData(updated);
+                                }
+                              }}
+                              className="px-4 py-3 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors flex items-center"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Remove 1
+                            </button>
                           </div>
                         </div>
                       </div>
-                    ))}
-                    <button
-                      onClick={addVillageField}
-                      className="flex items-center justify-center px-6 py-3 border-2 border-dashed border-gray-300 text-gray-600 rounded-xl hover:border-orange-500 hover:text-orange-600 transition-all duration-200 font-medium"
-                    >
-                      <Plus className="w-5 h-5 mr-2" />
-                      Add Another Village
-                    </button>
-                  </div>
-                </div>
+                    </div>
 
-               
-{/* Extra Components Section */}
-<div className="bg-gray-50 rounded-2xl p-6 border border-gray-200">
-  <div className="flex items-center mb-6">
-    <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center mr-4">
-      <Package className="w-5 h-5 text-green-600" />
-    </div>
-    <div>
-      <h3 className="text-xl font-semibold text-gray-900">Components & Milestones</h3>
-      <p className="text-gray-600">Define components and their milestones</p>
-    </div>
-  </div>
+                    {spursData.length > 0 && (
+                      <div className="space-y-4">
+                        {spursData.map((spur, spurIndex) => (
+                          <div key={spurIndex} className="bg-white border border-gray-300 rounded p-6">
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="flex items-center">
+                                <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center mr-3">
+                                  <span className="font-bold text-blue-700">{spurIndex + 1}</span>
+                                </div>
+                                <h5 className="text-lg font-semibold text-gray-900">
+                                  {spur.spur_name}
+                                </h5>
+                              </div>
+                              {spursData.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const updated = [...spursData];
+                                    updated.splice(spurIndex, 1);
+                                    updated.forEach((s, idx) => {
+                                      s.spur_name = `Spur ${idx + 1}`;
+                                    });
+                                    setSpursData(updated);
+                                  }}
+                                  className="flex items-center px-3 py-1.5 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-1" />
+                                  Remove
+                                </button>
+                              )}
+                            </div>
 
-  <div className="space-y-6">
-    {extraComponents.map((comp, i) => (
-      <div
-        key={i}
-        className="bg-white rounded-2xl p-6 border border-gray-200"
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h4 className="text-lg font-semibold text-gray-900">
-            Item : {i + 1}
-          </h4>
-          <div className="flex items-center gap-2">
-            {showMilestoneFields && comp.Numberofmilestone !== "0" && (
-              <div className={`text-sm font-medium px-3 py-1 rounded-full ${comp.Numberofmilestone === "1" ? "bg-blue-100 text-blue-800" :
-                comp.Numberofmilestone === "2" ? "bg-green-100 text-green-800" :
-                  comp.Numberofmilestone === "3" ? "bg-purple-100 text-purple-800" :
-                    "bg-gray-100 text-gray-800"
-                }`}>
-                {comp.Numberofmilestone} Milestone(s)
-              </div>
-            )}
-            {extraComponents.length > 1 && (
-              <button
-                onClick={() => removeComponentField(i)}
-                className="flex items-center px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Remove
-              </button>
-            )}
-          </div>
-        </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                              <div className="space-y-2">
+                                <label className="block text-sm font-medium text-gray-700">Spur Name *</label>
+                                <input
+                                  type="text"
+                                  value={spur.spur_name}
+                                  onChange={(e) => {
+                                    const updated = [...spursData];
+                                    updated[spurIndex].spur_name = e.target.value;
+                                    setSpursData(updated);
+                                  }}
+                                  className="w-full px-4 py-3 border border-gray-400 rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
+                                />
+                              </div>
 
-        {/* Component Basic Details */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {/* Component Name */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Name *</label>
-            <input
-              type="text"
-              placeholder="Description"
-              value={comp.componentname}
-              maxLength={25}
-              onChange={(e) => handleComponentChange(i, "componentname", e.target.value)}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 ${componentsErrors[i]?.componentname ? 'border-red-500' : 'border-gray-300'}`}
-            />
-            {componentsErrors[i]?.componentname && (
-              <p className="text-red-500 text-sm mt-1 flex items-center">
-                <AlertCircle className="w-3 h-3 mr-1" />
-                {componentsErrors[i]?.componentname}
-              </p>
-            )}
-          </div>
+                              <div className="space-y-2">
+                                <label className="block text-sm font-medium text-gray-700">Location (KM) *</label>
+                                <div className="relative">
+                                  <input
+                                    type="number"
+                                    value={spur.location_km}
+                                    onChange={(e) => {
+                                      const updated = [...spursData];
+                                      updated[spurIndex].location_km = e.target.value;
+                                      setSpursData(updated);
+                                    }}
+                                    step="0.01"
+                                    min="0"
+                                    className="w-full px-4 py-3 border border-gray-400 rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
+                                  />
+                                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                    <span className="text-gray-500">KM</span>
+                                  </div>
+                                </div>
+                              </div>
 
-          {/* Unit */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Unit *</label>
-            <input
-              type="text"
-              placeholder="e.g., cum, mt, ton"
-              value={comp.unit}
-              onChange={(e) => handleComponentChange(i, "unit", e.target.value)}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 ${componentsErrors[i]?.unit ? 'border-red-500' : 'border-gray-300'}`}
-              onKeyPress={(e) => {
-                if (!/^[A-Za-z]+$/.test(e.key)) {
-                  e.preventDefault();
-                }
-              }}
-            />
-            {componentsErrors[i]?.unit && (
-              <p className="text-red-500 text-sm mt-1 flex items-center">
-                <AlertCircle className="w-3 h-3 mr-1" />
-                {componentsErrors[i]?.unit}
-              </p>
-            )}
-          </div>
-
-          {/* Total Quantity */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="block text-sm font-medium text-gray-700">
-                Total Quantity *
-              </label>
-              {comp.totalQty && !componentsErrors[i]?.totalQty && (
-                <button
-                  type="button"
-                  onClick={() => autoCalculateMilestones(i, comp)}
-                  className="text-xs text-blue-600 hover:text-blue-800 flex items-center"
-                >
-                  <Calculator className="w-3 h-3 mr-1" />
-                  Auto-calc milestones
-                </button>
-              )}
-            </div>
-            <div className="relative">
-              <input
-                type="number"
-                placeholder="Enter total quantity"
-                value={comp.totalQty}
-                onChange={(e) => handleComponentChange(i, "totalQty", e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${componentsErrors[i]?.totalQty ? 'border-red-500' : 'border-gray-300'}`}
-                step="0.01"
-                min="0.01"
-              />
-            </div>
-            {componentsErrors[i]?.totalQty && (
-              <p className="text-red-500 text-sm mt-1 flex items-center">
-                <AlertCircle className="w-3 h-3 mr-1" />
-                {componentsErrors[i]?.totalQty}
-              </p>
-            )}
-          </div>
-
-                          <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-700">No of Milestones</label>
-                            <input
-                              type="text"
-                              readOnly
-                              value={
-                                !showMilestoneFields ? "Select period first" :
-                                  comp.Numberofmilestone === "1" ? 
-          formData.work_period_months === "12" ? "1 (12 months)" : 
-          formData.work_period_months === "16" ? "1 (16 months)" : "1 milestone" :
-        comp.Numberofmilestone === "2" ? 
-          formData.work_period_months === "24" ? "2 (24 months)" : 
-          formData.work_period_months === "32" ? "2 (32 months)" : "2 milestones" :
-        comp.Numberofmilestone === "3" ? "3 (36 months)" :
-        "0"
-                              }
-                              className={`w-full px-3 py-2 border rounded-lg ${showMilestoneFields
-                                ? "border-gray-300 bg-gray-50 text-gray-700"
-                                : "border-gray-200 bg-gray-100 text-gray-500"
-                                } cursor-not-allowed`}
-                            />
+                              <div className="space-y-2">
+                                <label className="block text-sm font-medium text-gray-700">Spur Type *</label>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updated = [...spursData];
+                                      updated[spurIndex].is_new = "new";
+                                      setSpursData(updated);
+                                    }}
+                                    className={`px-4 py-3 text-center rounded border-2 ${
+                                      spur.is_new === "new"
+                                        ? 'bg-green-100 text-green-800 border-green-500'
+                                        : 'bg-white text-gray-700 border-gray-300 hover:border-green-500'
+                                    }`}
+                                  >
+                                    New Spur
+                                  </button>
+                                  
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updated = [...spursData];
+                                      updated[spurIndex].is_new = "old";
+                                      setSpursData(updated);
+                                    }}
+                                    className={`px-4 py-3 text-center rounded border-2 ${
+                                      spur.is_new === "old"
+                                        ? 'bg-blue-100 text-blue-800 border-blue-500'
+                                        : 'bg-white text-gray-700 border-gray-300 hover:border-blue-500'
+                                    }`}
+                                  >
+                                    Old Spur
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
                           </div>
-
-        {/* Milestone Fields */}
-        {showMilestoneFields && parseInt(comp.Numberofmilestone) > 0 && (
-          <div className="mt-6 border-t pt-6">
-            <h5 className="text-md font-semibold text-gray-800 mb-4">
-              Milestone Quantities
-            </h5>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Milestone 1 */}
-              {parseInt(comp.Numberofmilestone) >= 1 && (
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Milestone 1 Quantity *
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      placeholder="M1 Quantity"
-                      value={comp.milestone1_qty}
-                      onChange={(e) => handleComponentChange(i, "milestone1_qty", e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${componentsErrors[i]?.milestone1_qty ? 'border-red-500' : 'border-gray-300'}`}
-                      step="0.01"
-                      min="0.01"
-                      max={comp.totalQty || undefined}
-                    />
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  {componentsErrors[i]?.milestone1_qty && (
-                    <p className="text-red-500 text-sm mt-1 flex items-center">
-                      <AlertCircle className="w-3 h-3 mr-1" />
-                      {componentsErrors[i]?.milestone1_qty}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {/* Milestone 2 */}
-              {parseInt(comp.Numberofmilestone) >= 2 && (
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Milestone 2 Quantity *
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="M2 Quantity"
-                    value={comp.milestone2_qty}
-                    onChange={(e) => handleComponentChange(i, "milestone2_qty", e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 ${componentsErrors[i]?.milestone2_qty ? 'border-red-500' : 'border-gray-300'}`}
-                    step="0.01"
-                    min="0.01"
-                    max={comp.totalQty || undefined}
-                  />
-                  {componentsErrors[i]?.milestone2_qty && (
-                    <p className="text-red-500 text-sm mt-1 flex items-center">
-                      <AlertCircle className="w-3 h-3 mr-1" />
-                      {componentsErrors[i]?.milestone2_qty}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {/* Milestone 3 */}
-              {parseInt(comp.Numberofmilestone) >= 3 && (
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Milestone 3 Quantity *
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="M3 Quantity"
-                    value={comp.milestone3_qty}
-                    onChange={(e) => handleComponentChange(i, "milestone3_qty", e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 ${componentsErrors[i]?.milestone3_qty ? 'border-red-500' : 'border-gray-300'}`}
-                    step="0.01"
-                    min="0.01"
-                    max={comp.totalQty || undefined}
-                  />
-                  {componentsErrors[i]?.milestone3_qty && (
-                    <p className="text-red-500 text-sm mt-1 flex items-center">
-                      <AlertCircle className="w-3 h-3 mr-1" />
-                      {componentsErrors[i]?.milestone3_qty}
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Milestone Sum Validation */}
-            {componentsErrors[i]?.milestone_sum && (
-              <div className="mt-4 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
-                <div className="flex items-center">
-                  <AlertCircle className="w-5 h-5 mr-2 text-red-500" />
-                  <div>
-                    <p className="font-medium">Milestone Quantity Error</p>
-                    <p className="text-sm mt-1">{componentsErrors[i]?.milestone_sum}</p>
-                    <p className="text-sm mt-1">
-                      • Sum of all milestone quantities must equal total quantity
-                      <br />
-                      • Individual milestone quantity cannot exceed total quantity
-                    </p>
-                  </div>
-                </div>
-              </div>
+                )}
+              </section>
             )}
 
-                        {showMilestoneFields && parseInt(comp.Numberofmilestone) > 0 && comp.totalQty && (
-  <div className="mt-4 bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg">
-    <div className="flex items-center">
-      <AlertCircle className="w-5 h-5 mr-2" />
-      <div>
-        <p className="font-medium">Milestone Calculation Guide</p>
-        <p className="text-sm mt-1">
-          • Total Quantity: <span className="font-bold">{comp.totalQty}</span>
-          <br />
-          • Period: <span className="font-bold">{formData.work_period_months} months</span>
-          <br />
-          • Milestones: <span className="font-bold">{comp.Numberofmilestone}</span>
-          <br />
-          • <span className="font-bold text-red-600">Rule:</span> M1 + M2 + M3 = Total Quantity
-          <br />
-          • <span className="text-green-600">Tip:</span> Use Auto calculate for equal distribution
-        </p>
-      </div>
-    </div>
-  </div>
-)}
-
-        {/* Milestone Fields Hidden Warning */}
-        {!showMilestoneFields && (
-          <div className="mt-4">
-            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg">
-              <div className="flex items-center">
-                <AlertCircle className="w-5 h-5 mr-2" />
-                <div>
-                  <p className="font-medium">Milestone fields are hidden</p>
-                  <p className="text-sm mt-1">
-                    Please select Period of Completion above to show milestone fields.
-                    <br />
-                    • 12 months = 1 milestone
-                    <br />
-                    • 16 months = 1 milestone
-                    <br />
-                    • 24 months = 2 milestones
-                    <br />
-                    • 32 months = 2 milestones
-                    <br />
-                    • 36 months = 3 milestones
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    ))}
-
-    {/* Add Another Component Button */}
-    <button
-      onClick={addComponentField}
-      className="flex items-center justify-center px-6 py-3 border-2 border-dashed border-gray-300 text-gray-600 rounded-xl hover:border-green-500 hover:text-green-600 transition-all duration-200 font-medium"
-    >
-      <Plus className="w-5 h-5 mr-2" />
-      Add Another Component
-    </button>
-  </div>
-</div>
-
-{/* Spurs Section - COMPLETELY SEPARATE FROM MILESTONES */}
-<div className="bg-gray-50 rounded-2xl p-6 border border-gray-200 mt-8">
-  <div className="flex items-center mb-6">
-    <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center mr-4">
-      <MapPin className="w-5 h-5 text-orange-600" />
-    </div>
-    <div>
-      <h3 className="text-xl font-semibold text-gray-900">Spurs Information</h3>
-      <p className="text-gray-600">Define spurs for this work package</p>
-    </div>
-  </div>
-
-  {/* Spurs Checkbox (Enable/Disable Spurs) */}
-  <div className="mb-6">
-    <label className="flex items-center">
-      <input
-        type="checkbox"
-        checked={hasSpurs}
-        onChange={(e) => setHasSpurs(e.target.checked)}
-        className="h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-      />
-      <span className="ml-3 text-lg font-medium text-gray-900">
-        This work package has spurs
-      </span>
-    </label>
-    <p className="text-gray-600 text-sm mt-2 ml-8">
-      Check this box if your work includes spurs. Spurs are small branch channels from the main canal.
-    </p>
-  </div>
-
-  {/* Spurs Section - Only show if hasSpurs is true */}
- {hasSpurs && (
-  <div className="space-y-6">
-    {/* Number of Spurs Input */}
-    <div className="bg-white rounded-xl p-6 border border-gray-200">
-      <div className="mb-4">
-        <label className="block text-lg font-medium text-gray-900 mb-2">
-          How many spurs are in this work package? *
-        </label>
-        <div className="flex items-center gap-4">
-          <div className="relative flex-1">
-            <input
-              type="number"
-              min="1"
-              max="100"
-              value={spursData.length}
-              onChange={(e) => {
-                const newCount = parseInt(e.target.value) || 0;
-                if (newCount >= 1 && newCount <= 100) {
-                  const currentSpurs = [...spursData];
-                  const newSpurs: SpurData[] = [];
-                  
-                  // Create or update spurs array based on new count
-                  for (let j = 0; j < newCount; j++) {
-                    if (j < currentSpurs.length) {
-                      // Keep existing spur data
-                      newSpurs.push(currentSpurs[j]);
-                    } else {
-                      // Add new spur with default values
-                      newSpurs.push({
-                        spur_name: `Spur ${j + 1}`,
-                        location_km: "",
-                        is_new: ""
-                      });
-                    }
-                  }
-                  
-                  setSpursData(newSpurs);
-                }
-              }}
-              placeholder="Enter number of spurs"
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-            />
-            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-              <span className="text-gray-500">spurs</span>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                if (spursData.length < 100) {
-                  setSpursData([
-                    ...spursData,
-                    {
-                      spur_name: `Spur ${spursData.length + 1}`,
-                      location_km: "",
-                      is_new: ""
-                    }
-                  ]);
-                }
-              }}
-              className="px-4 py-3 bg-blue-100 text-blue-700 rounded-xl hover:bg-blue-200 transition-all duration-200 flex items-center"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add 1
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (spursData.length > 1) {
-                  const updated = [...spursData];
-                  updated.pop();
-                  setSpursData(updated);
-                }
-              }}
-              className="px-4 py-3 bg-red-100 text-red-700 rounded-xl hover:bg-red-200 transition-all duration-200 flex items-center"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              Remove 1
-            </button>
-          </div>
-        </div>
-        <p className="text-sm text-gray-600 mt-2">
-          Minimum: 1, Maximum: 100
-        </p>
-      </div>
-      
-      <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-        <div className="flex items-center">
-          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-            <span className="font-bold text-blue-700">{spursData.length}</span>
-          </div>
-          <div>
-            <p className="font-medium text-blue-900">
-              Currently selected: <span className="font-bold">{spursData.length} spur{spursData.length !== 1 ? 's' : ''}</span>
-            </p>
-            <p className="text-sm text-blue-700 mt-1">
-              {spursData.length === 1 ? '1 spur is defined' : `${spursData.length} spurs are defined`}
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    {/* Spurs Details */}
-    {spursData.length > 0 && (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between mb-2">
-          <h4 className="text-lg font-semibold text-gray-900">
-            Spurs Details
-          </h4>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                const newSpurNumber = spursData.length + 1;
-                setSpursData([
-                  ...spursData,
-                  {
-                    spur_name: `Spur ${newSpurNumber}`,
-                    location_km: "",
-                    is_new: ""
-                  }
-                ]);
-              }}
-              className="flex items-center px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-all duration-200"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Another Spur
-            </button>
-            {spursData.length > 1 && (
-              <button
-                type="button"
-                onClick={() => {
-                  const updated = [...spursData];
-                  updated.pop();
-                  // Rename remaining spurs
-                  updated.forEach((s, idx) => {
-                    s.spur_name = `Spur ${idx + 1}`;
-                  });
-                  setSpursData(updated);
-                }}
-                className="flex items-center px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-all duration-200"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Remove Last Spur
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Spurs List */}
-        {spursData.map((spur, spurIndex) => (
-          <div key={spurIndex} className="bg-white rounded-xl p-6 border border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center">
-                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                  <span className="font-bold text-blue-700">{spurIndex + 1}</span>
-                </div>
-                <h5 className="text-lg font-semibold text-gray-900">
-                  {spur.spur_name}
-                </h5>
-              </div>
-              {spursData.length > 1 && (
+            {/* Form Actions */}
+            <div className="flex justify-between items-center pt-6 border-t border-gray-300">
+              <div className="flex gap-3">
                 <button
                   type="button"
-                  onClick={() => {
-                    const updated = [...spursData];
-                    updated.splice(spurIndex, 1);
-                    // Rename remaining spurs
-                    updated.forEach((s, idx) => {
-                      s.spur_name = `Spur ${idx + 1}`;
-                    });
-                    setSpursData(updated);
-                  }}
-                  className="flex items-center px-3 py-1.5 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-all duration-200"
+                  onClick={onBackToList}
+                  className="flex items-center gap-2 px-6 py-3 border border-gray-400 text-gray-700 rounded hover:bg-gray-50 transition-colors"
                 >
-                  <Trash2 className="w-4 h-4 mr-1" />
-                  Remove
+                  <ArrowLeft className="w-4 h-4" />
+                  Back to List
                 </button>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Spur Name */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Spur Name *
-                </label>
-                <input
-                  type="text"
-                  value={spur.spur_name}
-                  onChange={(e) => {
-                    const updated = [...spursData];
-                    updated[spurIndex].spur_name = e.target.value;
-                    setSpursData(updated);
-                  }}
-                  placeholder="e.g., Spur 1, Main Spur, Branch 1"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                />
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="px-6 py-3 border border-red-400 text-red-700 rounded hover:bg-red-50 transition-colors"
+                >
+                  Reset Form
+                </button>
               </div>
-
-              {/* Location (KM) */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Location (KM from start point) *
-                </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    value={spur.location_km}
-                    onChange={(e) => {
-                      const updated = [...spursData];
-                      updated[spurIndex].location_km = e.target.value;
-                      setSpursData(updated);
-                    }}
-                    placeholder="e.g., 2.5"
-                    step="0.01"
-                    min="0"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                  />
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <span className="text-gray-500">KM</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* New/Old Selection */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Spur Type *
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const updated = [...spursData];
-                      updated[spurIndex].is_new = "new";
-                      setSpursData(updated);
-                    }}
-                    className={`px-4 py-3 text-center rounded-xl border-2 transition-all duration-200 ${spur.is_new === "new"
-                        ? 'bg-green-100 text-green-800 border-green-500'
-                        : 'bg-white text-gray-700 border-gray-300 hover:border-green-500'
-                      }`}
-                  >
-                    <div className="font-medium">New Spur</div>
-                    <div className="text-xs mt-1">Fresh construction</div>
-                  </button>
-                  
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const updated = [...spursData];
-                      updated[spurIndex].is_new = "old";
-                      setSpursData(updated);
-                    }}
-                    className={`px-4 py-3 text-center rounded-xl border-2 transition-all duration-200 ${spur.is_new === "old"
-                        ? 'bg-blue-100 text-blue-800 border-blue-500'
-                        : 'bg-white text-gray-700 border-gray-300 hover:border-blue-500'
-                      }`}
-                  >
-                    <div className="font-medium">Old Spur</div>
-                    <div className="text-xs mt-1">Existing/Repair</div>
-                  </button>
-                </div>
+             
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => validateForm()}
+                  className="px-6 py-3 border border-blue-400 text-blue-700 rounded hover:bg-blue-50 transition-colors"
+                >
+                  Validate Form
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSubmitAll}
+                  disabled={createWorkMutation.isPending || !user}
+                  className="flex items-center gap-2 px-8 py-3 bg-[#003087] text-white rounded hover:bg-[#00205b] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Save className="w-4 h-4" />
+                  {createWorkMutation.isPending ? 'Saving...' : user ? 'Create Work Package' : 'Please Log In'}
+                </button>
               </div>
             </div>
-
-            {/* Selected Type Indicator */}
-            {spur.is_new && (
-              <div className={`mt-4 px-4 py-2 rounded-lg inline-flex items-center ${spur.is_new === "new"
-                  ? 'bg-green-50 text-green-800 border border-green-200'
-                  : 'bg-blue-50 text-blue-800 border border-blue-200'
-                }`}>
-                {spur.is_new === "new" ? (
-                  <>
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    This is a <span className="font-bold ml-1">NEW</span> spur (fresh construction)
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    This is an <span className="font-bold ml-1">EXISTING</span> spur (repair/renovation)
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
-
-        {/* Spurs Summary */}
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-          <div className="flex items-start">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
-              <MapPin className="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <h5 className="text-lg font-semibold text-blue-900 mb-2">
-                Spurs Summary
-              </h5>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white rounded-lg p-4 border border-blue-100">
-                  <div className="text-sm text-blue-700">Total Spurs</div>
-                  <div className="text-2xl font-bold text-blue-900">{spursData.length}</div>
-                </div>
-                <div className="bg-green-50 rounded-lg p-4 border border-green-100">
-                  <div className="text-sm text-green-700">New Spurs</div>
-                  <div className="text-2xl font-bold text-green-900">
-                    {spursData.filter(s => s.is_new === 'new').length}
-                  </div>
-                </div>
-                <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
-                  <div className="text-sm text-blue-700">Old Spurs</div>
-                  <div className="text-2xl font-bold text-blue-900">
-                    {spursData.filter(s => s.is_new === 'old').length}
-                  </div>
-                </div>
-              </div>
-              
-              {/* Location Summary */}
-              {spursData.length > 0 && (
-                <div className="mt-4">
-                  <p className="text-sm font-medium text-blue-800 mb-2">Spur Locations:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {spursData.map((spur, idx) => (
-                      <div key={idx} className="bg-white rounded-lg px-3 py-2 border border-blue-200">
-                        <span className="font-medium text-blue-900">{spur.spur_name}</span>
-                        <span className="text-blue-600 mx-2">•</span>
-                        <span className="text-gray-700">{spur.location_km || '0'} KM</span>
-                        <span className="text-blue-600 mx-2">•</span>
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${spur.is_new === 'new'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-blue-100 text-blue-800'
-                          }`}>
-                          {spur.is_new === 'new' ? 'NEW' : 'OLD'}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+          </form>
         </div>
-      </div>
-    )}
-  </div>
-)}
-</div>
-
-                {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row justify-end gap-4 pt-6 border-t border-gray-200">
-                  <button
-                    onClick={handleCancel}
-                    className="flex items-center justify-center px-8 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 font-medium shadow-sm"
-                  >
-                    <RotateCcw className="w-4 h-4 mr-2" />
-                    Reset Form
-                  </button>
-                  <button
-                    onClick={handleSubmitAll}
-                    disabled={createWorkMutation.isPending || !user}
-                    className="flex items-center justify-center px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 font-medium shadow-lg disabled:opacity-50"
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    {createWorkMutation.isPending ? "Saving..." : user ? "Save Complete Work Package" : "Please Log In"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      </main>
     </div>
   );
 };
