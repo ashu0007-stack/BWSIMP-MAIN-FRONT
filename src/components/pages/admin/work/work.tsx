@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import WorkListPage from "@/components/pages/admin/work/WorkListPage";
 import CreateWorkPage from "@/components/pages/admin/work/CreateWorkPage";
 import ViewWorkPage from "@/components/pages/admin/work/ViewWorkPage";
-import { UserData } from "@/components/shared/work";
+import { UserData } from "@/components/pages/admin/work/work";
 
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<"list" | "create" | "view" | "edit">("list");

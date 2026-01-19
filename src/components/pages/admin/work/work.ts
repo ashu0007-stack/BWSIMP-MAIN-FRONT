@@ -50,6 +50,7 @@ export interface UserData {
 }
 
 export interface Work {
+  district_name: string;
   award_status: string;
   id: number;
   work_name: string;
@@ -76,6 +77,7 @@ export interface Work {
   beneficiaries?: Beneficiaries;
   villages?: Village[];
   components?: WorkComponent[];
+  has_spurs?: number;
 }
 
 export interface Village {
@@ -87,6 +89,12 @@ export interface Village {
   census_population: string;
   male_population: string;
   female_population: string;
+}
+
+export interface SpurData {
+  spur_name: string;
+  location_km: string;
+  is_new: "new" | "old" | "";
 }
 
 export interface WorkComponent {
@@ -103,6 +111,7 @@ export interface WorkComponent {
   milestone2_qty: string;
   milestone3_qty: string;
   milestonedetails: string;
+
 }
 
 export interface Beneficiaries {
@@ -137,4 +146,5 @@ export interface WorkFormData {
   Area_Under_improved_Irrigation: string;
   command_area_after: string;
   award_status: string;
+  has_spurs?: number;
 }

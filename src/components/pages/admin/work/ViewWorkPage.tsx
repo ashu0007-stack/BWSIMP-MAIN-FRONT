@@ -15,7 +15,15 @@ import {
   FileText,
   Eye,
   EyeOff,
-  X
+  X,
+  Shield,
+  Building,
+  Download,
+  Printer,
+  BarChart3,
+  DollarSign,
+  Award,
+  Loader
 } from "lucide-react";
 
 import {
@@ -33,7 +41,7 @@ import {
   Beneficiaries,
   UserData,
   ValidationErrors
-} from "@/components/shared/work";
+} from "@/components/pages/admin/work/work";
 
 interface ViewWorkPageProps {
   workId: number;
@@ -76,7 +84,7 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
   });
 
   // React Query Hooks
-  const { data: fetchedWorkDetails, refetch: refetchWorkDetails } = useWorkById(workId);
+  const { data: fetchedWorkDetails, refetch: refetchWorkDetails, isLoading } = useWorkById(workId);
   const updateWorkMutation = useUpdateWork();
   const updateBeneficiariesMutation = useUpdateBeneficiaries();
   const updateVillagesMutation = useUpdateVillages();
@@ -138,7 +146,7 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
 
   // Format functions
   const formatDate = (dateString: string) => {
-    if (!dateString) return "N/A";
+    if (!dateString) return "—";
     return new Date(dateString).toLocaleDateString('en-IN', {
       day: '2-digit',
       month: 'short',
@@ -148,7 +156,12 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
 
   const formatCurrency = (amount: string) => {
     if (!amount) return "₹0";
-    return `₹${Number(amount).toLocaleString('en-IN')}`;
+    const amountNumber = parseFloat(amount);
+    if (isNaN(amountNumber)) return "₹0";
+    if (amountNumber >= 10000000) {
+      return `₹${(amountNumber / 10000000).toFixed(2)} Cr`;
+    }
+    return `₹${amountNumber.toLocaleString('en-IN')}`;
   };
 
   // Status badge component
@@ -156,22 +169,22 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
     const getStatusConfig = (status: string) => {
       switch (status) {
         case "Awarded":
-          return { bg: "bg-green-100", text: "text-green-800", label: "Awarded" };
+          return { bg: "bg-green-100", text: "text-green-800", border: "border-green-300", label: "Awarded" };
         case "In Progress":
-          return { bg: "bg-yellow-100", text: "text-yellow-800", label: "In Progress" };
+          return { bg: "bg-yellow-100", text: "text-yellow-800", border: "border-yellow-300", label: "In Progress" };
         case "Completed":
-          return { bg: "bg-blue-100", text: "text-blue-800", label: "Completed" };
+          return { bg: "bg-blue-100", text: "text-blue-800", border: "border-blue-300", label: "Completed" };
         case "Pending":
-          return { bg: "bg-orange-100", text: "text-orange-800", label: "Pending" };
+          return { bg: "bg-orange-100", text: "text-orange-800", border: "border-orange-300", label: "Pending" };
         default:
-          return { bg: "bg-gray-100", text: "text-gray-800", label: status || "Not Awarded" };
+          return { bg: "bg-gray-100", text: "text-gray-800", border: "border-gray-300", label: status || "Not Awarded" };
       }
     };
     
     const config = getStatusConfig(status);
     
     return (
-      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
+      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${config.bg} ${config.text} ${config.border}`}>
         {config.label}
       </span>
     );
@@ -442,35 +455,91 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
     }
   };
 
+  // Calculate stats
+  // const calculateStats = () => {
+  //   if (!workDetails) return null;
+    
+  //   const totalCost = parseFloat(workDetails.work_cost || "0") || 0;
+  //   const totalBeneficiaries = parseInt(beneficiaries?.total_population || "0") || 0;
+  //   const totalVillages = villages.length;
+  //   const totalComponents = components.length;
+    
+  //   return {
+  //     totalCost: formatCurrency(totalCost.toString()),
+  //     totalBeneficiaries: totalBeneficiaries.toLocaleString('en-IN'),
+  //     totalVillages,
+  //     totalComponents
+  //   };
+  // };
+
+  // const stats = calculateStats();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <Loader className="w-10 h-10 animate-spin text-[#003087]" />
+          <p className="mt-4 text-gray-700 font-medium">Loading Work Details...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!workDetails) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-        <div className="max-w-7xl mx-auto">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="bg-white border border-red-300 rounded p-8 text-center">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <p className="text-red-700 text-lg font-medium">Work package not found</p>
           <button
             onClick={onBackToList}
-             className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+            className="mt-6 px-6 py-2 bg-[#003087] text-white font-medium rounded hover:bg-[#00205b] inline-flex items-center gap-2"
           >
-            ⬅ Back
+            <ArrowLeft size={18} />
+            Back to Work List
           </button>
-          <div className="bg-white rounded-2xl p-8 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading work details...</p>
-          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gray-100 flex flex-col">
+      {/* Government Header */}
+      <header className="bg-[#003087] text-white border-b-4 border-[#FF9933]">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 p-2 rounded">
+                <Shield className="w-8 h-8" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold">{workDetails.work_name}</h1>
+                <p className="text-sm text-blue-100">
+                  Package: {workDetails.package_number} • Created: {formatDate(workDetails.created_at || "")}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={onBackToList}
+            className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded transition-colors"
+          >
+            <ArrowLeft size={18} /> Back to List
+          </button>
+        </div>
+      </header>
+
       {/* Message Banner */}
       {message && (
         <div className="sticky top-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-200 shadow-md">
-          <div className="max-w-7xl mx-auto px-6 py-3">
-            <div className={`p-4 rounded-lg border flex items-center justify-between ${message.includes("✅") || message.includes("successfully")
-              ? "bg-green-50 border-green-200 text-green-800"
-              : "bg-red-50 border-red-200 text-red-800"
-              }`}>
+          <div className="max-w-7xl mx-auto px-4 py-3">
+            <div className={`p-4 rounded-lg border flex items-center justify-between ${
+              message.includes("✅") || message.includes("successfully")
+                ? "bg-green-50 border-green-200 text-green-800"
+                : "bg-red-50 border-red-200 text-red-800"
+            }`}>
               <div className="flex items-center">
                 {message.includes("✅") || message.includes("successfully") ? (
                   <CheckCircle className="w-5 h-5 mr-3 flex-shrink-0" />
@@ -490,124 +559,151 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
         </div>
       )}
 
-      <div className="p-6">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
-            <button
-              onClick={onBackToList}
-              className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-            >
-               ⬅ Back
-            </button>
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
+        {/* Stats Cards */}
+        {/* <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
+          {[
+            { 
+              title: "Total Estimated Cost", 
+              value: stats?.totalCost || "₹0", 
+              icon: DollarSign, 
+              color: "blue",
+              subtitle: "Overall budget"
+            },
+            { 
+              title: "Total Beneficiaries", 
+              value: stats?.totalBeneficiaries || "0", 
+              icon: Users, 
+              color: "green",
+              subtitle: "Population covered"
+            },
+            { 
+              title: "Villages Covered", 
+              value: stats?.totalVillages || 0, 
+              icon: Home, 
+              color: "orange",
+              subtitle: "Areas covered"
+            },
+            { 
+              title: "Total Components", 
+              value: stats?.totalComponents || 0, 
+              icon: Package, 
+              color: "purple",
+              subtitle: "Work components"
+            },
+          ].map((stat, i) => (
+            <div key={i} className="bg-white border border-gray-300 rounded shadow-sm p-5 hover:border-[#003087] transition-colors">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-sm text-gray-600">{stat.title}</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
+                  <p className="text-xs text-gray-500 mt-1">{stat.subtitle}</p>
+                </div>
+                <div className={`p-3 bg-${stat.color}-50 rounded`}>
+                  <stat.icon className={`w-8 h-8 text-${stat.color}-600`} />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div> */}
 
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        {/* Status and Action Bar */}
+        <div className="bg-white border border-gray-300 rounded shadow-sm p-6 mb-6">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-4">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">{workDetails.work_name}</h1>
-                <p className="text-gray-600 mt-2">
-                  Package: {workDetails.package_number} • Created: {formatDate(workDetails.created_at || "")}
-                </p>
+                <span className="text-sm text-gray-600 block mb-1">Work Status</span>
+                <StatusBadge status={workDetails.award_status || ""} />
               </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={handleToggleEdit}
-                  className={`flex items-center px-6 py-3 rounded-xl transition-colors ${mode === "view"
-                      ? "bg-blue-600 text-white hover:bg-blue-700"
-                      : "bg-gray-600 text-white hover:bg-gray-700"
-                    }`}
-                >
-                  {mode === "view" ? (
-                    <>
-                      <Edit className="w-4 h-4 mr-2" />
-                      Edit Work
-                    </>
-                  ) : (
-                    <>
-                      <EyeOff className="w-4 h-4 mr-2" />
-                      Cancel Edit
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Status Bar */}
-          <div className="mb-8 bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="text-center">
-                <div className="text-sm text-gray-500">Status</div>
-                <div className="mt-1">
-                  <StatusBadge status={workDetails.award_status || ""} />
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-sm text-gray-500">Estimated Cost</div>
-                <div className="text-xl font-bold text-gray-900 mt-1">
-                  {formatCurrency(workDetails.work_cost || "0")}
-                </div>
-              </div>
-              <div className="text-center">
-                <div className="text-sm text-gray-500">Period of Completion</div>
-                <div className="text-xl font-bold text-gray-900 mt-1">
+              <div>
+                <span className="text-sm text-gray-600 block mb-1">Period of Completion</span>
+                <span className="text-lg font-bold text-gray-900">
                   {workDetails.work_period_months || "0"} months
-                </div>
+                </span>
               </div>
-              <div className="text-center">
-                <div className="text-sm text-gray-500">Length of Work</div>
-                <div className="text-xl font-bold text-gray-900 mt-1">
+              <div>
+                <span className="text-sm text-gray-600 block mb-1">Length of Work</span>
+                <span className="text-lg font-bold text-gray-900">
                   {workDetails.target_km || "0"} km
-                </div>
+                </span>
               </div>
             </div>
-          </div>
-
-          {/* Tabs */}
-          <div className="mb-6">
-            <div className="flex border-b border-gray-200 overflow-x-auto">
-              {["overview", "beneficiaries", "villages", "components"].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-6 py-3 font-medium capitalize whitespace-nowrap ${activeTab === tab
-                    ? "border-b-2 border-blue-500 text-blue-600"
-                    : "text-gray-500 hover:text-gray-700"
-                    }`}
-                >
-                  {tab}
-                </button>
-              ))}
+            
+            <div className="flex gap-3">
+              <button
+                onClick={handleToggleEdit}
+                className={`flex items-center gap-2 px-5 py-2 font-medium rounded transition-colors ${
+                  mode === "view"
+                    ? "bg-[#003087] text-white hover:bg-[#00205b]"
+                    : "bg-gray-600 text-white hover:bg-gray-700"
+                }`}
+              >
+                {mode === "view" ? (
+                  <>
+                    <Edit size={18} />
+                    Edit Work
+                  </>
+                ) : (
+                  <>
+                    <EyeOff size={18} />
+                    Cancel Edit
+                  </>
+                )}
+              </button>
             </div>
           </div>
+        </div>
 
-          {/* Tab Content */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-            {/* Overview Tab */}
-            {activeTab === "overview" && (
-              <div className="p-6 md:p-8">
+        {/* Tabs */}
+        <div className="bg-white border border-gray-300 rounded shadow-sm mb-6">
+          <div className="flex border-b border-gray-300 overflow-x-auto">
+            {["overview", "beneficiaries", "villages", "components"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-6 py-3 font-medium capitalize whitespace-nowrap ${
+                  activeTab === tab
+                    ? "border-b-2 border-[#003087] text-[#003087] bg-blue-50"
+                    : "text-gray-600 hover:text-[#003087] hover:bg-gray-50"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        <div className="space-y-6">
+          {/* Overview Tab */}
+          {activeTab === "overview" && (
+            <div className="bg-white border border-gray-300 rounded shadow-sm overflow-hidden">
+              <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">Work Overview</h2>
+                  <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <Building className="w-5 h-5 text-[#003087]" />
+                    Work Overview
+                  </h2>
                   {mode === "edit" && (
                     <button
                       onClick={handleUpdateWork}
                       disabled={updateWorkMutation.isPending}
-                      className="flex items-center px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50"
+                      className="flex items-center gap-2 px-5 py-2 bg-green-700 text-white font-medium rounded hover:bg-green-800 transition-colors disabled:opacity-50"
                     >
-                      <Save className="w-4 h-4 mr-2" />
+                      <Save size={18} />
                       {updateWorkMutation.isPending ? "Saving..." : "Save Changes"}
                     </button>
                   )}
                 </div>
 
                 <div className="space-y-6">
-                  <div className="bg-gray-50 rounded-xl p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
+                  <div className="p-6 bg-gray-50 rounded border border-gray-300">
+                    <h3 className="text-md font-semibold text-gray-800 mb-4">Basic Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          <span className="flex items-center">
-                            <FileText className="w-4 h-4 mr-2" />
+                          <span className="flex items-center gap-1">
+                            <FileText size={16} />
                             Name of Work *
                           </span>
                         </label>
@@ -617,17 +713,17 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
                             name="work_name"
                             value={editFormData.work_name}
                             onChange={handleEditChange}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                            className="w-full px-4 py-2 border border-gray-400 rounded focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
                           />
                         ) : (
-                          <div className="text-lg font-medium">{workDetails.work_name}</div>
+                          <div className="text-lg font-medium text-gray-900">{workDetails.work_name}</div>
                         )}
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          <span className="flex items-center">
-                            <Package className="w-4 h-4 mr-2" />
+                          <span className="flex items-center gap-1">
+                            <Package size={16} />
                             Package Number *
                           </span>
                         </label>
@@ -637,17 +733,17 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
                             name="package_number"
                             value={editFormData.package_number}
                             onChange={handleEditChange}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                            className="w-full px-4 py-2 border border-gray-400 rounded focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
                           />
                         ) : (
-                          <div className="text-lg font-medium">{workDetails.package_number}</div>
+                          <div className="text-lg font-medium text-gray-900">{workDetails.package_number}</div>
                         )}
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          <span className="flex items-center">
-                            <IndianRupee className="w-4 h-4 mr-2" />
+                          <span className="flex items-center gap-1">
+                            <IndianRupee size={16} />
                             Estimated Cost (₹) *
                           </span>
                         </label>
@@ -657,17 +753,19 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
                             name="work_cost"
                             value={editFormData.work_cost}
                             onChange={handleEditChange}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                            className="w-full px-4 py-2 border border-gray-400 rounded focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
                           />
                         ) : (
-                          <div className="text-lg font-medium">{formatCurrency(workDetails.work_cost || "0")}</div>
+                          <div className="text-lg font-medium text-gray-900">
+                            {formatCurrency(workDetails.work_cost || "0")}
+                          </div>
                         )}
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          <span className="flex items-center">
-                            <Ruler className="w-4 h-4 mr-2" />
+                          <span className="flex items-center gap-1">
+                            <Ruler size={16} />
                             Length of Work (KM) *
                           </span>
                         </label>
@@ -677,17 +775,17 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
                             name="target_km"
                             value={editFormData.target_km}
                             onChange={handleEditChange}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                            className="w-full px-4 py-2 border border-gray-400 rounded focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
                           />
                         ) : (
-                          <div className="text-lg font-medium">{workDetails.target_km} km</div>
+                          <div className="text-lg font-medium text-gray-900">{workDetails.target_km} km</div>
                         )}
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          <span className="flex items-center">
-                            <Calendar className="w-4 h-4 mr-2" />
+                          <span className="flex items-center gap-1">
+                            <Calendar size={16} />
                             Period of Completion (months) *
                           </span>
                         </label>
@@ -697,10 +795,12 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
                             name="work_period_months"
                             value={editFormData.work_period_months}
                             onChange={handleEditChange}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                            className="w-full px-4 py-2 border border-gray-400 rounded focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
                           />
                         ) : (
-                          <div className="text-lg font-medium">{workDetails.work_period_months} months</div>
+                          <div className="text-lg font-medium text-gray-900">
+                            {workDetails.work_period_months} months
+                          </div>
                         )}
                       </div>
 
@@ -714,64 +814,71 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
                             name="Area_Under_improved_Irrigation"
                             value={editFormData.Area_Under_improved_Irrigation}
                             onChange={handleEditChange}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                            className="w-full px-4 py-2 border border-gray-400 rounded focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
                           />
                         ) : (
-                          <div className="text-lg font-medium">{workDetails.Area_Under_improved_Irrigation || "0"} ha</div>
+                          <div className="text-lg font-medium text-gray-900">
+                            {workDetails.Area_Under_improved_Irrigation || "0"} ha
+                          </div>
                         )}
                       </div>
                     </div>
                   </div>
 
-                  <div className="bg-gray-50 rounded-xl p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Location Information</h3>
+                  <div className="p-6 bg-gray-50 rounded border border-gray-300">
+                    <h3 className="text-md font-semibold text-gray-800 mb-4">Location Information</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          <span className="flex items-center">
-                            <MapPin className="w-4 h-4 mr-2" />
+                          <span className="flex items-center gap-1">
+                            <MapPin size={16} />
                             Zone
                           </span>
                         </label>
-                        <div className="text-lg font-medium">{workDetails.zone_name || "N/A"}</div>
+                        <div className="text-lg font-medium text-gray-900">{workDetails.zone_name || "N/A"}</div>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Circle</label>
-                        <div className="text-lg font-medium">{workDetails.circle_name || "N/A"}</div>
+                        <div className="text-lg font-medium text-gray-900">{workDetails.circle_name || "N/A"}</div>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Division</label>
-                        <div className="text-lg font-medium">{workDetails.division_name || "N/A"}</div>
+                        <div className="text-lg font-medium text-gray-900">{workDetails.division_name || "N/A"}</div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Beneficiaries Tab */}
-            {activeTab === "beneficiaries" && (
-              <div className="p-6 md:p-8">
+          {/* Beneficiaries Tab */}
+          {activeTab === "beneficiaries" && (
+            <div className="bg-white border border-gray-300 rounded shadow-sm overflow-hidden">
+              <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">Beneficiaries</h2>
+                  <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <Users className="w-5 h-5 text-[#003087]" />
+                    Beneficiaries
+                  </h2>
                   {mode === "edit" && (
                     <button
                       onClick={handleUpdateBeneficiaries}
                       disabled={updateBeneficiariesMutation.isPending}
-                      className="flex items-center px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50"
+                      className="flex items-center gap-2 px-5 py-2 bg-green-700 text-white font-medium rounded hover:bg-green-800 transition-colors disabled:opacity-50"
                     >
-                      <Save className="w-4 h-4 mr-2" />
+                      <Save size={18} />
                       {updateBeneficiariesMutation.isPending ? "Saving..." : "Save Changes"}
                     </button>
                   )}
                 </div>
 
-                <div className="bg-gray-50 rounded-xl p-6">
+                <div className="p-6 bg-gray-50 rounded border border-gray-300">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        <span className="flex items-center">
-                          <Users className="w-4 h-4 mr-2" />
+                        <span className="flex items-center gap-1">
+                          <Users size={16} />
                           Total Population *
                         </span>
                       </label>
@@ -780,11 +887,11 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
                           type="number"
                           value={beneficiaries?.total_population || ""}
                           onChange={(e) => handleBeneficiariesChange("total_population", e.target.value)}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full px-4 py-2 border border-gray-400 rounded focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
                           placeholder="Enter total population"
                         />
                       ) : (
-                        <div className="text-3xl font-bold text-gray-900">
+                        <div className="text-2xl font-bold text-gray-900">
                           {beneficiaries?.total_population || "0"}
                         </div>
                       )}
@@ -799,11 +906,11 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
                           type="number"
                           value={beneficiaries?.beneficiaries_male || ""}
                           onChange={(e) => handleBeneficiariesChange("beneficiaries_male", e.target.value)}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-blue-50"
+                          className="w-full px-4 py-2 border border-gray-400 rounded focus:border-[#003087] focus:ring-1 focus:ring-[#003087] bg-blue-50"
                           readOnly
                         />
                       ) : (
-                        <div className="text-3xl font-bold text-gray-900">
+                        <div className="text-2xl font-bold text-gray-900">
                           {beneficiaries?.beneficiaries_male || "0"}
                         </div>
                       )}
@@ -818,11 +925,11 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
                           type="number"
                           value={beneficiaries?.beneficiaries_female || ""}
                           onChange={(e) => handleBeneficiariesChange("beneficiaries_female", e.target.value)}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-pink-50"
+                          className="w-full px-4 py-2 border border-gray-400 rounded focus:border-[#003087] focus:ring-1 focus:ring-[#003087] bg-pink-50"
                           readOnly
                         />
                       ) : (
-                        <div className="text-3xl font-bold text-gray-900">
+                        <div className="text-2xl font-bold text-gray-900">
                           {beneficiaries?.beneficiaries_female || "0"}
                         </div>
                       )}
@@ -837,11 +944,11 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
                           type="number"
                           value={beneficiaries?.beneficiaries_youth_15_28 || ""}
                           onChange={(e) => handleBeneficiariesChange("beneficiaries_youth_15_28", e.target.value)}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-green-50"
+                          className="w-full px-4 py-2 border border-gray-400 rounded focus:border-[#003087] focus:ring-1 focus:ring-[#003087] bg-green-50"
                           readOnly
                         />
                       ) : (
-                        <div className="text-3xl font-bold text-gray-900">
+                        <div className="text-2xl font-bold text-gray-900">
                           {beneficiaries?.beneficiaries_youth_15_28 || "0"}
                         </div>
                       )}
@@ -849,36 +956,41 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
                   </div>
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Villages Tab */}
-            {activeTab === "villages" && (
-              <div className="p-6 md:p-8">
+          {/* Villages Tab */}
+          {activeTab === "villages" && (
+            <div className="bg-white border border-gray-300 rounded shadow-sm overflow-hidden">
+              <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">Area Covered</h2>
+                  <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <Home className="w-5 h-5 text-[#003087]" />
+                    Area Covered
+                  </h2>
                   {mode === "edit" && (
                     <button
                       onClick={handleUpdateVillages}
                       disabled={updateVillagesMutation.isPending}
-                      className="flex items-center px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50"
+                      className="flex items-center gap-2 px-5 py-2 bg-green-700 text-white font-medium rounded hover:bg-green-800 transition-colors disabled:opacity-50"
                     >
-                      <Save className="w-4 h-4 mr-2" />
+                      <Save size={18} />
                       {updateVillagesMutation.isPending ? "Saving..." : "Save Changes"}
                     </button>
                   )}
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {villages.length > 0 ? (
                     villages.map((village, i) => (
-                      <div key={village.id || i} className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                          <span className="flex items-center">
-                            <Home className="w-4 h-4 mr-2" />
+                      <div key={village.id || i} className="p-6 bg-gray-50 rounded border border-gray-300">
+                        <h3 className="text-md font-semibold text-gray-800 mb-4">
+                          <span className="flex items-center gap-2">
+                            <Home size={16} />
                             Village {i + 1}
                           </span>
                         </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                               District Name
@@ -888,11 +1000,11 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
                                 type="text"
                                 value={village.district_name}
                                 onChange={(e) => handleVillageChange(i, "district_name", e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className="w-full px-3 py-2 border border-gray-400 rounded focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
                                 placeholder="Enter district name"
                               />
                             ) : (
-                              <div className="font-medium">{village.district_name}</div>
+                              <div className="font-medium text-gray-900">{village.district_name}</div>
                             )}
                           </div>
 
@@ -905,11 +1017,11 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
                                 type="text"
                                 value={village.block_name}
                                 onChange={(e) => handleVillageChange(i, "block_name", e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className="w-full px-3 py-2 border border-gray-400 rounded focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
                                 placeholder="Enter block name"
                               />
                             ) : (
-                              <div className="font-medium">{village.block_name}</div>
+                              <div className="font-medium text-gray-900">{village.block_name}</div>
                             )}
                           </div>
 
@@ -922,11 +1034,11 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
                                 type="text"
                                 value={village.gram_panchayat}
                                 onChange={(e) => handleVillageChange(i, "gram_panchayat", e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className="w-full px-3 py-2 border border-gray-400 rounded focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
                                 placeholder="Enter gram panchayat"
                               />
                             ) : (
-                              <div className="font-medium">{village.gram_panchayat}</div>
+                              <div className="font-medium text-gray-900">{village.gram_panchayat}</div>
                             )}
                           </div>
 
@@ -939,11 +1051,11 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
                                 type="text"
                                 value={village.village_name}
                                 onChange={(e) => handleVillageChange(i, "village_name", e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className="w-full px-3 py-2 border border-gray-400 rounded focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
                                 placeholder="Enter village name"
                               />
                             ) : (
-                              <div className="font-medium">{village.village_name}</div>
+                              <div className="font-medium text-gray-900">{village.village_name}</div>
                             )}
                           </div>
 
@@ -956,11 +1068,11 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
                                 type="number"
                                 value={village.census_population}
                                 onChange={(e) => handleVillageChange(i, "census_population", e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className="w-full px-3 py-2 border border-gray-400 rounded focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
                                 placeholder="Enter total population"
                               />
                             ) : (
-                              <div className="font-medium">{village.census_population}</div>
+                              <div className="font-medium text-gray-900">{village.census_population}</div>
                             )}
                           </div>
 
@@ -973,11 +1085,11 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
                                 type="number"
                                 value={village.male_population}
                                 onChange={(e) => handleVillageChange(i, "male_population", e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-blue-50"
+                                className="w-full px-3 py-2 border border-gray-400 rounded focus:border-[#003087] focus:ring-1 focus:ring-[#003087] bg-blue-50"
                                 readOnly
                               />
                             ) : (
-                              <div className="font-medium">{village.male_population}</div>
+                              <div className="font-medium text-gray-900">{village.male_population}</div>
                             )}
                           </div>
 
@@ -990,52 +1102,57 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
                                 type="number"
                                 value={village.female_population}
                                 onChange={(e) => handleVillageChange(i, "female_population", e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-pink-50"
+                                className="w-full px-3 py-2 border border-gray-400 rounded focus:border-[#003087] focus:ring-1 focus:ring-[#003087] bg-pink-50"
                                 readOnly
                               />
                             ) : (
-                              <div className="font-medium">{village.female_population}</div>
+                              <div className="font-medium text-gray-900">{village.female_population}</div>
                             )}
                           </div>
                         </div>
                       </div>
                     ))
                   ) : (
-                    <div className="text-center py-12 bg-gray-50 rounded-xl">
-                      <Home className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No villages added</h3>
+                    <div className="text-center py-12 bg-gray-50 rounded border border-gray-300">
+                      <Home className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+                      <p className="text-lg font-medium text-gray-900 mb-2">No villages added</p>
                       <p className="text-gray-600">Add villages to this work package</p>
                     </div>
                   )}
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Components Tab */}
-            {activeTab === "components" && (
-              <div className="p-6 md:p-8">
+          {/* Components Tab */}
+          {activeTab === "components" && (
+            <div className="bg-white border border-gray-300 rounded shadow-sm overflow-hidden">
+              <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">Components & Milestones</h2>
+                  <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <Package className="w-5 h-5 text-[#003087]" />
+                    Components & Milestones
+                  </h2>
                   {mode === "edit" && (
                     <button
                       onClick={handleUpdateComponents}
                       disabled={updateComponentsMutation.isPending}
-                      className="flex items-center px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50"
+                      className="flex items-center gap-2 px-5 py-2 bg-green-700 text-white font-medium rounded hover:bg-green-800 transition-colors disabled:opacity-50"
                     >
-                      <Save className="w-4 h-4 mr-2" />
+                      <Save size={18} />
                       {updateComponentsMutation.isPending ? "Saving..." : "Save Changes"}
                     </button>
                   )}
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {components.length > 0 ? (
                     components.map((component, i) => (
-                      <div key={component.id || i} className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                      <div key={component.id || i} className="p-6 bg-gray-50 rounded border border-gray-300">
+                        <h3 className="text-md font-semibold text-gray-800 mb-4">
                           Component {i + 1}
                         </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                               Description
@@ -1045,10 +1162,10 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
                                 type="text"
                                 value={component.nameofcomponent}
                                 onChange={(e) => handleComponentChange(i, "componentname", e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                className="w-full px-3 py-2 border border-gray-400 rounded focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
                               />
                             ) : (
-                              <div className="font-medium">{component.nameofcomponent}</div>
+                              <div className="font-medium text-gray-900">{component.nameofcomponent}</div>
                             )}
                           </div>
 
@@ -1061,10 +1178,10 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
                                 type="text"
                                 value={component.unitname}
                                 onChange={(e) => handleComponentChange(i, "unit", e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                className="w-full px-3 py-2 border border-gray-400 rounded focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
                               />
                             ) : (
-                              <div className="font-medium">{component.unitname}</div>
+                              <div className="font-medium text-gray-900">{component.unitname}</div>
                             )}
                           </div>
 
@@ -1077,10 +1194,10 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
                                 type="number"
                                 value={component.total_qty as string}
                                 onChange={(e) => handleComponentChange(i, "totalQty", e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                className="w-full px-3 py-2 border border-gray-400 rounded focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
                               />
                             ) : (
-                              <div className="font-medium">{component.total_qty as string}</div>
+                              <div className="font-medium text-gray-900">{component.total_qty as string}</div>
                             )}
                           </div>
 
@@ -1088,24 +1205,25 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                               Milestones
                             </label>
-                            <div className="font-medium">{component.num_of_milestones || "0"}</div>
+                            <div className="font-medium text-gray-900">{component.num_of_milestones || "0"}</div>
                           </div>
                         </div>
                       </div>
                     ))
                   ) : (
-                    <div className="text-center py-12 bg-gray-50 rounded-xl">
-                      <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No components added</h3>
+                    <div className="text-center py-12 bg-gray-50 rounded border border-gray-300">
+                      <Package className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+                      <p className="text-lg font-medium text-gray-900 mb-2">No components added</p>
                       <p className="text-gray-600">Add components to this work package</p>
                     </div>
                   )}
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
-      </div>
+      </main>
+     
     </div>
   );
 };

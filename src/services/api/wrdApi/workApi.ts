@@ -54,6 +54,19 @@ export const addComponentsAndMilestones = async (workId: number, data: any) => {
   return response.data;
 };
 
+export const addSpurs = async (workId: number, data: any) => {
+  const response = await axiosInstance.post(`${API_URL}/works/${workId}/spurs`, data);
+  return response.data;
+};
+
+// =============================
+// ✅ NEW: Get spurs by work ID
+// =============================
+export const getSpursByWorkId = async (workId: number) => {
+  const response = await axiosInstance.get(`${API_URL}/works/${workId}/spurs`);
+  return response.data.spurs || [];
+};
+
 // =============================
 // ✅ Get works by division
 // =============================
