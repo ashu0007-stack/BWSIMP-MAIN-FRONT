@@ -41,7 +41,7 @@ import {
   Beneficiaries,
   UserData,
   ValidationErrors
-} from "@/components/pages/admin/work/work";
+} from "@/components/shared/work";
 
 interface ViewWorkPageProps {
   workId: number;

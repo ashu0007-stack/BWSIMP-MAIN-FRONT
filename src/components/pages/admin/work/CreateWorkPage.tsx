@@ -48,7 +48,7 @@ import {
   SubworkComponent,
   Work,
   SpurData 
-} from "@/components/pages/admin/work/work";
+} from "@/components/shared/work";
 
 
 interface CreateWorkPageProps {

@@ -24,7 +24,7 @@ import {
   Home
 } from "lucide-react";
 import { useWorks } from "@/hooks/wrdHooks/useWorks";
-import { Work } from "@/components/pages/admin/work/work";
+import { Work } from "@/components/shared/work";
 
 interface WorkListPageProps {
   onViewWork: (workId: number) => void;
