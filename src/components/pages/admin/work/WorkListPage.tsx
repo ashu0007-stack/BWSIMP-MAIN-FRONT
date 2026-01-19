@@ -311,22 +311,22 @@ const WorkListPage: React.FC<WorkListPageProps> = ({ onViewWork, onCreateWork })
                 <table className="w-full">
                   <thead className="bg-blue-600 text-white">
                     <tr>
-                      <th className="p-4 text-left font-semibold whitespace-nowrap">
+                      <th className="p-4 text-center font-semibold whitespace-nowrap">
                         Package Details
                       </th>
-                      <th className="p-4 text-left font-semibold whitespace-nowrap">
+                      <th className="p-4 text-center font-semibold whitespace-nowrap">
                         Work Name
                       </th>
-                      <th className="p-4 text-left font-semibold whitespace-nowrap">
+                      <th className="p-4 text-center font-semibold whitespace-nowrap">
                         Division
                       </th>
-                      <th className="p-4 text-left font-semibold whitespace-nowrap">
+                      <th className="p-4 text-center font-semibold whitespace-nowrap">
                         Estimated Cost(Cr.)
                       </th>
-                      <th className="p-4 text-left font-semibold whitespace-nowrap">
+                      <th className="p-4 text-center font-semibold whitespace-nowrap">
                         Status
                       </th>
-                      <th className="p-4 text-left font-semibold whitespace-nowrap">
+                      <th className="p-4 text-center font-semibold whitespace-nowrap">
                         Actions
                       </th>
                     </tr>

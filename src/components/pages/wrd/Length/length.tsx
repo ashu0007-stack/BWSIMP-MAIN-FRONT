@@ -1305,11 +1305,11 @@ export default function LengthProgressPage({
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-            <div className="overflow-x-auto border rounded-md shadow-sm">
-              <table className="w-full border-collapse shadow-sm">
-                <thead>
-                  <tr className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+         
+           <div className="overflow-x-auto rounded-xl border mb-4">
+             <table className="w-full">
+                  <thead className="bg-blue-600 text-white">
+               <tr>
                     <th className="border p-2 whitespace-nowrap">Package No.</th>
                     <th className="border p-2">Work Name</th>
                     <th className="border p-2 whitespace-nowrap">Agency Name</th>
@@ -1349,7 +1349,7 @@ export default function LengthProgressPage({
                 </tbody>
               </table>
             </div>
-          </div>
+         
         </div>
       )}
 

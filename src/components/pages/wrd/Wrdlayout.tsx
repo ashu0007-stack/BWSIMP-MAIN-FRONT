@@ -17,6 +17,7 @@ import PimComparativeStudy from "./PIMM/pimstudy";
 import Reports from "./PIMM/report";
 import Dashboard from "./PIMM/wuApim";
 import MeetingTraining from "./PIMM/meeting";
+import ESProgressPage from "./ES/ESProgressPage";
 export default function WrdLayout() {
   const [activeTab, setActiveTab] = useState("dashboard");
  // Load active tab from localStorage
@@ -62,6 +63,8 @@ export default function WrdLayout() {
         return <UserDetails/>;
         case "Doc":
         return <DmsPage/>;
+        case "ESReport":
+          return <ESProgressPage />
         case "pimw" :
          return <Dashboard/>
       default:

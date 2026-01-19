@@ -420,7 +420,8 @@ function ContractorFormComponent({
   onEdit,
   user,
   onBackToList,
-  onViewHistory
+  onViewHistory,
+  workOptions
 }: {
   initialForm: FormData;
   onCancel: () => void;
@@ -431,6 +432,7 @@ function ContractorFormComponent({
   onBackToList?: () => void;
   onViewHistory?: () => void;
   user: any;
+  workOptions:any;
 }) {
   const [formData, setFormData] = useState<FormData>(initialForm);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -1258,10 +1260,11 @@ function ContractorFormComponent({
     );
   };
 
-  const workOptions = tendercontracts.map((work: any) => ({
-    value: work.id.toString(),
-    label: work.work_name || "Unnamed Work",
-  }));
+  // const workOptions = tendercontracts.map((work: any) => ({
+  //   value: work.id.toString(),
+  //   label: work.work_name || "Unnamed Work",
+    
+  // }));
 
   const renderInputField = (
     field: {
@@ -1632,12 +1635,12 @@ function ContractorFormComponent({
                   <table className="w-full border-collapse">
                     <thead className="bg-blue-100">
                       <tr>
-                        <th className="border border-blue-300 p-3 text-left font-semibold text-gray-700">S.N</th>
-                        <th className="border border-blue-300 p-3 text-left font-semibold text-gray-700">Particular</th>
-                        <th className="border border-blue-300 p-3 text-left font-semibold text-gray-700">Status</th>
-                        <th className="border border-blue-300 p-3 text-left font-semibold text-gray-700">Issue Date</th>
-                        <th className="border border-blue-300 p-3 text-left font-semibold text-gray-700">Valid up to</th>
-                        <th className="border border-blue-300 p-3 text-left font-semibold text-gray-700">Document</th>
+                        <th className="border border-blue-300 p-3 text-center font-semibold text-gray-700">S.N</th>
+                        <th className="border border-blue-300 p-3 text-center font-semibold text-gray-700">Particular</th>
+                        <th className="border border-blue-300 p-3 text-center font-semibold text-gray-700">Status</th>
+                        <th className="border border-blue-300 p-3 text-center font-semibold text-gray-700">Issue Date</th>
+                        <th className="border border-blue-300 p-3 text-center font-semibold text-gray-700">Valid up to</th>
+                        <th className="border border-blue-300 p-3 text-center font-semibold text-gray-700">Document</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2838,9 +2841,12 @@ export default function ContractorForm() {
   const user = storedProfile ? JSON.parse(storedProfile) : null;
   const [showHistory, setShowHistory] = useState(false);
   const { data: contracts = [] } = useContracts();
+  const { data: allWorks = [] } = useWorkTender();
   const createContractMutation = useCreateContract();
   const updateContractMutation = useUpdateContract(); // ✅ Added update hook
   const { data: contractDetails, isLoading: isContractLoading, refetch } = useContractById(selectedContractId);
+
+  
 
     const filteredContracts = useMemo(() => {
     if (!contracts || contracts.length === 0) return [];
@@ -2878,6 +2884,30 @@ export default function ContractorForm() {
     console.log("ℹ️ No user division_id found, showing all contracts");
     return contracts;
   }, [contracts, user?.division_id, user?.circle_id, user?.zone_id]);
+
+const filteredWorks  = useMemo(() => {
+    if (!allWorks || allWorks.length === 0) return [];
+    
+    if (user?.division_id) {
+      return allWorks.filter((work: any) => {
+        // Division-based filtering
+        return work.division_id === user.division_id;
+      });
+    } else if (user?.circle_id) {
+      return allWorks.filter((work: any) => {
+        // Circle-based filtering
+        return work.circle_id === user.circle_id;
+      });
+    } else if (user?.zone_id) {
+      return allWorks.filter((work: any) => {
+        // Zone-based filtering
+        return work.zone_id === user.zone_id;
+      });
+    }
+    
+    return allWorks;
+  }, [allWorks, user?.division_id, user?.circle_id, user?.zone_id]);
+
   useEffect(() => {
     if (contractDetails && selectedContractId) {
       console.log("📋 Loaded contract details:", contractDetails);
@@ -3161,6 +3191,11 @@ export default function ContractorForm() {
             onBackToList={handleBackToList}
             onViewHistory={handleViewHistory}
             user={user}
+            workOptions={filteredWorks.map((work: any) => ({
+             value: work.id.toString(),
+               label: work.work_name || "Unnamed Work",
+                       }))}
+            
           />
         )}
       </div>

@@ -1,5 +1,4 @@
-// ✅ NEW: Keep only necessary directives
-/* eslint-disable @next/next/no-img-element */
+
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useDivisions } from "@/hooks/location/useDivision";
 import { useWorksByDivision } from "@/hooks/wrdHooks/useWorks";
@@ -8,15 +7,17 @@ import { TenderLog } from "@/services/api/wrdApi/tenderApi";
 import {
   ChevronDown, Upload, FileText, Calendar, Building,
   DollarSign, Clock, User, BookOpen, Award, FileCheck,
-  MessageSquare, AlertCircle, Eye,
+  MessageSquare, AlertCircle, Eye, Edit, Trash2,
   Plus, X, Filter, Download, Search, ChevronLeft,
   ChevronRight, ExternalLink, History, CheckCircle,
   FolderOpen, FileEdit, Save, Layers, File, Briefcase, Hash, Clock as ClockIcon,
   Lock, RefreshCw, ZoomIn, Maximize2, Minimize2,
-  IndianRupee, ChevronRight as ChevronRightIcon
+  IndianRupee
 } from "lucide-react";
-import { FaRupeeSign } from "react-icons/fa";
 
+/* -------------------------------------------------------------------------- */
+/*                                1. TypeDefs                                 */
+/* -------------------------------------------------------------------------- */
 interface SelectProps {
   options: Array<{ value: string | number; label: string }>;
   value: string | number;
@@ -30,18 +31,18 @@ interface Tender {
   id: number;
   division_name: string;
   work_name: string;
-  tenderRefNo: string;
-  agreement_no: string;
-  tenderAuthority: string;
-  emdfee: string;
+  tenderRefNo: string;  
+  agreement_no: string; 
+  tenderAuthority: string; 
+  emdfee: string; 
   bid_security: string | any;
-  tenderValidity: string;
-  newspaperdetails?: string;
-  nitfile?: string;
-  corrigendumUpload?: string;
-  financialEvaluation?: string;
-  loaUpload?: string;
-  contractUpload?: string;
+  tenderValidity: string; 
+  newspaperdetails?: string; 
+  nitfile?: string; 
+  corrigendumUpload?: string; 
+  financialEvaluation?: string; 
+  loaUpload?: string; 
+  contractUpload?: string; 
   remark?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -51,12 +52,12 @@ interface Tender {
   [key: string]: any;
 }
 
+
 interface UserData {
   username: string;
   email: string;
   dept_id: number;
   role: string;
-  role_id?: string;
   department?: string;
   designation?: string;
   levelname?: string;
@@ -72,25 +73,34 @@ interface ValidationErrors {
 
 type PageMode = 'list' | 'create' | 'view' | 'edit';
 
+
+
+
+/* -------------------------------------------------------------------------- */
+/*                        2. Modern UI Base Components                        */
+/* -------------------------------------------------------------------------- */
+
 const CustomSelect: React.FC<SelectProps> = ({ options, value, onChange, placeholder, disabled = false, error }) => {
   const [isOpen, setIsOpen] = useState(false);
   const selectedOption = options.find(o => o.value === value);
   const user = JSON.parse(sessionStorage.getItem('userdetail') || '{}');
   const userDivisionId = user?.division_id;
-  const filteredOptions = userDivisionId
+  console.log("User Details from sessionStorage:", userDivisionId);
+   const filteredOptions = userDivisionId 
     ? options.filter(option => option.value === userDivisionId)
-    : options;
+    : options; 
   return (
     <div className="relative">
       <button
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`w-full px-4 py-3.5 border-2 rounded-xl flex items-center justify-between transition-all duration-200 ${disabled
-          ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-70'
-          : error
-            ? 'border-red-500 hover:border-red-600 bg-white'
-            : 'border-gray-200 hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white'
-          }`}
+        className={`w-full px-4 py-3.5 border-2 rounded-xl flex items-center justify-between transition-all duration-200 ${
+          disabled
+            ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-70'
+            : error
+              ? 'border-red-500 hover:border-red-600 bg-white'
+              : 'border-gray-200 hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white'
+        }`}
       >
         <span className={`${!selectedOption?.value ? 'text-gray-400' : 'text-gray-900'} font-medium`}>
           {selectedOption?.label || placeholder || "Select an option"}
@@ -112,10 +122,11 @@ const CustomSelect: React.FC<SelectProps> = ({ options, value, onChange, placeho
               key={option.value}
               type="button"
               onClick={() => { onChange(option.value); setIsOpen(false); }}
-              className={`w-full px-4 py-3.5 text-left transition-colors duration-150 ${option.value === value
-                ? 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border-l-4 border-blue-500 font-semibold'
-                : 'text-gray-700 hover:bg-gray-50'
-                }`}
+              className={`w-full px-4 py-3.5 text-left transition-colors duration-150 ${
+                option.value === value
+                  ? 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border-l-4 border-blue-500 font-semibold'
+                  : 'text-gray-700 hover:bg-gray-50'
+              }`}
             >
               {option.label}
             </button>
@@ -140,46 +151,8 @@ const ModernInput: React.FC<{
   disabled?: boolean;
   icon?: React.ReactNode;
   onClear?: () => void;
-  isCurrency?: boolean; // ✅ New prop for currency formatting
-}> = ({ label, name, value, onChange, onBlur, placeholder, error, type = "text", required = false, readOnly = false, disabled = false, icon, onClear, isCurrency = false }) => {
+}> = ({ label, name, value, onChange, onBlur, placeholder, error, type = "text", required = false, readOnly = false, disabled = false, icon, onClear }) => {
   const isLocked = disabled || readOnly;
-
-  // ✅ Currency formatting function
-  const formatCurrencyDisplay = (val: string) => {
-    if (!val) return '';
-    // Remove commas and format with Indian numbering system
-    const numStr = val.replace(/,/g, '');
-    if (!/^\d*\.?\d*$/.test(numStr)) return val;
-
-    const num = parseFloat(numStr);
-    if (isNaN(num)) return val;
-
-    return new Intl.NumberFormat('en-IN', {
-      maximumFractionDigits: 2,
-      minimumFractionDigits: 0
-    }).format(num);
-  };
-
-  // ✅ Handle currency input change
-  const handleCurrencyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawValue = e.target.value.replace(/,/g, '');
-
-    // Allow only numbers and decimal point
-    if (rawValue === '' || /^\d*\.?\d*$/.test(rawValue)) {
-      // Create synthetic event with raw value
-      const syntheticEvent = {
-        ...e,
-        target: {
-          ...e.target,
-          value: rawValue
-        }
-      };
-      onChange(syntheticEvent);
-    }
-  };
-
-  // ✅ Get display value
-  const displayValue = isCurrency ? formatCurrencyDisplay(value) : value;
 
   return (
     <div className="space-y-2">
@@ -203,18 +176,19 @@ const ModernInput: React.FC<{
         <input
           type={type}
           name={name}
-          value={displayValue} // ✅ Use formatted display value
-          onChange={isCurrency ? handleCurrencyChange : onChange} // ✅ Use custom handler for currency
+          value={value}
+          onChange={onChange}
           onBlur={onBlur}
           placeholder={placeholder}
           readOnly={readOnly}
           disabled={disabled}
-          className={`w-full px-4 py-3.5 border-2 rounded-xl font-medium transition-all duration-200 ${error
-            ? 'border-red-500 focus:border-red-600 focus:ring-2 focus:ring-red-100'
-            : isLocked
-              ? 'bg-gray-100 border-gray-300 text-gray-700 cursor-not-allowed'
-              : 'border-gray-200 hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white'
-            }`}
+          className={`w-full px-4 py-3.5 border-2 rounded-xl font-medium transition-all duration-200 ${
+            error
+              ? 'border-red-500 focus:border-red-600 focus:ring-2 focus:ring-red-100'
+              : isLocked
+                ? 'bg-gray-100 border-gray-300 text-gray-700 cursor-not-allowed'
+                : 'border-gray-200 hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white'
+          }`}
         />
         {isLocked && !onClear && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -230,13 +204,6 @@ const ModernInput: React.FC<{
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
           <span>{error}</span>
         </div>
-      )}
-      {isCurrency && !error && (
-        <p className="text-xs text-gray-500">
-          • Enter amount with commas (e.g., 2,87,00,000)
-          <br />
-          • Will be saved as plain number (28700000)
-        </p>
       )}
     </div>
   );
@@ -282,12 +249,13 @@ const ModernFileUpload: React.FC<{
         )}
       </div>
 
-      <div className={`p-4 border-2 rounded-xl transition-all duration-200 ${disabled
-        ? 'bg-gray-100 border-gray-300'
-        : error
-          ? 'border-red-500 bg-red-50'
-          : 'border-gray-200 hover:border-blue-400 bg-white'
-        } ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+      <div className={`p-4 border-2 rounded-xl transition-all duration-200 ${
+        disabled
+          ? 'bg-gray-100 border-gray-300'
+          : error
+            ? 'border-red-500 bg-red-50'
+            : 'border-gray-200 hover:border-blue-400 bg-white'
+      } ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
         <label className={disabled ? 'cursor-not-allowed' : 'cursor-pointer'}>
           <div className="flex flex-col items-center justify-center gap-3">
             <div className={`p-3 rounded-full ${disabled ? 'bg-gray-200' : error ? 'bg-red-100' : 'bg-blue-100'}`}>
@@ -301,10 +269,11 @@ const ModernFileUpload: React.FC<{
                 {fileName || existingFile || "PDF, DOC, DOCX, JPEG, PNG (Max 5MB)"}
               </p>
             </div>
-            <span className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${disabled ? 'bg-gray-200 text-gray-500'
-              : error ? 'bg-red-100 text-red-700 hover:bg-red-200'
+            <span className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              disabled ? 'bg-gray-200 text-gray-500'
+                : error ? 'bg-red-100 text-red-700 hover:bg-red-200'
                 : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-              }`}>
+            }`}>
               Choose File
             </span>
           </div>
@@ -351,6 +320,10 @@ const ModernFileUpload: React.FC<{
     </div>
   );
 };
+
+/* -------------------------------------------------------------------------- */
+/*                        3. ImageViewer & Log Modal                          */
+/* -------------------------------------------------------------------------- */
 
 interface ImageViewerModalProps {
   images: Array<{ src: string; alt: string }>;
@@ -478,8 +451,8 @@ const ImageViewerModal: React.FC<ImageViewerModalProps> = ({ images, initialInde
                   key={index}
                   onClick={() => { setCurrentIndex(index); setIsLoading(true); }}
                   className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 ${currentIndex === index
-                    ? 'border-blue-500 scale-110 shadow-lg'
-                    : 'border-gray-600 hover:border-gray-400'
+                      ? 'border-blue-500 scale-110 shadow-lg'
+                      : 'border-gray-600 hover:border-gray-400'
                     }`}
                 >
                   <img
@@ -539,19 +512,19 @@ const LogModal: React.FC<LogModalProps> = ({ tenderId, onClose, isOpen }) => {
   const getLogSnapshot = (data: any): object => {
     let parsedData = data;
     if (typeof data === 'string') {
-      try {
-        parsedData = JSON.parse(data);
-      } catch {
+      try { 
+        parsedData = JSON.parse(data); 
+      } catch { 
         console.error("Error parsing log data:", data);
-        return { error: "Invalid JSON format in log data." };
+        return { error: "Invalid JSON format in log data." }; 
       }
     }
-
+    
     const displayData: any = {};
-
+    
     if (parsedData.action_type) displayData['Action Type'] = parsedData.action_type;
     if (parsedData.status) displayData['Status'] = parsedData.status;
-
+    
     const basicFields = [
       'division_id', 'work_id', 'tender_ref_no', 'authority',
       'emd_fee', 'bid_security', 'validity', 'nameofpiu',
@@ -560,7 +533,7 @@ const LogModal: React.FC<LogModalProps> = ({ tenderId, onClose, isOpen }) => {
       'bidReceiptDate', 'techBidopeningDate', 'techBidevaluationDate',
       'financial_eval_date', 'loa_date'
     ];
-
+    
     basicFields.forEach(field => {
       if (parsedData[field]) {
         const formattedKey = field.replace(/_/g, ' ')
@@ -570,7 +543,9 @@ const LogModal: React.FC<LogModalProps> = ({ tenderId, onClose, isOpen }) => {
         displayData[formattedKey] = parsedData[field];
       }
     });
+    
 
+    
     if (parsedData.files && typeof parsedData.files === 'object') {
       Object.entries(parsedData.files).forEach(([key, value]) => {
         if (value) {
@@ -582,11 +557,11 @@ const LogModal: React.FC<LogModalProps> = ({ tenderId, onClose, isOpen }) => {
         }
       });
     }
-
+    
     if (parsedData._isUpdate && parsedData.original_data) {
       displayData['Update Type'] = 'Field Update';
     }
-
+    
     return displayData;
   };
 
@@ -817,7 +792,7 @@ const LogModal: React.FC<LogModalProps> = ({ tenderId, onClose, isOpen }) => {
             {logs && logs.length > 0 ? (
               <div className="space-y-6">
                 {logs.map((log, index) => {
-                  const { color, bg, border, label } = getActionStyle(log.action_type);
+                  const { color, bg, border, icon, label } = getActionStyle(log.action_type);
                   const isLatest = index === 0;
                   return (
                     <div key={log.id} className={`p-5 rounded-xl border-2 ${border} ${bg} shadow-sm`}>
@@ -888,6 +863,10 @@ const LogModal: React.FC<LogModalProps> = ({ tenderId, onClose, isOpen }) => {
   );
 };
 
+/* -------------------------------------------------------------------------- */
+/*                          5. Tender Detail View                             */
+/* -------------------------------------------------------------------------- */
+
 const TenderDetailView: React.FC<{
   tender: Tender;
   onBack: () => void;
@@ -915,24 +894,25 @@ const TenderDetailView: React.FC<{
     }
   };
 
-  const isImageFile = (filename: string | undefined): boolean => {
-    if (!filename) return false;
-    const exts = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg'];
-    return exts.some(ext => filename.toLowerCase().endsWith(ext));
-  };
+const isImageFile = (filename: string | undefined): boolean => {
+  if (!filename) return false;
+  const exts = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg'];
+  return exts.some(ext => filename.toLowerCase().endsWith(ext));
+};
+
 
   const infoCards = [
-    { icon: <Building className="w-5 h-5" />, label: "Division Name", value: tender.division_name, color: "from-blue-500 to-blue-600" },
-    { icon: <Briefcase className="w-5 h-5" />, label: "Name of Work", value: tender.work_name, color: "from-purple-500 to-purple-600" },
-    { icon: <Hash className="w-5 h-5" />, label: "Tender Reference No", value: tender.tenderRefNo, color: "from-green-500 to-green-600" },
+    { icon: <Building className="w-5 h-5" />, label: "Division", value: tender.division_name, color: "from-blue-500 to-blue-600" },
+    { icon: <Briefcase className="w-5 h-5" />, label: "Work Name", value: tender.work_name, color: "from-purple-500 to-purple-600" },
+    { icon: <Hash className="w-5 h-5" />, label: "Tender Ref No", value: tender.tenderRefNo, color: "from-green-500 to-green-600" },
     { icon: <FileCheck className="w-5 h-5" />, label: "Agreement No", value: tender.agreement_no || 'N/A', color: "from-orange-500 to-orange-600" },
-    { icon: <User className="w-5 h-5" />, label: "Officer Inviting Bid", value: tender.tenderAuthority, color: "from-indigo-500 to-indigo-600" },
-    { icon: <IndianRupee className="w-5 h-5" />, label: "Work Cost amount", value: `₹${formatCurrency(tender.emdfee)}`, color: "from-emerald-500 to-emerald-600" },
-    { icon: <IndianRupee className="w-5 h-5" />, label: "Bid Security amount", value: `₹${formatCurrency(tender.bid_security)}`, color: "from-rose-500 to-rose-600" },
-    { icon: <ClockIcon className="w-5 h-5" />, label: "Validity (in Days)", value: tender.tenderValidity, color: "from-cyan-500 to-cyan-600" }
+    { icon: <User className="w-5 h-5" />, label: "Tender Authority", value: tender.tenderAuthority, color: "from-indigo-500 to-indigo-600" },
+    { icon: <DollarSign className="w-5 h-5" />, label: "Work Cost", value: `₹${formatCurrency(tender.emdfee)}`, color: "from-emerald-500 to-emerald-600" },
+    { icon: <DollarSign className="w-5 h-5" />, label: "Bid Security", value: `₹${formatCurrency(tender.bid_security)}`, color: "from-rose-500 to-rose-600" },
+    { icon: <ClockIcon className="w-5 h-5" />, label: "Validity (Days)", value: tender.tenderValidity, color: "from-cyan-500 to-cyan-600" }
   ];
 
-  const documentCards = [
+const documentCards = [
     {
       label: "NIT document",
       file: tender.nitfile || '',
@@ -1028,11 +1008,18 @@ const TenderDetailView: React.FC<{
                     <h1 className="text-2xl lg:text-3xl font-bold text-white">Tender Details</h1>
                     <div className="flex flex-wrap items-center gap-4 mt-2">
                       <p className="text-blue-100">Reference: {tender.tenderRefNo}</p>
+                      <span className={`px-3 py-1 text-sm font-semibold rounded-full ${
+                        tender.status === 'finalized' ? 'bg-green-100 text-green-800'
+                        : tender.status === 'submitted' ? 'bg-blue-100 text-blue-800'
+                        : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {tender.status}
+                      </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-3">
+                  <div className="flex flex-wrap gap-3">
                   <button
                     onClick={onBack}
                      className="bg-cyan-500 text-white px-4 py-2 rounded hover:bg-blue-600"
@@ -1064,7 +1051,7 @@ const TenderDetailView: React.FC<{
                         ) : null}
                       </div>
                       <p className="text-sm text-gray-600 mb-1">{card.label}</p>
-                      <p className="font-bold text-gray-900 text-lg">{card.value}</p>
+                      <p className="font-bold text-gray-900 text-lg truncate">{card.value}</p>
                     </div>
                   ))}
                 </div>
@@ -1087,29 +1074,32 @@ const TenderDetailView: React.FC<{
                       Image Documents ({imageDocuments.length})
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                      {imageDocuments.map((doc, index) => {
-                        if (!doc.file) return null;
+                 
 
-                        return (
-                          <div
-                            key={index}
-                            className={`${doc.color} border-2 rounded-xl p-5 hover:shadow-md transition-all duration-300 hover:scale-[1.02] group cursor-pointer`}
-                            onClick={() => handleImageClick(doc.file!, doc.label)}
-                          >
-                            <div className="flex items-center gap-3 mb-3">
-                              <div className="p-2 bg-white/50 rounded-lg">{doc.icon}</div>
-                              <span className="font-semibold">{doc.label}</span>
-                            </div>
-
-                            <div className="relative aspect-square rounded-lg overflow-hidden border-2 border-gray-200 mb-3">
-                              <img
-                                src={getFileUrl(doc.file!)}
-                                alt={doc.label}
-                                className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.style.display = 'none';
-                                  target.parentElement!.innerHTML = `
+{imageDocuments.map((doc, index) => {
+  // Ensure file is defined before rendering
+  if (!doc.file) return null;
+  
+  return (
+    <div
+      key={index}
+      className={`${doc.color} border-2 rounded-xl p-5 hover:shadow-md transition-all duration-300 hover:scale-[1.02] group cursor-pointer`}
+      onClick={() => handleImageClick(doc.file!, doc.label)}
+    >
+      <div className="flex items-center gap-3 mb-3">
+        <div className="p-2 bg-white/50 rounded-lg">{doc.icon}</div>
+        <span className="font-semibold">{doc.label}</span>
+      </div>
+      
+      <div className="relative aspect-square rounded-lg overflow-hidden border-2 border-gray-200 mb-3">
+        <img
+          src={getFileUrl(doc.file!)}
+          alt={doc.label}
+          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.style.display = 'none';
+            target.parentElement!.innerHTML = `
               <div class="w-full h-full flex flex-col items-center justify-center bg-gray-100">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -1117,22 +1107,22 @@ const TenderDetailView: React.FC<{
                 <span class="text-gray-500 text-sm">Preview not available</span>
               </div>
             `;
-                                }}
-                              />
-                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                                <ZoomIn className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                              </div>
-                            </div>
-
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm truncate text-gray-600">{doc.file}</span>
-                              <span className="text-xs px-2 py-1 bg-blue-100 text-blue-600 rounded-full">
-                                Click to view
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
+          }}
+        />
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+          <ZoomIn className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+        </div>
+      </div>
+      
+      <div className="flex items-center justify-between">
+        <span className="text-sm truncate text-gray-600">{doc.file}</span>
+        <span className="text-xs px-2 py-1 bg-blue-100 text-blue-600 rounded-full">
+          Click to view
+        </span>
+      </div>
+    </div>
+  );
+})}
                     </div>
                   </div>
                 )}
@@ -1181,6 +1171,13 @@ const TenderDetailView: React.FC<{
 
               {tender.remark && (
                 <section className="space-y-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-100 text-purple-600 rounded-lg">
+                      <MessageSquare className="w-5 h-5" />
+                    </div>
+                    <h2 className="text-xl font-bold text-gray-800">Remarks</h2>
+                  </div>
+
                   <div className="bg-gradient-to-br from-purple-50 to-white border-2 border-purple-100 rounded-xl p-6">
                     <p className="text-gray-700 leading-relaxed">{tender.remark}</p>
                   </div>
@@ -1228,6 +1225,10 @@ const TenderDetailView: React.FC<{
   );
 };
 
+/* -------------------------------------------------------------------------- */
+/*              6. Tender Form (Enhanced Locking & Mapping Logic)             */
+/* -------------------------------------------------------------------------- */
+
 interface TenderFormProps {
   initialData?: any;
   onSubmit: (data: any, status: 'draft' | 'finalized' | 'draft_update') => void | Promise<void>;
@@ -1269,13 +1270,12 @@ const initialToFormMap: Record<string, string[]> = {
   tech_bid_eva_date: ['techBidevaluationDate'],
   financial_eval_date: ['financial_eval_date'],
   loa_date: ['loa_date'],
-  contract_date: ['contract_date']
 };
 
 function computePrefilledFromInitial(initial: any): Set<string> {
   const set = new Set<string>();
   if (!initial) return set;
-
+  
   Object.entries(initialToFormMap).forEach(([formKey, initialKeys]) => {
     for (const key of initialKeys) {
       const v = initial?.[key];
@@ -1288,13 +1288,14 @@ function computePrefilledFromInitial(initial: any): Set<string> {
       }
     }
   });
-
+  
+  // Also check for file existence
   const fileFields = [
     'newspaper_file', 'nit_file', 'sale_file', 'pre_bid_file',
     'corrigendum_file', 'bids_file', 'tech_open_file', 'tech_eval_file',
     'financial_eval_file', 'loa_file', 'contract_file'
   ];
-
+  
   fileFields.forEach(field => {
     const existingField = `existing_${field}`;
     if (initial?.[existingField]) {
@@ -1305,10 +1306,9 @@ function computePrefilledFromInitial(initial: any): Set<string> {
       }
     }
   });
-
+  
   return set;
 }
-
 const TenderForm: React.FC<TenderFormProps> = ({
   initialData,
   onSubmit,
@@ -1319,211 +1319,73 @@ const TenderForm: React.FC<TenderFormProps> = ({
   const { data: divisions, isLoading: divisionsLoading } = useDivisions();
   const [selectedDivision, setSelectedDivision] = useState<string | number>("");
   const { data: works, isLoading: worksLoading } = useWorksByDivision(selectedDivision);
-   const [formData, setFormData] = useState<any>(() => getInitialFormData());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [touched, setTouched] = useState<Set<string>>(new Set());
   const getFileUrl = useFileUrl();
-  const isDraftStatus = initialData?.status === 'draft';
-  const isFinalizedStatus = initialData?.status === 'finalized';
-  const isDraftContinuation = isEditing && isDraftStatus;
+    
   const [user, setUser] = useState<UserData | null>(null);
   const [userLoading, setUserLoading] = useState(true);
 
-  // Step-by-step workflow states
-  const [currentStep, setCurrentStep] = useState<number>(() => {
-    if (initialData) {
-      const steps = [
-        'nit_file',
-        'newspaper_file',
-        'sale_file',
-        'pre_bid_file',
-        'corrigendum_file',
-        'bids_file',
-        'tech_open_file',
-        'tech_eval_file',
-        'financial_eval_file',
-        'loa_file',
-        'contract_file'
-      ];
+    useEffect(() => {
+    const getUserData = () => {
+      try {
+        setUserLoading(true);
+        
+        if (typeof window !== "undefined") {
+          const userDetails = sessionStorage.getItem("userdetail");
 
-      for (let i = steps.length - 1; i >= 0; i--) {
-        const field = steps[i];
-        const existingField = `existing_${field}`;
-        if (initialData[field] || initialData[existingField]) {
-          return i + 1;
+          if (userDetails) {
+            try {
+              const parsedData = JSON.parse(userDetails);
+              const userData: UserData = {
+                username: parsedData.full_name || "Unknown User",
+                email: parsedData.email || "unknown@example.com",
+                dept_id: parsedData.department_id || 1,
+                role: parsedData.role_name || "user",
+                department: parsedData.department_name,
+                designation: parsedData.designation_name,
+                levelname: parsedData.level_name,
+                levelid: parsedData.user_level_id,
+                zone_id: parsedData.zone_id,
+                circle_id: parsedData.circle_id,
+                division_id: parsedData.division_id
+              };
+
+              setUser(userData);
+              
+              // Auto-select user's division if available
+              if (userData.division_id && !formData.division_id && !selectedDivision) {
+                console.log("Auto-selecting user's division:", userData.division_id);
+                setSelectedDivision(userData.division_id);
+                setFormData((prev: any) => ({ 
+                  ...prev, 
+                  division_id: userData.division_id!.toString() 
+                }));
+              }
+            } catch (parseError) {
+              console.error("Error parsing user data:", parseError);
+            }
+          }
         }
+      } catch (error) {
+        console.error("Error loading user data:", error);
+      } finally {
+        setUserLoading(false);
       }
-    }
-    return 0;
-  });
+    };
 
-  const stepConfig = useMemo(() => [
-    {
-      name: 'NIT Document',
-      fields: ['nit_date', 'nit_time', 'nit_file', 'existing_nit_file'],
-      requiredForNext: ['nit_file', 'existing_nit_file'],
-      icon: <FileText className="w-4 h-4" />,
-      description: 'Upload Notice Inviting Tender (NIT) document'
-    },
-    {
-      name: 'Newspaper Publication',
-      fields: ['newsdate', 'newsdate_time', 'newspaper_file', 'existing_newspaper_file'],
-      requiredForNext: ['newspaper_file', 'existing_newspaper_file'],
-      icon: <FileText className="w-4 h-4" />,
-      description: 'Upload newspaper publication document'
-    },
-    {
-      name: 'Sale of Bidding Document',
-      fields: ['sale_start_date', 'sale_start_time', 'sale_file', 'existing_sale_file'],
-      requiredForNext: ['sale_file', 'existing_sale_file'],
-      icon: <BookOpen className="w-4 h-4" />,
-      description: 'Upload sale of bidding document'
-    },
-    {
-      name: 'Pre-Bid Meeting',
-      fields: ['pre_bid_date', 'pre_bid_time', 'pre_bid_file', 'existing_pre_bid_file'],
-      requiredForNext: ['pre_bid_file', 'existing_pre_bid_file'],
-      icon: <MessageSquare className="w-4 h-4" />,
-      description: 'Upload pre-bid meeting document'
-    },
-    {
-      name: 'Amendment/Corrigendum',
-      fields: ['corrigendum_date', 'corrigendum_time', 'corrigendum_file', 'existing_corrigendum_file'],
-      requiredForNext: ['corrigendum_file', 'existing_corrigendum_file'],
-      icon: <FileCheck className="w-4 h-4" />,
-      description: 'Upload amendment/corrigendum document'
-    },
-    {
-      name: 'Last Date for Receipt of Bids',
-      fields: ['bid_receipt_date', 'bid_receipt_time', 'bids_file', 'existing_bids_file'],
-      requiredForNext: ['bids_file', 'existing_bids_file'],
-      icon: <Clock className="w-4 h-4" />,
-      description: 'Upload last date for receipt of bids document'
-    },
-    {
-      name: 'Technical Bids Opening',
-      fields: ['tech_bid_ope_date', 'tech_bid_ope_time', 'tech_open_file', 'existing_tech_open_file'],
-      requiredForNext: ['tech_open_file', 'existing_tech_open_file'],
-      icon: <Award className="w-4 h-4" />,
-      description: 'Upload technical bids opening document'
-    },
-    {
-      name: 'Technical Bid Evaluation',
-      fields: ['tech_bid_eva_date', 'tech_bid_eva_time', 'tech_eval_file', 'existing_tech_eval_file'],
-      requiredForNext: ['tech_eval_file', 'existing_tech_eval_file'],
-      icon: <Award className="w-4 h-4" />,
-      description: 'Upload technical bid evaluation document'
-    },
-    {
-      name: 'Financial Bid Evaluation',
-      fields: ['financial_eval_date', 'financial_eval_time', 'financial_eval_file', 'existing_financial_eval_file'],
-      requiredForNext: ['financial_eval_file', 'existing_financial_eval_file'],
-      icon: <DollarSign className="w-4 h-4" />,
-      description: 'Upload financial bid evaluation document'
-    },
-    {
-      name: 'Letter of Award (LOA)',
-      fields: ['loa_date', 'loa_time', 'loa_file', 'existing_loa_file'],
-      requiredForNext: ['loa_file', 'existing_loa_file'],
-      icon: <FileText className="w-4 h-4" />,
-      description: 'Upload Letter of Award document'
-    },
-    {
-      name: 'Signed Agreement',
-      fields: ['contract_date', 'contract_file', 'existing_contract_file'],
-      requiredForNext: ['contract_file', 'existing_contract_file'],
-      icon: <FileCheck className="w-4 h-4" />,
-      description: 'Upload signed agreement document'
-    }
-  ], [ ]);
+    getUserData();
+  }, []);
 
-  useEffect(() => {
-    if (initialData && !isFinalizedStatus) {
-      let highestCompletedStep = 0;
+  
 
-      stepConfig.forEach((step, index) => {
-        const isCompleted = step.requiredForNext.some(field => {
-          const fileField = field.includes('_file') ? field : `${field}_file`;
-          const existingField = `existing_${fileField}`;
-          return initialData[fileField] || initialData[existingField];
-        });
-
-        if (isCompleted) {
-          highestCompletedStep = index + 1;
-        }
-      });
-
-      setCurrentStep(Math.min(highestCompletedStep, stepConfig.length - 1));
-    }
-  }, [initialData, isFinalizedStatus, stepConfig]);
-
-  const isStepCompleted = (stepIndex: number): boolean => {
-    if (stepIndex > currentStep) return false;
-
-    const step = stepConfig[stepIndex];
-    return step.requiredForNext.some(field => {
-      const isNewFile = formData[field];
-      const existingField = `existing_${field}`;
-      const isExistingFile = formData[existingField];
-
-      return isNewFile || isExistingFile;
-    });
-  };
-
-  const isCurrentStepComplete = (): boolean => {
-    const step = stepConfig[currentStep];
-    return step.requiredForNext.some(field => {
-      const isNewFile = formData[field];
-      const existingField = `existing_${field}`;
-      const isExistingFile = formData[existingField];
-
-      return isNewFile || isExistingFile;
-    });
-  };
-
-  const handleNextStep = () => {
-    if (isCurrentStepComplete() && currentStep < stepConfig.length - 1) {
-      setCurrentStep(prev => prev + 1);
-    }
-  };
-
-  const handlePrevStep = () => {
-    if (currentStep > 0) {
-      setCurrentStep(prev => prev - 1);
-    }
-  };
-
-  const areAllStepsComplete = (): boolean => {
-    return stepConfig.every((step, index) => isStepCompleted(index));
-  };
-
-  const isFieldEnabledByStep = (fieldName: string): boolean => {
-    if (isFinalizedStatus && isEditing) return false;
-
-    const basicFields = [
-      'division_id', 'work_id', 'tender_ref_no', 'authority',
-      'work_cost', 'bid_security', 'validity', 'agreement_number',
-      'remark'
-    ];
-
-    if (basicFields.includes(fieldName)) {
-      return true;
-    }
-
-    for (let i = 0; i < stepConfig.length; i++) {
-      if (stepConfig[i].fields.includes(fieldName)) {
-        return i <= currentStep;
-      }
-    }
-
-    return true;
-  };
-
-
+  const isDraftStatus = initialData?.status === 'draft';
+  const isFinalizedStatus = initialData?.status === 'finalized';
+  const isDraftContinuation = isEditing && isDraftStatus;
 
   const [lockOnDraft, setLockOnDraft] = useState<boolean>(false);
-  const [previouslyFilledFields, setPreviouslyFilledFields] = useState<Set<string>>(() =>
+  const [previouslyFilledFields, setPreviouslyFilledFields] = useState<Set<string>>(() => 
     computePrefilledFromInitial(initialData || {})
   );
 
@@ -1536,21 +1398,21 @@ const TenderForm: React.FC<TenderFormProps> = ({
         return updated;
       });
     }
-  }, [lockOnDraft, formData]);
+  }, [lockOnDraft]);
 
- const fileSections = useMemo(() => [
-  { label: "Notice Inviting Tender (NIT)", dateField: "nit_date", timeField: "nit_time", fileField: "nit_file", existingFileField: "existing_nit_file", icon: <FileText className="w-4 h-4" />, required: false, showTime: false },
-  { label: "Published in Newspaper", dateField: "newsdate", timeField: "newsdate_time", fileField: "newspaper_file", existingFileField: "existing_newspaper_file", icon: <FileText className="w-4 h-4" />, required: false, showTime: false },
-  { label: "Start of Sale of Bidding Document", dateField: "sale_start_date", timeField: "sale_start_time", fileField: "sale_file", existingFileField: "existing_sale_file", icon: <BookOpen className="w-4 h-4" />, required: false, showTime: true },
-  { label: "Pre-Bid Meeting", dateField: "pre_bid_date", timeField: "pre_bid_time", fileField: "pre_bid_file", existingFileField: "existing_pre_bid_file", icon: <MessageSquare className="w-4 h-4" />, required: false, showTime: true },
-  { label: "Amendment / Corrigendum", dateField: "corrigendum_date", timeField: "corrigendum_time", fileField: "corrigendum_file", existingFileField: "existing_corrigendum_file", icon: <FileCheck className="w-4 h-4" />, required: false, showTime: false },
-  { label: "Last Date for Receipt of Bids", dateField: "bid_receipt_date", timeField: "bid_receipt_time", fileField: "bids_file", existingFileField: "existing_bids_file", icon: <Clock className="w-4 h-4" />, required: false, showTime: true },
-  { label: "Technical Bids Opening", dateField: "tech_bid_ope_date", timeField: "tech_bid_ope_time", fileField: "tech_open_file", existingFileField: "existing_tech_open_file", icon: <Award className="w-4 h-4" />, required: false, showTime: true },
-  { label: "Technical Bid Evaluation", dateField: "tech_bid_eva_date", timeField: "tech_bid_eva_time", fileField: "tech_eval_file", existingFileField: "existing_tech_eval_file", icon: <Award className="w-4 h-4" />, required: false, showTime: true },
-  { label: "Financial Bid Evaluation", dateField: "financial_eval_date", timeField: "financial_eval_time", fileField: "financial_eval_file", existingFileField: "existing_financial_eval_file", icon: <DollarSign className="w-4 h-4" />, required: false, showTime: true },
-  { label: "Letter of Award (LOA)", dateField: "loa_date", timeField: "loa_time", fileField: "loa_file", existingFileField: "existing_loa_file", icon: <FileText className="w-4 h-4" />, required: false, showTime: false },
-  { label: "Signed Agreement", dateField: "contract_date", timeField: "", fileField: "contract_file", existingFileField: "existing_contract_file", icon: <FileCheck className="w-4 h-4" />, required: false, showTime: false },
-], []);
+  const fileSections = [
+    { label: "Notice Inviting Tender (NIT)", dateField: "nit_date", timeField: "nit_time", fileField: "nit_file", existingFileField: "existing_nit_file", icon: <FileText className="w-4 h-4" />, required: false, showTime: false },
+    { label: "Published in Newspaper", dateField: "newsdate", timeField: "newsdate_time", fileField: "newspaper_file", existingFileField: "existing_newspaper_file", icon: <FileText className="w-4 h-4" />, required: false, showTime: false },
+    { label: "Start of Sale of Bidding Document", dateField: "sale_start_date", timeField: "sale_start_time", fileField: "sale_file", existingFileField: "existing_sale_file", icon: <BookOpen className="w-4 h-4" />, required: false, showTime: true },
+    { label: "Pre-Bid Meeting", dateField: "pre_bid_date", timeField: "pre_bid_time", fileField: "pre_bid_file", existingFileField: "existing_pre_bid_file", icon: <MessageSquare className="w-4 h-4" />, required: false, showTime: true },
+    { label: "Amendment / Corrigendum", dateField: "corrigendum_date", timeField: "corrigendum_time", fileField: "corrigendum_file", existingFileField: "existing_corrigendum_file", icon: <FileCheck className="w-4 h-4" />, required: false, showTime: false },
+    { label: "Last Date for Receipt of Bids", dateField: "bid_receipt_date", timeField: "bid_receipt_time", fileField: "bids_file", existingFileField: "existing_bids_file", icon: <Clock className="w-4 h-4" />, required: false, showTime: true },
+    { label: "Technical Bids Opening", dateField: "tech_bid_ope_date", timeField: "tech_bid_ope_time", fileField: "tech_open_file", existingFileField: "existing_tech_open_file", icon: <Award className="w-4 h-4" />, required: false, showTime: true },
+    { label: "Technical Bid Evaluation", dateField: "tech_bid_eva_date", timeField: "tech_bid_eva_time", fileField: "tech_eval_file", existingFileField: "existing_tech_eval_file", icon: <Award className="w-4 h-4" />, required: false, showTime: true },
+    { label: "Financial Bid Evaluation", dateField: "financial_eval_date", timeField: "financial_eval_time", fileField: "financial_eval_file", existingFileField: "existing_financial_eval_file", icon: <DollarSign className="w-4 h-4" />, required: false, showTime: true },
+    { label: "Letter of Award (LOA)", dateField: "loa_date", timeField: "loa_time", fileField: "loa_file", existingFileField: "existing_loa_file", icon: <FileText className="w-4 h-4" />, required: false, showTime: false },
+    { label: "Signed Agreement", dateField: "contract_file", timeField: "", fileField: "contract_file", existingFileField: "existing_contract_file", icon: <FileCheck className="w-4 h-4" />, required: false, showTime: false },
+  ];
 
   const extractDateTime = (dateString: string | undefined): { date: string, time: string } => {
     if (!dateString) return { date: "", time: "" };
@@ -1567,9 +1429,10 @@ const TenderForm: React.FC<TenderFormProps> = ({
   };
 
   const getInitialFormData = () => {
-    const divisionId = initialData?.division_id || "";
-    const workId = initialData?.work_id || "";
-    const workCost = initialData?.work_cost || "";
+    let divisionId = initialData?.division_id || "";
+    console.log("Initial Division ID:", divisionId);
+    let workId = initialData?.work_id || "";
+    let workCost = initialData?.work_cost || "";
 
     const formData = {
       id: initialData?.id || null,
@@ -1627,10 +1490,11 @@ const TenderForm: React.FC<TenderFormProps> = ({
       loa_date: extractDateTime(initialData?.loa_date).date,
       loa_time: extractDateTime(initialData?.loa_time).time,
     };
+console.log("📋 Form data initialized with ID:", formData.id);
     return formData;
   };
 
-  //const [formData, setFormData] = useState<any>(() => getInitialFormData());
+  const [formData, setFormData] = useState<any>(() => getInitialFormData());
 
   useEffect(() => {
     if (!formData.division_id && initialData?.division_name && divisions?.length) {
@@ -1642,7 +1506,7 @@ const TenderForm: React.FC<TenderFormProps> = ({
     } else if (formData.division_id) {
       setSelectedDivision(formData.division_id);
     }
-  }, [divisions, initialData, formData.division_id,selectedDivision]);
+  }, [divisions, initialData, formData.division_id]);
 
   useEffect(() => {
     if (works && initialData?.work_name && selectedDivision && !formData.work_id) {
@@ -1658,10 +1522,6 @@ const TenderForm: React.FC<TenderFormProps> = ({
   }, [works, initialData, selectedDivision, formData.work_id]);
 
   const isFieldDisabled = (fieldName: string): boolean => {
-    if (!isFieldEnabledByStep(fieldName)) {
-      return true;
-    }
-
     if (isFinalizedStatus && isEditing) return true;
 
     const draftLockActive = (isEditing && isDraftStatus) || lockOnDraft;
@@ -1669,14 +1529,14 @@ const TenderForm: React.FC<TenderFormProps> = ({
       if (previouslyFilledFields.has(fieldName)) {
         return true;
       }
-
+      
       if (fieldName.endsWith('_file') && !fieldName.includes('existing_')) {
         const existingField = `existing_${fieldName}`;
         if (formData[existingField] || previouslyFilledFields.has(existingField)) {
           return true;
         }
       }
-
+      
       const sec = fileSections.find(
         s => s.fileField === fieldName || s.dateField === fieldName || s.timeField === fieldName
       );
@@ -1687,7 +1547,7 @@ const TenderForm: React.FC<TenderFormProps> = ({
         }
       }
     }
-
+    
     return false;
   };
 
@@ -1720,6 +1580,7 @@ const TenderForm: React.FC<TenderFormProps> = ({
         newErrors.contract_file = 'Signed Agreement file is required for final submission';
       }
     }
+    
 
     if (formData.work_cost) {
       const raw = String(formData.work_cost).replace(/,/g, '').trim();
@@ -1780,12 +1641,6 @@ const TenderForm: React.FC<TenderFormProps> = ({
     setFormData((prev: any) => ({ ...prev, [name]: file, [existingFileField]: file ? null : prev[existingFileField] }));
     setTouched(prev => new Set(prev).add(name));
     if (errors[name]) setErrors(prev => { const ne = { ...prev }; delete ne[name]; return ne; });
-
-    if (isCurrentStepComplete() && currentStep < stepConfig.length - 1) {
-      setTimeout(() => {
-        setCurrentStep(prev => prev + 1);
-      }, 500);
-    }
   };
 
   const clearFieldValue = (fieldName: string) => {
@@ -1815,7 +1670,7 @@ const TenderForm: React.FC<TenderFormProps> = ({
         }
         return next;
       });
-
+      
       setPreviouslyFilledFields(prev => {
         const updated = new Set(prev);
         updated.delete(fieldName);
@@ -1854,123 +1709,73 @@ const TenderForm: React.FC<TenderFormProps> = ({
       setLockOnDraft(true);
     }
   }, [isEditing, isDraftStatus, initialData]);
+const handleSubmit = async (e: React.FormEvent, status: 'draft' | 'finalized' | 'draft_update') => {
+  e.preventDefault();
+  setTouched(new Set(Object.keys(formData)));
 
-  useEffect(() => {
-    const getUserData = () => {
-      try {
-        setUserLoading(true);
+  const isFinalSubmit = status === 'finalized';
+  
+  // Fix: Determine the correct action type
+  let actionType = '';
+  if (isFinalSubmit) {
+    actionType = 'FINAL_SUBMIT';
+  } else if (isEditing && formData.id) {
+    actionType = 'UPDATE';
+  } else {
+    actionType = 'DRAFT_SAVE';
+  }
 
-        if (typeof window !== "undefined") {
-          const userDetails = sessionStorage.getItem("userdetail");
+  console.log(`🔍 Setting action_type to: ${actionType} for status: ${status}`);
+  
+ 
 
-          if (userDetails) {
-            try {
-              const parsedData = JSON.parse(userDetails);
-              const userData: UserData = {
-                username: parsedData.full_name || "Unknown User",
-                email: parsedData.email || "unknown@example.com",
-                dept_id: parsedData.department_id || 1,
-                role: parsedData.role_name || "user",
-                department: parsedData.department_name,
-                designation: parsedData.designation_name,
-                levelname: parsedData.level_name,
-                levelid: parsedData.user_level_id,
-                zone_id: parsedData.zone_id,
-                circle_id: parsedData.circle_id,
-                division_id: parsedData.division_id
-              };
 
-              setUser(userData);
+  if (isFinalSubmit && !validateForm(true)) {
+    alert('Please fix the errors in the form before Final Submission.');
+    return;
+  }
+  if (!isFinalSubmit && !validateForm(false)) {
+    alert('Please fix the format errors in the form.');
+    return;
+  }
 
-              if (userData.division_id && !formData.division_id && !selectedDivision) {
-                console.log("Auto-selecting user's division:", userData.division_id);
-                setSelectedDivision(userData.division_id);
-                setFormData((prev: any) => ({
-                  ...prev,
-                  division_id: userData.division_id!.toString()
-                }));
-              }
-            } catch (parseError) {
-              console.error("Error parsing user data:", parseError);
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Error loading user data:", error);
-      } finally {
-        setUserLoading(false);
-      }
+  setIsSubmitting(true);
+  try {
+    // Prepare the data with correct action_type
+    const submitData = {
+      ...formData,
+      emdfee: formData.work_cost || formData.emdfee,
+      status: isFinalSubmit ? 'finalized' : 'draft',
+      action_type: actionType, // This is the key fix
+      _isUpdate: isEditing,
+      _originalData: originalData,
+      // Ensure work_id is properly set
+      work_id: formData.work_id || selectedDivision, // Make sure work_id is included
     };
 
-    getUserData();
-  }, [formData.division_id, selectedDivision]);
+    await onSubmit(submitData, status);
+    console.log(submitData ,'my submot data-----------');
+    
+    // Handle post-submit logic
+    const currentFilledFields = computePrefilledFromInitial(formData);
+    setPreviouslyFilledFields(prev => {
+      const updated = new Set(prev);
+      currentFilledFields.forEach(field => updated.add(field));
+      return updated;
+    });
 
-  const handleSubmit = async (e: React.FormEvent, status: 'draft' | 'finalized' | 'draft_update') => {
-    e.preventDefault();
-    setTouched(new Set(Object.keys(formData)));
-
-    const isFinalSubmit = status === 'finalized';
-
-    let actionType = '';
-    if (isFinalSubmit) {
-      actionType = 'FINAL_SUBMIT';
-    } else if (isEditing && formData.id) {
-      actionType = 'UPDATE';
-    } else {
-      actionType = 'DRAFT_SAVE';
+    if (!isFinalSubmit) {
+      setLockOnDraft(true);
     }
-
-    console.log(`🔍 Setting action_type to: ${actionType} for status: ${status}`);
-
-    if (isFinalSubmit && !validateForm(true)) {
-      alert('Please fix the errors in the form before Final Submission.');
-      return;
-    }
-    if (!isFinalSubmit && !validateForm(false)) {
-      alert('Please fix the format errors in the form.');
-      return;
-    }
-
-    if (isFinalSubmit && !areAllStepsComplete()) {
-      alert('Please complete all document steps before final submission.');
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const submitData = {
-        ...formData,
-        emdfee: formData.work_cost || formData.emdfee,
-        status: isFinalSubmit ? 'finalized' : 'draft',
-        action_type: actionType,
-        _isUpdate: isEditing,
-        _originalData: originalData,
-        work_id: formData.work_id || selectedDivision,
-      };
-
-      await onSubmit(submitData, status);
-      console.log(submitData, 'my submot data-----------');
-
-      const currentFilledFields = computePrefilledFromInitial(formData);
-      setPreviouslyFilledFields(prev => {
-        const updated = new Set(prev);
-        currentFilledFields.forEach(field => updated.add(field));
-        return updated;
-      });
-
-      if (!isFinalSubmit) {
-        setLockOnDraft(true);
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const showLockStatus = () => {
-    const lockedFields = Array.from(previouslyFilledFields).filter(field =>
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+const showLockStatus = () => {
+    const lockedFields = Array.from(previouslyFilledFields).filter(field => 
       formData[field] && formData[field].toString().trim() !== ''
     );
-
+    
     return (
       <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
         <div className="flex items-center gap-2 mb-2">
@@ -1980,8 +1785,8 @@ const TenderForm: React.FC<TenderFormProps> = ({
         {lockedFields.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {lockedFields.map(field => (
-              <span
-                key={field}
+              <span 
+                key={field} 
                 className="px-2 py-1 bg-white text-blue-600 text-xs rounded border border-blue-200"
                 title="Click 'Clear to edit' to modify this field"
               >
@@ -1996,11 +1801,17 @@ const TenderForm: React.FC<TenderFormProps> = ({
     );
   };
 
-  const isFinalSubmitReady =
-    formData.agreement_number && formData.agreement_number.trim() !== '' &&
-    (formData.corrigendum_file || formData.existing_corrigendum_file) &&
-    (formData.bids_file || formData.existing_bids_file) &&
-    (formData.contract_file || formData.existing_contract_file);
+  const isFinalSubmitReady = 
+    // formData.agreement_number && formData.agreement_number.trim() !== '' &&
+    // (formData.corrigendum_file || formData.existing_corrigendum_file) &&
+    // (formData.financial_eval_file || formData.existing_financial_eval_file);
+
+
+  formData.agreement_number && formData.agreement_number.trim() !== '' &&
+  (formData.corrigendum_file || formData.existing_corrigendum_file) &&
+  (formData.bids_file || formData.existing_bids_file) &&
+  (formData.contract_file || formData.existing_contract_file);
+
 
   const workOptions = works?.map((w: any) => ({
     value: w.id,
@@ -2025,14 +1836,34 @@ const TenderForm: React.FC<TenderFormProps> = ({
     );
   }
 
+  // Add this after the form title or before the basic info section:
+{!isFinalizedStatus && (
+  <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-xl">
+    <div className="flex items-center gap-3">
+      <div className="flex-shrink-0">
+        <div className={`w-3 h-3 rounded-full ${isFinalSubmitReady ? 'bg-green-500 animate-pulse' : 'bg-amber-500'}`}></div>
+      </div>
+      <div>
+        <p className="font-medium text-blue-800">Submission Status</p>
+        <p className="text-sm text-blue-600 mt-1">
+          {isFinalSubmitReady 
+            ? '✓ All required fields are filled. Ready for final submission!'
+            : 'Fill required fields to enable final submission: Agreement Number, Amendment/Corrigendum, Last Date for Receipt of Bids, and Signed Agreement.'
+          }
+        </p>
+      </div>
+    </div>
+  </div>
+)}
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30 p-4 lg:p-8">
       <div className="max-w-7xl mx-auto">
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100">
-          <div className={`p-6 lg:p-8 ${isFinalizedStatus && isEditing
-            ? 'bg-gradient-to-r from-gray-600 to-gray-700'
-            : 'bg-gradient-to-r from-blue-600 to-blue-700'
-            }`}>
+          <div className={`p-6 lg:p-8 ${
+            isFinalizedStatus && isEditing
+              ? 'bg-gradient-to-r from-gray-600 to-gray-700'
+              : 'bg-gradient-to-r from-blue-600 to-blue-700'
+          }`}>
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
@@ -2043,7 +1874,7 @@ const TenderForm: React.FC<TenderFormProps> = ({
                     {isFinalizedStatus && isEditing
                       ? 'View Finalized Tender'
                       : (isDraftContinuation || lockOnDraft)
-                        ? 'Continue'
+                        ? 'Continue Draft'
                         : isEditing
                           ? 'Edit Tender'
                           : 'Create New Tender'}
@@ -2052,7 +1883,7 @@ const TenderForm: React.FC<TenderFormProps> = ({
                     {isFinalizedStatus && isEditing
                       ? 'This tender is finalized and cannot be edited.'
                       : (isDraftContinuation || lockOnDraft)
-                        ? 'Continuation mode. Previously filled fields are locked. Clear to edit.'
+                        ? 'Draft continuation mode. Previously filled fields are locked. Clear to edit.'
                         : isEditing
                           ? `Status: ${initialData?.status?.toUpperCase() || 'DRAFT'} • All fields are optional for drafts`
                           : 'Fill in tender details. All fields are optional for drafts.'}
@@ -2092,127 +1923,11 @@ const TenderForm: React.FC<TenderFormProps> = ({
                 </div>
                 <div className="flex-1">
                   <p className="font-bold text-lg">Draft Continuation Mode</p>
-                  <p className="text-amber-700 mt-1">Previously filled fields are locked. Use &quot;Clear to edit&quot; if needed.</p>
+                  <p className="text-amber-700 mt-1">Previously filled fields are locked. Use "Clear to edit" if needed.</p>
                 </div>
               </div>
             </div>
           )}
-
-          {/* Step Progress Indicator */}
-          <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-gray-100">
-            <div className="mb-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-700">Document Upload Steps</h3>
-                <span className="px-3 py-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm font-medium rounded-full">
-                  Step {currentStep + 1} of {stepConfig.length}
-                </span>
-              </div>
-
-              <div className="relative">
-                {/* Progress line */}
-                <div className="absolute top-4 left-0 right-0 h-0.5 bg-gray-200"></div>
-                <div
-                  className="absolute top-4 left-0 h-0.5 bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-300"
-                  style={{ width: `${(currentStep / (stepConfig.length - 1)) * 100}%` }}
-                ></div>
-
-                {/* Steps */}
-                <div className="relative flex justify-between">
-                  {stepConfig.map((step, index) => {
-                    const isCompleted = isStepCompleted(index);
-                    const isCurrent = index === currentStep;
-                    const isEnabled = index <= currentStep;
-
-                    return (
-                      <div key={index} className="flex flex-col items-center">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (isCompleted || isEnabled) {
-                              setCurrentStep(index);
-                            }
-                          }}
-                          className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-all duration-300 relative z-10
-                            ${isCompleted
-                              ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg transform scale-110'
-                              : isCurrent
-                                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg ring-4 ring-blue-200'
-                                : isEnabled
-                                  ? 'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-600 border-2 border-blue-300 hover:bg-blue-300'
-                                  : 'bg-gray-100 text-gray-400 border-2 border-gray-300 cursor-not-allowed'
-                            }`}
-                          disabled={!isEnabled && !isCompleted}
-                        >
-                          {isCompleted ? (
-                            <CheckCircle className="w-5 h-5" />
-                          ) : (
-                            <span className="font-semibold">{index + 1}</span>
-                          )}
-                        </button>
-                        <span className={`text-xs font-medium text-center max-w-[80px] ${isCurrent ? 'text-blue-600 font-bold' : 'text-gray-500'}`}>
-                          {step.name.split(' ')[0]}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* Current Step Information */}
-            <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-200 rounded-xl">
-              <div className="flex items-start gap-4">
-                <div className="p-2 bg-white rounded-lg shadow-sm">
-                  {stepConfig[currentStep].icon}
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-bold text-lg text-blue-800">
-                    Current Step: {stepConfig[currentStep].name}
-                  </h3>
-                  <p className="text-blue-600 mt-1">{stepConfig[currentStep].description}</p>
-                  <div className="mt-2 flex items-center gap-2">
-                    {isCurrentStepComplete() ? (
-                      <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full flex items-center gap-1">
-                        <CheckCircle className="w-3 h-3" />
-                        Step Complete
-                      </span>
-                    ) : (
-                      <span className="px-2 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
-                        Required: Upload document to proceed
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Step Navigation Buttons */}
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={handlePrevStep}
-                    disabled={currentStep === 0}
-                    className={`px-4 py-2 rounded-lg font-medium ${currentStep === 0
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                      }`}
-                  >
-                    Previous
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleNextStep}
-                    disabled={!isCurrentStepComplete() || currentStep === stepConfig.length - 1}
-                    className={`px-4 py-2 rounded-lg font-medium ${!isCurrentStepComplete() || currentStep === stepConfig.length - 1
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700'
-                      }`}
-                  >
-                    Next Step
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
 
           <form className="p-6 lg:p-8 space-y-8">
             <section className="space-y-6">
@@ -2228,60 +1943,80 @@ const TenderForm: React.FC<TenderFormProps> = ({
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {isFieldShown('division_id') && (
-                  <div>
-                    <label className="font-medium text-gray-700 mb-2 block">Division Name</label>
-                    {userLoading ? (
-                      <div className="px-4 py-3 bg-gray-100 rounded-xl animate-pulse">
-                        Loading user data...
-                      </div>
-                    ) : user?.division_id ? (
-                      <div className="relative">
-                        <div className="w-full px-4 py-3 border border-blue-300 rounded-xl bg-blue-50">
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-800 font-medium">
-                              {divisions?.data?.find((d: any) => d.id === user.division_id)?.division_name ||
-                                `Division ${user.division_id}`}
-                            </span>
-                          </div>
-                        </div>
-                        <input
-                          type="hidden"
-                          name="division_id"
-                          value={user.division_id}
-                        />
-                      </div>
-                    ) : (
-                      <CustomSelect
-                        options={divisions?.data?.map((d: any) => ({ value: d.id, label: d.division_name })) || []}
-                        value={formData.division_id}
-                        onChange={handleDivisionChange}
-                        placeholder="Select Division"
-                        error={touched.has('division_id') ? errors.division_id : undefined}
-                        disabled={isFieldDisabled('division_id')}
-                      />
-                    )}
-                  </div>
-                )}
+  <div>
+    <label className="font-medium text-gray-700 mb-2 block">Division Name</label>
+    {userLoading ? (
+      <div className="px-4 py-3 bg-gray-100 rounded-xl animate-pulse">
+        Loading user data...
+      </div>
+    ) : user?.division_id ? (
+      // If user has division_id, show disabled dropdown with only their division
+      <div className="relative">
+        <div className="w-full px-4 py-3 border border-blue-300 rounded-xl bg-blue-50">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-800 font-medium">
+              {divisions?.data?.find((d: any) => d.id === user.division_id)?.division_name || 
+               `Division ${user.division_id}`}
+            </span>
+            {/* <span className="text-xs bg-blue-500 text-white px-2 py-1 rounded">
+              Auto-selected
+            </span> */}
+          </div>
+          {/* <div className="text-xs text-gray-600 mt-1">
+            Division ID: {user.division_id}
+          </div> */}
+        </div>
+        <input
+          type="hidden"
+          name="division_id"
+          value={user.division_id}
+        />
+      </div>
+    ) : (
+      // If user doesn't have division_id, show normal dropdown
+      <CustomSelect
+        options={divisions?.data?.map((d: any) => ({ value: d.id, label: d.division_name })) || []}
+        value={formData.division_id}
+        onChange={handleDivisionChange}
+        placeholder="Select Division"
+        error={touched.has('division_id') ? errors.division_id : undefined}
+        disabled={isFieldDisabled('division_id')}
+      />
+    )}
+    
+    {/* User info display */}
+    {/* {user && (
+      <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
+        <User className="w-3 h-3" />
+        <span>
+          Logged in as: <span className="font-medium">{user.username}</span>
+          {user.designation && ` • ${user.designation}`}
+          {user.division_id && ` • Division ID: ${user.division_id}`}
+        </span>
+      </div>
+    )} */}
+  </div>
+)}
 
                 {isFieldShown('work_id') && (
-                  <div>
-                    <label className="font-medium text-gray-700 mb-2 block">Work:(Scheme)</label>
-                    <CustomSelect
-                      options={workOptions}
-                      value={formData.work_id}
-                      onChange={handleWorkChange}
-                      placeholder={selectedDivision ? "Select Work" : "Select Division first"}
-                      disabled={isFieldDisabled('work_id') || !selectedDivision || worksLoading}
-                      error={touched.has('work_id') ? errors.work_id : undefined}
-                    />
-                    {worksLoading && (
-                      <div className="mt-2 flex items-center gap-2 text-blue-600 text-sm">
-                        <div className="w-4 h-4 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-                        <span>Loading works...</span>
-                      </div>
-                    )}
-                  </div>
-                )}
+  <div>
+    <label className="font-medium text-gray-700 mb-2 block">Work:(Scheme)</label>
+    <CustomSelect
+      options={workOptions}
+      value={formData.work_id}
+      onChange={handleWorkChange}
+      placeholder={selectedDivision ? "Select Work" : "Select Division first"}
+      disabled={isFieldDisabled('work_id') || !selectedDivision || worksLoading}
+      error={touched.has('work_id') ? errors.work_id : undefined}
+    />
+    {worksLoading && (
+      <div className="mt-2 flex items-center gap-2 text-blue-600 text-sm">
+        <div className="w-4 h-4 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+        <span>Loading works...</span>
+      </div>
+    )}
+  </div>
+)}
 
                 {isFieldShown('tender_ref_no') && (
                   <ModernInput
@@ -2326,7 +2061,7 @@ const TenderForm: React.FC<TenderFormProps> = ({
                     error={errors.work_cost}
                     readOnly={true}
                     disabled={isFieldDisabled('work_cost')}
-                    icon={<FaRupeeSign className="w-4 h-4" />}
+                    icon={<DollarSign className="w-4 h-4" />}
                     onClear={isFieldDisabled('work_cost') ? () => clearFieldValue('work_cost') : undefined}
                   />
                 )}
@@ -2342,7 +2077,7 @@ const TenderForm: React.FC<TenderFormProps> = ({
                     error={errors.bid_security}
                     disabled={isFieldDisabled('bid_security')}
                     readOnly={isFieldDisabled('bid_security')}
-                    icon={<FaRupeeSign className="w-4 h-4" />}
+                    icon={<DollarSign className="w-4 h-4" />}
                     onClear={isFieldDisabled('bid_security') ? () => clearFieldValue('bid_security') : undefined}
                   />
                 )}
@@ -2363,6 +2098,22 @@ const TenderForm: React.FC<TenderFormProps> = ({
                     onClear={isFieldDisabled('validity') ? () => clearFieldValue('validity') : undefined}
                   />
                 )}
+
+                {/* {isFieldShown('agreement_number') && (
+                  <ModernInput
+                    label="Agreement Number / Work Order"
+                    name="agreement_number"
+                    value={formData.agreement_number}
+                    onChange={handleInputChange}
+                    onBlur={() => handleBlur('agreement_number')}
+                    placeholder="WO-2024-001"
+                    error={errors.agreement_number}
+                    disabled={isFieldDisabled('agreement_number')}
+                    readOnly={isFieldDisabled('agreement_number')}
+                    icon={<FileCheck className="w-4 h-4" />}
+                    onClear={isFieldDisabled('agreement_number') ? () => clearFieldValue('agreement_number') : undefined}
+                  />
+                )} */}
 
                 {isFieldShown('remark') && (
                   <div className="lg:col-span-2">
@@ -2400,107 +2151,48 @@ const TenderForm: React.FC<TenderFormProps> = ({
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-gray-800">Documents & Timeline</h2>
-                  <p className="text-gray-600 text-sm mt-1">
-                    Complete steps in sequence. Current step: {currentStep + 1}. {stepConfig[currentStep].name}
-                  </p>
+                  <p className="text-gray-600 text-sm mt-1">All document fields are optional for drafts</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {fileSections
-                  .filter(f => {
-                    const stepIndex = stepConfig.findIndex(step =>
-                      step.fields.includes(f.fileField)
-                    );
-                    return stepIndex <= currentStep;
-                  })
+                  .filter(f => isFieldShown(f.fileField) || formData[f.existingFileField])
                   .map((f) => {
-                    const stepIndex = stepConfig.findIndex(step =>
-                      step.fields.includes(f.fileField)
-                    );
-                    const isCurrentStepField = stepIndex === currentStep;
-                    const isCompleted = stepIndex < currentStep;
-
-                    const sectionStyle = isCurrentStepField
-                      ? 'border-2 border-blue-400 bg-gradient-to-br from-blue-50 to-white shadow-md relative'
-                      : isCompleted
-                        ? 'border-2 border-green-200 bg-gradient-to-br from-green-50 to-white'
-                        : 'border-2 border-gray-100 bg-white hover:border-blue-200';
+                    const isFileFieldDisabled = isFieldDisabled(f.fileField);
+                    const isDateFieldDisabled = isFieldDisabled(f.dateField);
+                    const isTimeFieldDisabled = isFieldDisabled(f.timeField);
 
                     return (
-                      <div
-                        key={f.fileField}
-                        className={`space-y-4 p-5 rounded-xl transition-all duration-300 ${sectionStyle}`}
-                      >
-                        {isCurrentStepField && (
-                          <div className="absolute top-2 right-2">
-                            <span className="px-2 py-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-medium rounded-full animate-pulse">
-                              Current
-                            </span>
-                          </div>
-                        )}
-
-                        {isCompleted && (
-                          <div className="absolute top-2 right-2">
-                            <span className="px-2 py-1 bg-gradient-to-r from-green-500 to-green-600 text-white text-xs font-medium rounded-full flex items-center gap-1">
-                              <CheckCircle className="w-3 h-3" />
-                              Done
-                            </span>
-                          </div>
-                        )}
-
+                      <div key={f.fileField} className="space-y-4 p-5 border-2 border-gray-100 rounded-xl hover:border-blue-200 transition-all duration-300 bg-white hover:shadow-md">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <div className={`p-2 rounded-lg ${isCurrentStepField ? 'bg-blue-100' : isCompleted ? 'bg-green-100' : 'bg-gray-50'}`}>
-                              <div className={`${isCurrentStepField ? 'text-blue-600' : isCompleted ? 'text-green-600' : 'text-gray-600'}`}>{f.icon}</div>
+                            <div className={`p-2 rounded-lg ${isFileFieldDisabled ? 'bg-gray-100' : 'bg-blue-50'}`}>
+                              <div className={`${isFileFieldDisabled ? 'text-gray-400' : 'text-blue-600'}`}>{f.icon}</div>
                             </div>
-                            <h3 className={`font-semibold ${isCurrentStepField ? 'text-blue-800' : isCompleted ? 'text-green-800' : 'text-gray-800'}`}>
-                              {f.label}
-                            </h3>
+                            <h3 className={`font-semibold ${isFileFieldDisabled ? 'text-gray-500' : 'text-gray-800'}`}>{f.label}</h3>
                           </div>
-
-                          {isCompleted && (
-                            <ChevronRightIcon className="w-4 h-4 text-green-500" />
+                          {isFileFieldDisabled && (
+                            <button
+                              type="button"
+                              onClick={() => clearFieldValue(f.fileField)}
+                              className="text-xs text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded transition-colors"
+                            >
+                              Clear file
+                            </button>
                           )}
                         </div>
 
-                        {f.dateField && (
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <div className="flex justify-between items-center mb-1.5">
-                                <label className={`text-sm font-medium ${isFieldDisabled(f.dateField) ? 'text-gray-400' : 'text-gray-600'}`}>Date</label>
-                                {isFieldDisabled(f.dateField) && (
-                                  <button
-                                    type="button"
-                                    onClick={() => clearFieldValue(f.dateField)}
-                                    className="text-xs text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-1 py-0.5 rounded transition-colors"
-                                  >
-                                    Clear
-                                  </button>
-                                )}
-                              </div>
-                              <input
-                                type="date"
-                                value={formData[f.dateField]}
-                                onChange={e => handleDateChange(f.dateField, f.timeField, e.target.value, formData[f.timeField] || '00:00')}
-                                onBlur={() => handleBlur(f.dateField)}
-                                disabled={isFieldDisabled(f.dateField)}
-                                readOnly={isFieldDisabled(f.dateField)}
-                                className={`w-full px-3 py-2.5 border rounded-lg transition-colors ${isFieldDisabled(f.dateField) ? 'bg-gray-100 border-gray-300 text-gray-500 cursor-not-allowed'
-                                  : errors[f.dateField] ? 'border-red-500 bg-red-50'
-                                    : 'border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white'
-                                  }`}
-                              />
-                            </div>
-
-                            {f.showTime && (
+                        <div className="space-y-3">
+                          {f.dateField && (
+                            <div className="grid grid-cols-2 gap-3">
                               <div>
                                 <div className="flex justify-between items-center mb-1.5">
-                                  <label className={`text-sm font-medium ${isFieldDisabled(f.timeField) ? 'text-gray-400' : 'text-gray-600'}`}>Time</label>
-                                  {isFieldDisabled(f.timeField) && (
+                                  <label className={`text-sm font-medium ${isDateFieldDisabled ? 'text-gray-400' : 'text-gray-600'}`}>Date</label>
+                                  {isDateFieldDisabled && (
                                     <button
                                       type="button"
-                                      onClick={() => clearFieldValue(f.timeField)}
+                                      onClick={() => clearFieldValue(f.dateField)}
                                       className="text-xs text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-1 py-0.5 rounded transition-colors"
                                     >
                                       Clear
@@ -2508,37 +2200,71 @@ const TenderForm: React.FC<TenderFormProps> = ({
                                   )}
                                 </div>
                                 <input
-                                  type="time"
-                                  value={formData[f.timeField]}
-                                  onChange={e => handleDateChange(f.dateField, f.timeField, formData[f.dateField] || '', e.target.value)}
-                                  onBlur={() => handleBlur(f.timeField)}
-                                  disabled={isFieldDisabled(f.timeField)}
-                                  readOnly={isFieldDisabled(f.timeField)}
-                                  className={`w-full px-3 py-2.5 border rounded-lg transition-colors ${isFieldDisabled(f.timeField) ? 'bg-gray-100 border-gray-300 text-gray-500 cursor-not-allowed'
-                                    : errors[f.timeField] ? 'border-red-500 bg-red-50'
+                                  type="date"
+                                  value={formData[f.dateField]}
+                                  onChange={e => handleDateChange(f.dateField, f.timeField, e.target.value, formData[f.timeField] || '00:00')}
+                                  onBlur={() => handleBlur(f.dateField)}
+                                  disabled={isDateFieldDisabled}
+                                  readOnly={isDateFieldDisabled}
+                                  className={`w-full px-3 py-2.5 border rounded-lg transition-colors ${
+                                    isDateFieldDisabled ? 'bg-gray-100 border-gray-300 text-gray-500 cursor-not-allowed'
+                                      : errors[f.dateField] ? 'border-red-500 bg-red-50'
                                       : 'border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white'
-                                    }`}
+                                  }`}
                                 />
                               </div>
-                            )}
-                          </div>
-                        )}
 
-                        <ModernFileUpload
-                          label={`${f.label} File`}
-                          name={f.fileField}
-                          onChange={(e) => handleFileChange(e, f.existingFileField)}
-                          error={errors[f.fileField]}
-                          existingFile={formData[f.existingFileField]}
-                          getFileUrl={(filename) => getFileUrl(filename) || "#"}
-                          icon={<Upload className="w-4 h-4" />}
-                          disabled={isFieldDisabled(f.fileField)}
-                          onClear={isFieldDisabled(f.fileField) ? () => clearFieldValue(f.fileField) : undefined}
-                        />
+                              {f.showTime && (
+                                <div>
+                                  <div className="flex justify-between items-center mb-1.5">
+                                    <label className={`text-sm font-medium ${isTimeFieldDisabled ? 'text-gray-400' : 'text-gray-600'}`}>Time</label>
+                                    {isTimeFieldDisabled && (
+                                      <button
+                                        type="button"
+                                        onClick={() => clearFieldValue(f.timeField)}
+                                        className="text-xs text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-1 py-0.5 rounded transition-colors"
+                                      >
+                                        Clear
+                                      </button>
+                                    )}
+                                  </div>
+                                  <input
+                                    type="time"
+                                    value={formData[f.timeField]}
+                                    onChange={e => handleDateChange(f.dateField, f.timeField, formData[f.dateField] || '', e.target.value)}
+                                    onBlur={() => handleBlur(f.timeField)}
+                                    disabled={isTimeFieldDisabled}
+                                    readOnly={isTimeFieldDisabled}
+                                    className={`w-full px-3 py-2.5 border rounded-lg transition-colors ${
+                                      isTimeFieldDisabled ? 'bg-gray-100 border-gray-300 text-gray-500 cursor-not-allowed'
+                                        : errors[f.timeField] ? 'border-red-500 bg-red-50'
+                                        : 'border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 bg-white'
+                                    }`}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          <ModernFileUpload
+                            label={`${f.label} File`}
+                            name={f.fileField}
+                            onChange={(e) => handleFileChange(e, f.existingFileField)}
+                            error={errors[f.fileField]}
+                            existingFile={formData[f.existingFileField]}
+                            getFileUrl={(filename) => getFileUrl(filename) || "#"}
+                            icon={<Upload className="w-4 h-4" />}
+                            disabled={isFileFieldDisabled}
+                            onClear={isFileFieldDisabled ? () => clearFieldValue(f.fileField) : undefined}
+                          />
+                        </div>
+                        
                       </div>
+                      
                     );
+                    
                   })}
-                     {isFieldShown('agreement_number') && (
+                  {isFieldShown('agreement_number') && (
                   <ModernInput
                     label="Agreement Number / Work Order"
                     name="agreement_number"
@@ -2559,100 +2285,62 @@ const TenderForm: React.FC<TenderFormProps> = ({
             <div className="pt-8 border-t border-gray-100">
               <div className="flex flex-col lg:flex-row justify-between items-center gap-6">
                 <div className="flex items-center gap-3 text-sm text-gray-600">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span>Finalized</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
-                    <span>Draft</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <span>Current Step</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                    <span>Locked/Disabled</span>
-                  </div>
-                  {(isFinalizedStatus && isEditing) && (
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                      <span>Read Only</span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2"><div className="w-2 h-2 bg-green-500 rounded-full"></div><span>Finalized</span></div>
+                  <div className="flex items-center gap-2"><div className="w-2 h-2 bg-amber-500 rounded-full"></div><span>Draft</span></div>
+                  <div className="flex items-center gap-2"><div className="w-2 h-2 bg-blue-500 rounded-full"></div><span>Editable</span></div>
+                  <div className="flex items-center gap-2"><div className="w-2 h-2 bg-gray-500 rounded-full"></div><span>Locked</span></div>
+                  {(isFinalizedStatus && isEditing) && <div className="flex items-center gap-2"><div className="w-2 h-2 bg-red-500 rounded-full"></div><span>Read Only</span></div>}
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-4">
-                  {!isFinalizedStatus && (
-                    <button
-                      type="button"
-                      onClick={(e) => handleSubmit(e, isDraftContinuation ? 'draft_update' : 'draft')}
-                      disabled={isSubmitting}
-                      className="px-8 py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl hover:from-amber-600 hover:to-amber-700 disabled:opacity-50 flex items-center justify-center gap-3 font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-300 min-w-[180px]"
-                    >
-                      {isSubmitting ? (
-                        <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      ) : (
-                        <>
-                          <Save className="w-5 h-5" />
-                          {isDraftContinuation ? 'Update' : 'Save'}
-                        </>
-                      )}
-                    </button>
-                  )}
+               {/* // In the button section of TenderForm, replace with: */}
+<div className="flex flex-col sm:flex-row gap-4">
+  {!isFinalizedStatus && !isFinalSubmitReady && (
+    <button
+      type="button"
+      onClick={(e) => handleSubmit(e, isDraftContinuation ? 'draft_update' : 'draft')}
+      disabled={isSubmitting}
+      className="px-8 py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl hover:from-amber-600 hover:to-amber-700 disabled:opacity-50 flex items-center justify-center gap-3 font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-300 min-w-[180px]"
+    >
+      {isSubmitting ? (
+        <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+      ) : (
+        <>
+          <Save className="w-5 h-5" />
+          {isDraftContinuation ? 'Update Draft' : 'Save'}
+        </>
+      )}
+    </button>
+  )}
 
-                  {!isFinalizedStatus && isFinalSubmitReady && areAllStepsComplete() && (
-                    <button
-                      type="button"
-                      onClick={(e) => handleSubmit(e, 'finalized')}
-                      disabled={isSubmitting}
-                      className="px-8 py-3.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 disabled:opacity-50 flex items-center justify-center gap-3 font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-300 min-w-[180px]"
-                    >
-                      {isSubmitting ? (
-                        <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      ) : (
-                        <>
-                          <CheckCircle className="w-5 h-5" />
-                          Final Submit
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
+{!isFinalizedStatus && isFinalSubmitReady && (
+  <button
+    type="button"
+    onClick={(e) => handleSubmit(e, 'finalized')} 
+    disabled={isSubmitting}
+    className="px-8 py-3.5 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 disabled:opacity-50 flex items-center justify-center gap-3 font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-300 min-w-[180px]"
+  >
+    {isSubmitting ? (
+      <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+    ) : (
+      <>
+        <CheckCircle className="w-5 h-5" />
+        Final Submit
+      </>
+    )}
+  </button>
+)}
+</div>
               </div>
 
-              {!isFinalizedStatus && (!isFinalSubmitReady || !areAllStepsComplete()) && (
-                <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
-                  <p className="text-sm text-amber-700 flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                    {!isFinalSubmitReady
-                      ? 'To enable Final Submit, please fill: Agreement Number, Amendment/Corrigendum, Last Date for Receipt of Bids, and Signed Agreement.'
-                      : `Complete all document steps (${currentStep + 1}/${stepConfig.length}) to enable Final Submit.`
-                    }
-                  </p>
-                </div>
-              )}
-
-              {/* Progress Summary */}
-              <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-xl">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-blue-800">Document Progress</p>
-                    <p className="text-blue-600 text-sm mt-1">
-                      {stepConfig.filter((_, index) => isStepCompleted(index)).length} of {stepConfig.length} steps completed
-                    </p>
-                  </div>
-                  <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-300"
-                      style={{
-                        width: `${(stepConfig.filter((_, index) => isStepCompleted(index)).length / stepConfig.length) * 100}%`
-                      }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
+        
+{!isFinalizedStatus && !isFinalSubmitReady && (
+  <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+    <p className="text-sm text-amber-700 flex items-center gap-2">
+      <AlertCircle className="w-4 h-4 flex-shrink-0" />
+      To enable Final Submit, please fill: Agreement Number, Amendment/Corrigendum, Last Date for Receipt of Bids, and Signed Agreement.
+    </p>
+  </div>
+)}
             </div>
           </form>
         </div>
@@ -2661,14 +2349,19 @@ const TenderForm: React.FC<TenderFormProps> = ({
   );
 };
 
+/* -------------------------------------------------------------------------- */
+/*                          7. Main Tender Module                             */
+/* -------------------------------------------------------------------------- */
+
 const TenderModule: React.FC = () => {
-  const { data: tenders, refetch: refetchTenders } = useTenders();
+   const { data: tenders, refetch: refetchTenders } = useTenders();
   const saveTenderMutation = useSaveTender();
   const getFileUrl = useFileUrl();
 
+  // Add user state
   const [user, setUser] = useState<UserData | null>(null);
   const [userLoading, setUserLoading] = useState(true);
-
+  
   const [pageMode, setPageMode] = useState<PageMode>('list');
   const [selectedTender, setSelectedTender] = useState<Tender | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -2677,11 +2370,12 @@ const TenderModule: React.FC = () => {
   const [showLogModal, setShowLogModal] = useState(false);
   const itemsPerPage = 10;
 
+  // Load user data
   useEffect(() => {
     const getUserData = () => {
       try {
         setUserLoading(true);
-
+        
         if (typeof window !== "undefined") {
           const userDetails = sessionStorage.getItem("userdetail");
 
@@ -2692,10 +2386,10 @@ const TenderModule: React.FC = () => {
                 username: parsedData.full_name || "Unknown User",
                 email: parsedData.email || "unknown@example.com",
                 dept_id: parsedData.department_id || 1,
-                role: parsedData.role_id || "user",
-                department: parsedData.department,
-                designation: parsedData.designation,
-                levelname: parsedData.level,
+                role: parsedData.role_name || "user",
+                department: parsedData.department_name,
+                designation: parsedData.designation_name,
+                levelname: parsedData.level_name,
                 levelid: parsedData.user_level_id,
                 zone_id: parsedData.zone_id,
                 circle_id: parsedData.circle_id,
@@ -2720,242 +2414,238 @@ const TenderModule: React.FC = () => {
   }, []);
 
   const filteredTenders = tenders?.filter((tender: Tender) => {
-    if (user?.division_id) {
-      const isUserDivisionTender =
-        tender.division_id === user.division_id ||
-        (tender.division_name &&
-          tender.division_name.toLowerCase().includes(
-            user.division_id.toString().toLowerCase()
-          ));
-      if (!isUserDivisionTender) return false;
-    }
-    else if (user?.circle_id) {
-      const isUserCircleTender =
-        tender.circle_id === user.circle_id ||
-        (tender.circle_name &&
-          tender.circle_name.toLowerCase().includes(
-            user.circle_id.toString().toLowerCase()
-          ));
-      if (!isUserCircleTender) return false;
+     if (user?.division_id) {
+    // Check if tender belongs to user's division
+    // Assuming tender has division_id field or we need to match division_name
+    const isUserDivisionTender = 
+      tender.division_id === user.division_id || 
+      (tender.division_name && 
+       tender.division_name.toLowerCase().includes(
+         user.division_id.toString().toLowerCase()
+       ));
+    
+    if (!isUserDivisionTender) return false;
+  }
+     const matchesSearch = searchTerm === '' ||
+    (tender.division_name && tender.division_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (tender.work_name && tender.work_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (tender.tenderRefNo && tender.tenderRefNo.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (tender.tenderAuthority && tender.tenderAuthority.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    }
-    else if (user?.zone_id) {
-      const isUserZoneTender =
-        tender.zone_id === user.zone_id ||
-        (tender.zone_name &&
-          tender.zone_name.toLowerCase().includes(
-            user.zone_id.toString().toLowerCase()
-          ));
-      if (!isUserZoneTender) return false;
+  // Apply division filter (if user doesn't have division_id)
+  const matchesDivision = !user?.division_id && 
+    (filterDivision === '' || tender.division_name === filterDivision);
 
-    }
-    const matchesSearch = searchTerm === '' ||
-      (tender.division_name && tender.division_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (tender.work_name && tender.work_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (tender.tenderRefNo && tender.tenderRefNo.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (tender.tenderAuthority && tender.tenderAuthority.toLowerCase().includes(searchTerm.toLowerCase()));
-
-    const matchesDivision = !user?.division_id &&
-      (filterDivision === '' || tender.division_name === filterDivision);
-
-    return matchesSearch && (user?.division_id ? true : matchesDivision);
-  }) || [];
+  return matchesSearch && (user?.division_id ? true : matchesDivision);
+}) || [];
 
   const totalPages = Math.ceil((filteredTenders?.length || 0) / itemsPerPage);
   const paginatedTenders = filteredTenders?.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  //const divisionOptions = Array.from(new Set(tenders?.map((t: Tender) => t.division_name) || []));
   const divisionOptions = Array.from(
-    new Set(
-      tenders
-        ?.filter((t: Tender) =>
-          !user?.division_id ||
-          t.division_id === user.division_id ||
-          t.division_name?.includes(user.division_id.toString())
-        )
-        ?.map((t: Tender) => t.division_name) || []
-    )
-  );
+  new Set(
+    tenders
+      ?.filter((t: Tender) => 
+        !user?.division_id || 
+        t.division_id === user.division_id || 
+        t.division_name?.includes(user.division_id.toString())
+      )
+      ?.map((t: Tender) => t.division_name) || []
+  )
+);
 
-  const handleSaveTender = async (formData: any, status: 'draft' | 'finalized' | 'draft_update') => {
-    try {
-      const submitData = new FormData();
+const handleSaveTender = async (formData: any, status: 'draft' | 'finalized' | 'draft_update') => {
+  try {
+    const submitData = new FormData();
+    
 
-      const dateTimeCombinations = [
-        { dateField: 'newsdate', timeField: 'newsdate_time', combinedField: 'newsdate' },
-        { dateField: 'nit_date', timeField: 'nit_time', combinedField: 'nitDate' },
-        { dateField: 'sale_start_date', timeField: 'sale_start_time', combinedField: 'saleStartDate' },
-        { dateField: 'pre_bid_date', timeField: 'pre_bid_time', combinedField: 'preBidDate' },
-        { dateField: 'corrigendum_date', timeField: 'corrigendum_time', combinedField: 'corrigendumDate' },
-        { dateField: 'bid_receipt_date', timeField: 'bid_receipt_time', combinedField: 'bidReceiptDate' },
-        { dateField: 'tech_bid_ope_date', timeField: 'tech_bid_ope_time', combinedField: 'techBidopeningDate' },
-        { dateField: 'tech_bid_eva_date', timeField: 'tech_bid_eva_time', combinedField: 'techBidevaluationDate' },
-        { dateField: 'financial_eval_date', timeField: 'financial_eval_time', combinedField: 'financial_eval_date' },
-        { dateField: 'loa_date', timeField: 'loa_time', combinedField: 'loa_date' },
-      ];
 
-      const processedData: any = { ...formData };
+    // Combine date and time fields into ISO strings
+    const dateTimeCombinations = [
+      { dateField: 'newsdate', timeField: 'newsdate_time', combinedField: 'newsdate' },
+      { dateField: 'nit_date', timeField: 'nit_time', combinedField: 'nitDate' },
+      { dateField: 'sale_start_date', timeField: 'sale_start_time', combinedField: 'saleStartDate' },
+      { dateField: 'pre_bid_date', timeField: 'pre_bid_time', combinedField: 'preBidDate' },
+      { dateField: 'corrigendum_date', timeField: 'corrigendum_time', combinedField: 'corrigendumDate' },
+      { dateField: 'bid_receipt_date', timeField: 'bid_receipt_time', combinedField: 'bidReceiptDate' },
+      { dateField: 'tech_bid_ope_date', timeField: 'tech_bid_ope_time', combinedField: 'techBidopeningDate' },
+      { dateField: 'tech_bid_eva_date', timeField: 'tech_bid_eva_time', combinedField: 'techBidevaluationDate' },
+      { dateField: 'financial_eval_date', timeField: 'financial_eval_time', combinedField: 'financial_eval_date' },
+      { dateField: 'loa_date', timeField: 'loa_time', combinedField: 'loa_date' },
+    ];
 
-      dateTimeCombinations.forEach(({ dateField, timeField, combinedField }) => {
-        const dateValue = processedData[dateField];
-        const timeValue = processedData[timeField];
+    // First, collect all the processed data
+    const processedData: any = { ...formData };
 
-        if (dateValue) {
-          if (timeValue) {
-            processedData[combinedField] = `${dateValue}T${timeValue}:00`;
-          } else {
-            processedData[combinedField] = `${dateValue}T00:00:00`;
-          }
-          console.log(`✅ Combined ${combinedField}:`, processedData[combinedField]);
+    // Process date fields
+    dateTimeCombinations.forEach(({ dateField, timeField, combinedField }) => {
+      const dateValue = processedData[dateField];
+      const timeValue = processedData[timeField];
+      
+      if (dateValue) {
+        if (timeValue) {
+          // Combine date and time
+          processedData[combinedField] = `${dateValue}T${timeValue}:00`;
         } else {
-          processedData[combinedField] = null;
+          // Date only, default to 00:00:00
+          processedData[combinedField] = `${dateValue}T00:00:00`;
         }
-      });
-
-      const basicFields = [
-        'id', 'division_id', 'work_id', 'tender_ref_no', 'authority',
-        'work_cost', 'bid_security', 'validity', 'agreement_number', 'remark',
-        'nameofpiu', 'newsprno'
-      ];
-
-      basicFields.forEach(field => {
-        if (processedData[field] !== undefined && processedData[field] !== null && processedData[field] !== '') {
-          submitData.append(field, String(processedData[field]));
-          console.log(`➕ Appended ${field}:`, processedData[field]);
-        }
-      });
-
-      const emdfeeValue = processedData.work_cost || processedData.emdfee;
-      if (emdfeeValue && emdfeeValue !== '') {
-        submitData.append('emdfee', String(emdfeeValue));
-        console.log(`💰 Appended emdfee:`, emdfeeValue);
+        console.log(`✅ Combined ${combinedField}:`, processedData[combinedField]);
+      } else {
+        // If no date, set to null or empty
+        processedData[combinedField] = null;
       }
+    });
 
-      dateTimeCombinations.forEach(({ combinedField }) => {
-        if (processedData[combinedField] !== undefined && processedData[combinedField] !== null && processedData[combinedField] !== '') {
-          submitData.append(combinedField, processedData[combinedField]);
-          console.log(`📅 Appended date ${combinedField}:`, processedData[combinedField]);
-        }
-      });
+    // Append basic fields - ADD BOTH work_cost AND emdfee
+    const basicFields = [
+      'id', 'division_id', 'work_id', 'tender_ref_no', 'authority',
+      'work_cost', 'bid_security', 'validity', 'agreement_number', 'remark',
+      'nameofpiu', 'newsprno'
+    ];
 
-      const fileFields = [
-        'newspaper_file', 'nit_file', 'sale_file', 'pre_bid_file',
-        'corrigendum_file', 'bids_file', 'tech_open_file', 'tech_eval_file',
-        'financial_eval_file', 'loa_file', 'contract_file'
-      ];
-
-      fileFields.forEach(field => {
-        const file = processedData[field];
-
-        const isFile = file &&
-          typeof file === 'object' &&
-          'name' in file &&
-          'size' in file &&
-          'type' in file;
-
-        if (isFile) {
-          submitData.append(field, file);
-          console.log(`📎 Appended file ${field}:`, file.name);
-        }
-      });
-
-      const existingFileFields = [
-        'existing_newspaper_file', 'existing_nit_file', 'existing_sale_file', 'existing_pre_bid_file',
-        'existing_corrigendum_file', 'existing_bids_file', 'existing_tech_open_file', 'existing_tech_eval_file',
-        'existing_financial_eval_file', 'existing_loa_file', 'existing_contract_file'
-      ];
-
-      existingFileFields.forEach(field => {
-        if (processedData[field] && !processedData[field.replace('existing_', '')]) {
-          submitData.append(field, processedData[field]);
-          console.log(`📎 Appended existing file ${field}:`, processedData[field]);
-        }
-      });
-
-      const actionType = status === 'finalized' ? 'FINAL_SUBMIT' :
-        (formData.id ? 'UPDATE' : 'DRAFT_SAVE');
-
-      submitData.append('action_type', actionType);
-      submitData.append('status', status === 'finalized' ? 'finalized' : 'draft');
-
-      console.log(`🎯 Action type: ${actionType}, Status: ${status === 'finalized' ? 'finalized' : 'draft'}`);
-
-      console.log('📤 Final FormData being sent:');
-      for (const [key, value] of submitData.entries()) {
-        const isFile = value &&
-          typeof value === 'object' &&
-          'name' in value &&
-          'size' in value &&
-          'type' in value;
-
-        if (isFile) {
-          console.log(`  ${key}: File - ${value.name} (${value.size} bytes)`);
-        } else {
-          console.log(`  ${key}: ${value}`);
-        }
+    basicFields.forEach(field => {
+      if (processedData[field] !== undefined && processedData[field] !== null && processedData[field] !== '') {
+        submitData.append(field, String(processedData[field]));
+        console.log(`➕ Appended ${field}:`, processedData[field]);
       }
+    });
 
-      await new Promise<void>((resolve, reject) => {
-        saveTenderMutation.mutate(submitData, {
-          onSuccess: async (response: any) => {
-            console.log("✅ Save successful:", response);
-
-            if (status === 'finalized') {
-              alert('Tender finalized successfully!');
-              setPageMode('list');
-              setSelectedTender(null);
-            } else {
-              alert('Draft saved successfully!');
-              setPageMode('list');
-            }
-
-            await refetchTenders?.();
-
-            resolve();
-          },
-          onError: (error: any) => {
-            console.error('❌ Error saving tender:', error);
-            alert(`Error saving tender: ${error.message || 'Unknown error'}`);
-            reject(error);
-          }
-        });
-      });
-    } catch (error) {
-      console.error('Form preparation error:', error);
-      alert('Failed to prepare form data');
+    // CRITICAL: Also append emdfee field (your backend expects this)
+    const emdfeeValue = processedData.work_cost || processedData.emdfee;
+    if (emdfeeValue && emdfeeValue !== '') {
+      submitData.append('emdfee', String(emdfeeValue));
+      console.log(`💰 Appended emdfee:`, emdfeeValue);
     }
-  };
 
-  const handleViewTender = (tender: Tender) => {
+    // Append date fields (the combined ones)
+    dateTimeCombinations.forEach(({ combinedField }) => {
+      if (processedData[combinedField] !== undefined && processedData[combinedField] !== null && processedData[combinedField] !== '') {
+        submitData.append(combinedField, processedData[combinedField]);
+        console.log(`📅 Appended date ${combinedField}:`, processedData[combinedField]);
+      }
+    });
+
+    // Append file fields
+    const fileFields = [
+      'newspaper_file', 'nit_file', 'sale_file', 'pre_bid_file',
+      'corrigendum_file', 'bids_file', 'tech_open_file', 'tech_eval_file',
+      'financial_eval_file', 'loa_file', 'contract_file'
+    ];
+
+    fileFields.forEach(field => {
+      const file = processedData[field];
+      
+      // Check if it's a File object
+      const isFile = file && 
+                    typeof file === 'object' && 
+                    'name' in file && 
+                    'size' in file && 
+                    'type' in file;
+      
+      if (isFile) {
+        submitData.append(field, file);
+        console.log(`📎 Appended file ${field}:`, file.name);
+      }
+    });
+
+    // Append existing file fields (if not uploading new files)
+    const existingFileFields = [
+      'existing_newspaper_file', 'existing_nit_file', 'existing_sale_file', 'existing_pre_bid_file',
+      'existing_corrigendum_file', 'existing_bids_file', 'existing_tech_open_file', 'existing_tech_eval_file',
+      'existing_financial_eval_file', 'existing_loa_file', 'existing_contract_file'
+    ];
+
+    existingFileFields.forEach(field => {
+      if (processedData[field] && !processedData[field.replace('existing_', '')]) {
+        submitData.append(field, processedData[field]);
+        console.log(`📎 Appended existing file ${field}:`, processedData[field]);
+      }
+    });
+
+    // Append action_type and status
+    const actionType = status === 'finalized' ? 'FINAL_SUBMIT' : 
+                      (formData.id ? 'UPDATE' : 'DRAFT_SAVE');
+    
+    submitData.append('action_type', actionType);
+    submitData.append('status', status === 'finalized' ? 'finalized' : 'draft');
+    
+    console.log(`🎯 Action type: ${actionType}, Status: ${status === 'finalized' ? 'finalized' : 'draft'}`);
+
+    // Debug: Log all FormData entries
+    console.log('📤 Final FormData being sent:');
+    for (const [key, value] of submitData.entries()) {
+      // Check if it's a File object
+      const isFile = value && 
+                    typeof value === 'object' && 
+                    'name' in value && 
+                    'size' in value && 
+                    'type' in value;
+      
+      if (isFile) {
+        console.log(`  ${key}: File - ${value.name} (${value.size} bytes)`);
+      } else {
+        console.log(`  ${key}: ${value}`);
+      }
+    }
+
+    // Send to backend
+    await new Promise<void>((resolve, reject) => {
+      saveTenderMutation.mutate(submitData, {
+        onSuccess: async (response: any) => {
+          console.log("✅ Save successful:", response);
+          
+          if (status === 'finalized') {
+            alert('Tender finalized successfully!');
+            setPageMode('list');
+            setSelectedTender(null);
+          } else {
+            alert('Draft saved successfully!');
+            setPageMode('list');
+          }
+          
+          await refetchTenders?.();
+        
+          resolve();
+        },
+        onError: (error: any) => {
+          console.error('❌ Error saving tender:', error);
+          alert(`Error saving tender: ${error.message || 'Unknown error'}`);
+          reject(error);
+        }
+      });
+    });
+  } catch (error) {
+    console.error('Form preparation error:', error);
+    alert('Failed to prepare form data');
+  }
+};
+const handleViewTender = (tender: Tender) => {
     setSelectedTender(tender);
     setPageMode('view');
   };
-
   const handleEditTender = (tender: Tender) => {
     setSelectedTender(tender);
     setPageMode('edit');
   };
-
   const handleViewLogs = (tender: Tender) => {
     setSelectedTender(tender);
     setShowLogModal(true);
   };
-
   const handleAddNew = () => {
     setSelectedTender(null);
     setPageMode('create');
   };
-
   const handleBackToList = () => {
     setPageMode('list');
     setSelectedTender(null);
   };
-
   const formatCurrency = (amount: string) => {
     if (!amount) return '0';
     const num = parseFloat(amount);
     if (isNaN(num)) return amount;
     return new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2, minimumFractionDigits: 2 }).format(num);
   };
-
   if (pageMode === 'create' || pageMode === 'edit') {
     return (
       <TenderForm
@@ -2967,7 +2657,6 @@ const TenderModule: React.FC = () => {
       />
     );
   }
-
   if (pageMode === 'view' && selectedTender) {
     return (
       <TenderDetailView
@@ -2977,11 +2666,10 @@ const TenderModule: React.FC = () => {
       />
     );
   }
-
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30">
-        <div className="max-w-7xl mx-auto space-y-6">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30 p-4 lg:p-8">
+        <div className="max-w-7xl mx-auto space-y-8">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl shadow-lg">
@@ -2992,14 +2680,14 @@ const TenderModule: React.FC = () => {
                 <p className="text-gray-600 mt-2">Manage all tender processes in one place</p>
               </div>
             </div>
-            {user?.role == '5' && (
-              <button
-                onClick={handleAddNew}
-                className="flex items-center gap-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3.5 rounded-xl hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold"
-              >
-                <Plus className="w-5 h-5" />
-                New Tender
-              </button>)}
+
+            <button
+              onClick={handleAddNew}
+              className="flex items-center gap-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3.5 rounded-xl hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold"
+            >
+              <Plus className="w-5 h-5" />
+              New Tender
+            </button>
           </div>
 
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
@@ -3064,13 +2752,13 @@ const TenderModule: React.FC = () => {
                     <table className="w-full">
                         <thead className="bg-blue-600 text-white">
                         <tr>
-                          <th className="p-4 text-left font-semibold whitespace-nowrap">Division Name</th>
-                          <th className="p-4 text-left font-semibold whitespace-nowrap">Name of Work</th>
-                          <th className="p-4 text-left font-semibold whitespace-nowrap">Tender Reference No</th>
-                          <th className="p-4 text-left font-semibold whitespace-nowrap">Work Order</th>
-                          <th className="p-4 text-left font-semibold whitespace-nowrap">Status</th>
-                          <th className="p-4 text-left font-semibold whitespace-nowrap">Work Cost</th>
-                          <th className="p-4 text-left font-semibold whitespace-nowrap">Actions</th>
+                          <th className="p-4 text-center font-semibold whitespace-nowrap">Division Name</th>
+                          <th className="p-4 text-center font-semibold whitespace-nowrap">Name of Work</th>
+                          <th className="p-4 text-center font-semibold whitespace-nowrap">Tender Reference No</th>
+                          <th className="p-4 text-center font-semibold whitespace-nowrap">Work Order</th>
+                          <th className="p-4 text-center font-semibold whitespace-nowrap">Status</th>
+                          <th className="p-4 text-center font-semibold whitespace-nowrap">Work Cost(Cr.)</th>
+                          <th className="p-4 text-center font-semibold whitespace-nowrap">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
@@ -3098,10 +2786,10 @@ const TenderModule: React.FC = () => {
                                 {t.status}
                               </span>
                             </td>
-                            <td className="p-4">
-                              <div className="flex items-center gap-2">
+                            <td className="p-4 text-center">
+                              <div className="flex items-center gap-2 ">
                                 <IndianRupee className="w-4 h-4 text-gray-400" />
-                                <span className="font-semibold text-gray-800">₹{t.emdfee ? formatCurrency(t.emdfee) : '0'}</span>
+                                <span className="font-semibold text-gray-800 ">{t.emdfee ? formatCurrency(t.emdfee) : '0'}</span>
                               </div>
                             </td>
                             <td className="p-4">

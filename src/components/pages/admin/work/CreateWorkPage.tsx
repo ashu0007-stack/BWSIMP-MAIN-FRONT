@@ -1494,12 +1494,12 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                         onChange={handleChange}
                         className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white ${validationErrors.work_period_months ? 'border-red-500' : 'border-gray-300'}`}
                       >
-                        <option value="">Select Period</option>
-  <option value="12">12 months (1 milestone)</option>
-  <option value="16">16 months (1 milestone)</option>
-  <option value="24">24 months (2 milestones)</option>
-  <option value="32">32 months (2 milestones)</option>
-  <option value="36">36 months (3 milestones)</option>
+                          <option value="">Select Period</option>
+                          <option value="12">12 months (1 milestone)</option>
+                          <option value="16">16 months (1 milestone for flood)</option>
+                          <option value="24">24 months (2 milestones)</option>
+                          <option value="32">32 months (2 milestones for flood)</option>
+                          <option value="36">36 months (3 milestones)</option>
                       </select>
                       {validationErrors.work_period_months && (
                         <p className="text-red-500 text-sm mt-1 flex items-center">
@@ -1903,13 +1903,12 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                               value={
                                 !showMilestoneFields ? "Select period first" :
                                   comp.Numberofmilestone === "1" ? 
-          formData.work_period_months === "12" ? "1 (12 months)" : 
-          formData.work_period_months === "16" ? "1 (16 months)" : "1 milestone" :
-        comp.Numberofmilestone === "2" ? 
-          formData.work_period_months === "24" ? "2 (24 months)" : 
-          formData.work_period_months === "32" ? "2 (32 months)" : "2 milestones" :
-        comp.Numberofmilestone === "3" ? "3 (36 months)" :
-        "0"
+                                  formData.work_period_months === "12" ? "1 (12 months)" : 
+                                  formData.work_period_months === "16" ? "1 (16 months for flood)" : "1 milestone" :
+                                  comp.Numberofmilestone === "2" ? 
+                                  formData.work_period_months === "24" ? "2 (24 months)" : 
+                                  formData.work_period_months === "32" ? "2 (32 months for flood)" : "2 milestones" :
+                                  comp.Numberofmilestone === "3" ? "3 (36 months)" : "0"
                               }
                               className={`w-full px-3 py-2 border rounded-lg ${showMilestoneFields
                                 ? "border-gray-300 bg-gray-50 text-gray-700"
@@ -2024,8 +2023,6 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
           • Milestones: <span className="font-bold">{comp.Numberofmilestone}</span>
           <br />
           • <span className="font-bold text-red-600">Rule:</span> M1 + M2 + M3 = Total Quantity
-          <br />
-          • <span className="text-green-600">Tip:</span> Use Auto calculate for equal distribution
         </p>
       </div>
     </div>

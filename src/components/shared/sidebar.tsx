@@ -212,6 +212,7 @@ export const Sidebar: FC<any> = ({ setActiveTab, activeTab }) => {
         children: [
           { id: "length", label: "Length", icon: CircleDot, roles: [1, 2, 3, 5, 6] },
           { id: "milestone", label: "Milestone", icon: ListChecks, roles: [1, 2, 3, 5, 6] },
+          { id: "ESReport", label: "ESProgress", icon: CircleDot, roles: [1, 2, 3, 5, 6] },
         ],
       },
 
