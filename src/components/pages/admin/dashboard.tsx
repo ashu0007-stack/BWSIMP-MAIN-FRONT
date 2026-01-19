@@ -1,6 +1,6 @@
 import { act, useState } from "react";
 import Link from "next/link";
-import CreateWorkPackages from "./work/work";
+import App from "./work/work";
 import DmsPage from "./dms/DmsPage";
 import { Sidebar } from "@/components/shared/sidebar";
 import { UserCreate } from "./usermanagement/userCreate";
@@ -71,7 +71,7 @@ export default function SuperAdminDashboard() {
         )}
 
         {/* SuperAdmin actions */}
-        {activeTab === "work" && <CreateWorkPackages />}
+        {activeTab === "work" && <App />}
         {activeTab === "usersDetails" && <UserDetails />}
         {activeTab === "addUser" && <UserCreate />}
         {activeTab === "dms" && <DmsPage />}

@@ -2,7 +2,7 @@ import { NextPage } from 'next'
 import React from 'react'
 import { ImageCarousel } from '@/components/landingComponents/ImageCarousel'
 import OverviewCard from '@/components/landingComponents/OverviewCard'
-import  NavHeader  from '@/components/shared/Header/NavHeader'
+import NavHeader from '@/components/shared/Header/NavHeader'
 import { Gallery } from '@/components/landingComponents/Gallery'
 import { AboutProject } from '@/components/landingComponents/AboutProject'
 

@@ -15,7 +15,9 @@ import {
   updateBeneficiaries,
   updateVillages,
   updateComponents,
-  fetchAssignedWorks
+  fetchAssignedWorks,
+  getSpursByWorkId,
+  addSpurs
 
 } from "@/services/api/wrdApi/workApi";
 
@@ -180,5 +182,34 @@ export const useAssignedWorks = (userId?: string) => {
     queryFn: () => fetchAssignedWorks(userId!),
     enabled: !!userId,
     staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
+export const useAddSpurs = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ workId, data }: { workId: number; data: any }) =>
+      addSpurs(workId, data),
+    onSuccess: (_, variables) => {
+      // Invalidate both the work details and spurs specific query
+      queryClient.invalidateQueries({ queryKey: ["work", variables.workId] });
+      queryClient.invalidateQueries({ queryKey: ["spurs", variables.workId] });
+      queryClient.invalidateQueries({ queryKey: ["works"] });
+    },
+    onError: (error) => {
+      console.error('❌ Error adding spurs:', error);
+      throw error;
+    }
+  });
+};
+
+// =============================
+// ✅ Hook: Get spurs by work ID
+// =============================
+export const useSpursByWorkId = (workId: number | null | undefined) => {
+  return useQuery({
+    queryKey: ["spurs", workId],
+    queryFn: () => getSpursByWorkId(workId!),
+    enabled: !!workId,
   });
 };
