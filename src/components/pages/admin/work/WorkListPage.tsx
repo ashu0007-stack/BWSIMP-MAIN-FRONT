@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { 
-  Package, 
   Eye, 
   Plus, 
   ChevronLeft, 
@@ -9,7 +8,20 @@ import {
   ChevronsRight,
   Search,
   Filter,
-  Download
+  Download,
+  Package,
+  Building,
+  Calendar,
+  MapPin,
+  Users,
+  Award,
+  Loader,
+  Shield,
+  FileText,
+  ArrowLeft,
+  BarChart3,
+  DollarSign,
+  Home
 } from "lucide-react";
 import { useWorks } from "@/hooks/wrdHooks/useWorks";
 import { Work } from "@/components/pages/admin/work/work";
@@ -17,18 +29,20 @@ import { Work } from "@/components/pages/admin/work/work";
 interface WorkListPageProps {
   onViewWork: (workId: number) => void;
   onCreateWork: () => void;
+  onBack?: () => void;
 }
 
-const WorkListPage: React.FC<WorkListPageProps> = ({ onViewWork, onCreateWork }) => {
+const WorkListPage: React.FC<WorkListPageProps> = ({ onViewWork, onCreateWork, onBack }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [districtFilter, setDistrictFilter] = useState<string>("all");
   
   const { data: worksList = [], isLoading: worksLoading, refetch: refetchWorks } = useWorks();
 
-  // Filter works based on search and status
+  // Filter works based on search, status and district
   const filteredWorks = React.useMemo(() => {
     if (!worksList || !Array.isArray(worksList)) return [];
     
@@ -36,13 +50,15 @@ const WorkListPage: React.FC<WorkListPageProps> = ({ onViewWork, onCreateWork })
       const matchesSearch = 
         work.work_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         work.package_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        work.division_name?.toLowerCase().includes(searchTerm.toLowerCase());
+        work.division_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        work.circle_name?.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesStatus = statusFilter === "all" || work.award_status === statusFilter;
+      const matchesDistrict = districtFilter === "all" || work.district_name === districtFilter;
       
-      return matchesSearch && matchesStatus;
+      return matchesSearch && matchesStatus && matchesDistrict;
     });
-  }, [worksList, searchTerm, statusFilter]);
+  }, [worksList, searchTerm, statusFilter, districtFilter]);
 
   // Calculate total pages when filteredWorks changes
   useEffect(() => {
@@ -80,15 +96,23 @@ const WorkListPage: React.FC<WorkListPageProps> = ({ onViewWork, onCreateWork })
     setCurrentPage(1);
   };
 
+  // Get unique districts
+ // const districts = Array.from(new Set(worksList.map((work: Work) => work.district_name).filter(Boolean)));
+
   // Format currency
   const formatCurrency = (amount: string) => {
     if (!amount) return "₹0";
-    return `₹${Number(amount).toLocaleString('en-IN')}`;
+    const amountNumber = parseFloat(amount);
+    if (isNaN(amountNumber)) return "₹0";
+    if (amountNumber >= 10000000) {
+      return `₹${(amountNumber / 10000000).toFixed(2)} Cr`;
+    }
+    return `₹${amountNumber.toLocaleString('en-IN')}`;
   };
 
   // Format date
   const formatDate = (dateString: string) => {
-    if (!dateString) return "N/A";
+    if (!dateString) return "—";
     return new Date(dateString).toLocaleDateString('en-IN', {
       day: '2-digit',
       month: 'short',
@@ -96,339 +120,381 @@ const WorkListPage: React.FC<WorkListPageProps> = ({ onViewWork, onCreateWork })
     });
   };
 
-  // Pagination Component
-  const renderPagination = () => {
-    const totalItems = filteredWorks?.length || 0;
-    
-    if (totalItems === 0) return null;
-    
-    const startItem = (currentPage - 1) * itemsPerPage + 1;
-    const endItem = Math.min(currentPage * itemsPerPage, totalItems);
-    
-    const pageNumbers = [];
-    const maxPageButtons = 5;
-    
-    if (totalPages <= maxPageButtons) {
-      for (let i = 1; i <= totalPages; i++) {
-        pageNumbers.push(i);
-      }
-    } else {
-      let startPage = Math.max(1, currentPage - Math.floor(maxPageButtons / 2));
-      let endPage = startPage + maxPageButtons - 1;
-      
-      if (endPage > totalPages) {
-        endPage = totalPages;
-        startPage = Math.max(1, endPage - maxPageButtons + 1);
-      }
-      
-      for (let i = startPage; i <= endPage; i++) {
-        pageNumbers.push(i);
-      }
-    }
-    
-    return (
-      <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 bg-white border-t border-gray-200 rounded-b-xl">
-        <div className="mb-4 sm:mb-0">
-          <p className="text-sm text-gray-700">
-            Showing <span className="font-medium">{startItem}</span> to{" "}
-            <span className="font-medium">{endItem}</span> of{" "}
-            <span className="font-medium">{totalItems}</span> work packages
-          </p>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <div className="flex items-center mr-4">
-            <label className="text-sm text-gray-700 mr-2">Rows per page:</label>
-            <select
-              value={itemsPerPage}
-              onChange={handleItemsPerPageChange}
-              className="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value={5}>5</option>
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
-            </select>
-          </div>
-          
-          <button
-            onClick={() => handlePageChange(1)}
-            disabled={currentPage === 1}
-            className={`p-2 rounded-lg ${currentPage === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'}`}
-          >
-            <ChevronsLeft className="w-4 h-4" />
-          </button>
-          
-          <button
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className={`p-2 rounded-lg ${currentPage === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'}`}
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          
-          <div className="flex items-center space-x-1">
-            {pageNumbers.map(page => (
-              <button
-                key={page}
-                onClick={() => handlePageChange(page)}
-                className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium ${
-                  currentPage === page
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                {page}
-              </button>
-            ))}
-            
-            {totalPages > maxPageButtons && currentPage < totalPages - Math.floor(maxPageButtons / 2) && (
-              <>
-                <span className="px-2 text-gray-500">...</span>
-                <button
-                  onClick={() => handlePageChange(totalPages)}
-                  className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium ${
-                    currentPage === totalPages
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  {totalPages}
-                </button>
-              </>
-            )}
-          </div>
-          
-          <button
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className={`p-2 rounded-lg ${currentPage === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'}`}
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-          
-          <button
-            onClick={() => handlePageChange(totalPages)}
-            disabled={currentPage === totalPages}
-            className={`p-2 rounded-lg ${currentPage === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'}`}
-          >
-            <ChevronsRight className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-    );
-  };
-
   // Status badge component
   const StatusBadge = ({ status }: { status: string }) => {
     const getStatusConfig = (status: string) => {
       switch (status) {
         case "Awarded":
-          return { bg: "bg-green-100", text: "text-green-800", label: "Awarded" };
+          return { bg: "bg-green-100", text: "text-green-800", border: "border-green-300", label: "Awarded" };
         case "In Progress":
-          return { bg: "bg-yellow-100", text: "text-yellow-800", label: "In Progress" };
+          return { bg: "bg-yellow-100", text: "text-yellow-800", border: "border-yellow-300", label: "In Progress" };
         case "Completed":
-          return { bg: "bg-blue-100", text: "text-blue-800", label: "Completed" };
+          return { bg: "bg-blue-100", text: "text-blue-800", border: "border-blue-300", label: "Completed" };
         case "Pending":
-          return { bg: "bg-orange-100", text: "text-orange-800", label: "Pending" };
+          return { bg: "bg-orange-100", text: "text-orange-800", border: "border-orange-300", label: "Pending" };
         default:
-          return { bg: "bg-gray-100", text: "text-gray-800", label: status || "Not Awarded" };
+          return { bg: "bg-gray-100", text: "text-gray-800", border: "border-gray-300", label: status || "Not Awarded" };
       }
     };
     
     const config = getStatusConfig(status);
     
     return (
-      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
+      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${config.bg} ${config.text} ${config.border}`}>
         {config.label}
       </span>
     );
   };
 
-  // Render work list
-  const renderWorkList = () => {
-    const paginatedWorks = getPaginatedWorks();
-    
+  // Calculate stats
+  const totalWorks = worksList.length;
+  const totalCost = worksList.reduce((sum: number, work: { work_cost: any; }) => sum + (parseFloat(work.work_cost || "0") || 0), 0);
+  const awardedWorks = worksList.filter((work: { award_status: string; }) => work.award_status === "Awarded").length;
+  const inProgressWorks = worksList.filter((work: { award_status: string; }) => work.award_status === "In Progress").length;
+
+  if (worksLoading) {
     return (
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-        <div className="p-6">
-          {/* Filters and Search */}
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="text"
-                  placeholder="Search by work name, package number, or division..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <Loader className="w-10 h-10 animate-spin text-[#003087]" />
+          <p className="mt-4 text-gray-700 font-medium">Loading Work Packages...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100 flex flex-col">
+      {/* Government Header */}
+      <header className="bg-[#003087] text-white border-b-4 border-[#FF9933]">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            {/* Government Logo/Emblem Placeholder */}
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 p-2 rounded">
+                <Shield className="w-8 h-8" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold">Work Package Management</h1>
+                <p className="text-sm text-blue-100">Manage and track all your work packages</p>
               </div>
             </div>
-            <div className="flex gap-2">
-              <div className="relative">
-                <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="all">All Status</option>
-                  <option value="Awarded">Awarded</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Completed">Completed</option>
-                  <option value="Pending">Pending</option>
-                </select>
+          </div>
+
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded transition-colors"
+            >
+              <ArrowLeft size={18} /> Back
+            </button>
+          )}
+        </div>
+      </header>
+
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
+        {/* Government Stats Cards */}
+        {/* <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
+          {[
+            { 
+              title: "Total Work Packages", 
+              value: totalWorks, 
+              icon: Package, 
+              color: "blue",
+              subtitle: "All works"
+            },
+            { 
+              title: "Total Estimated Cost", 
+              value: formatCurrency(totalCost.toString()), 
+              icon: DollarSign, 
+              color: "green",
+              subtitle: "Overall budget"
+            },
+            { 
+              title: "Awarded Works", 
+              value: awardedWorks, 
+              icon: Award, 
+              color: "orange",
+              subtitle: "Successfully awarded"
+            },
+            { 
+              title: "In Progress", 
+              value: inProgressWorks, 
+              icon: BarChart3, 
+              color: "purple",
+              subtitle: "Ongoing works"
+            },
+          ].map((stat, i) => (
+            <div key={i} className="bg-white border border-gray-300 rounded shadow-sm p-5 hover:border-[#003087] transition-colors">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-sm text-gray-600">{stat.title}</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
+                  <p className="text-xs text-gray-500 mt-1">{stat.subtitle}</p>
+                </div>
+                <div className={`p-3 bg-${stat.color}-50 rounded`}>
+                  <stat.icon className={`w-8 h-8 text-${stat.color}-600`} />
+                </div>
               </div>
+            </div>
+          ))}
+        </div> */}
+
+        {/* Government Filter Panel */}
+        <div className="bg-white border border-gray-300 rounded shadow-sm p-6 mb-6">
+          <div className="flex flex-wrap gap-4 items-end">
+            <div className="flex-1 min-w-[280px]">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                <Search className="inline w-4 h-4 mr-2" />
+                Search Work Packages
+              </label>
+              <input
+                type="text"
+                placeholder="Search by work name, package number, division, or circle..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-400 rounded focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <select
+                value={statusFilter}
+                onChange={e => setStatusFilter(e.target.value)}
+                className="px-4 py-2 border border-gray-400 rounded focus:border-[#003087] w-40"
+              >
+                <option value="all">All Status</option>
+                <option value="Awarded">Awarded</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Completed">Completed</option>
+                <option value="Pending">Pending</option>
+              </select>
+            </div>
+
+            {/* <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">District</label>
+              <select
+                value={districtFilter}
+                onChange={e => setDistrictFilter(e.target.value)}
+                className="px-4 py-2 border border-gray-400 rounded focus:border-[#003087] w-48"
+              >
+                <option value="all">All Districts</option>
+                {districts.map((d: boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | React.Key | null | undefined) => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </div> */}
+
+            <div className="flex gap-3">
               <button
                 onClick={() => refetchWorks()}
-                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
+                className="px-5 py-2 border border-gray-400 text-gray-700 font-medium rounded hover:bg-gray-50 flex items-center gap-2 transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
                 Refresh
               </button>
+
               <button
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
                 onClick={onCreateWork}
+                className="px-6 py-2 bg-green-700 text-white font-medium rounded hover:bg-green-800 flex items-center gap-2 transition-colors"
               >
-                <Plus className="w-4 h-4" />
-                Add New Work
+                <Plus size={18} /> Create New Work
               </button>
             </div>
           </div>
+        </div>
 
-          {worksLoading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading work packages...</p>
-            </div>
-          ) : filteredWorks.length > 0 ? (
-            <>
-              <div className="overflow-x-auto rounded-xl border mb-4">
-                <table className="w-full">
-                  <thead className="bg-blue-600 text-white">
-                    <tr>
-                      <th className="p-4 text-left font-semibold whitespace-nowrap">
-                        Package Details
-                      </th>
-                      <th className="p-4 text-left font-semibold whitespace-nowrap">
-                        Work Name
-                      </th>
-                      <th className="p-4 text-left font-semibold whitespace-nowrap">
-                        Division
-                      </th>
-                      <th className="p-4 text-left font-semibold whitespace-nowrap">
-                        Estimated Cost(Cr.)
-                      </th>
-                      <th className="p-4 text-left font-semibold whitespace-nowrap">
-                        Status
-                      </th>
-                      <th className="p-4 text-left font-semibold whitespace-nowrap">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {paginatedWorks.map((work: Work) => (
-                      <tr key={work.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="flex flex-col">
-                            <span className="font-medium text-gray-900">{work.package_number || "N/A"}</span>
-                            <span className="text-sm text-gray-500 mt-1">
-                              Created: {formatDate(work.created_at || "")}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-col">
-                            <span className="font-medium text-gray-900 line-clamp-2" title={work.work_name}>
-                              {work.work_name}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-col">
-                            <span className="text-gray-900">{work.division_name || "N/A"}</span>
-                            <div className="text-sm text-gray-500">
-                              {work.circle_name && <span>{work.circle_name}, </span>}
-                              {work.zone_name && <span>{work.zone_name}</span>}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-col">
-                            <span className="font-medium text-gray-900">{formatCurrency(work.work_cost || "0")}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <StatusBadge status={work.award_status || ""} />
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => onViewWork(work.id)}
-                              className="inline-flex items-center px-3 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-sm"
-                              title="View Details"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              
-              {renderPagination()}
-            </>
-          ) : (
-            <div className="text-center py-12 bg-gray-50 rounded-xl border border-gray-200">
-              <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {searchTerm || statusFilter !== "all" ? "No matching work packages found" : "No work packages found"}
-              </h3>
-              <p className="text-gray-600 mb-6">
-                {searchTerm || statusFilter !== "all" 
-                  ? "Try adjusting your search or filter criteria" 
-                  : "Create your first work package to get started"}
+        {/* Government Data Table */}
+        <div className="bg-white border border-gray-300 rounded shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left text-gray-700">
+              <thead className="bg-gray-100 text-gray-800">
+                <tr>
+                  <th className="px-6 py-4 font-semibold border-b border-gray-300">Package Details</th>
+                  <th className="px-6 py-4 font-semibold border-b border-gray-300">Work Name</th>
+                  <th className="px-6 py-4 font-semibold border-b border-gray-300">Division & Location</th>
+                  <th className="px-6 py-4 font-semibold border-b border-gray-300">Estimated Cost</th>
+                  <th className="px-6 py-4 font-semibold border-b border-gray-300">Status</th>
+                  <th className="px-6 py-4 font-semibold border-b border-gray-300">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {getPaginatedWorks().map((work: Work) => (
+                  <tr key={work.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="font-medium text-gray-900">{work.package_number || "N/A"}</div>
+                      <div className="flex items-center gap-1 text-xs text-gray-600 mt-1">
+                        <Calendar size={14} /> 
+                        {formatDate(work.created_at || "")}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="font-medium text-gray-900" title={work.work_name}>
+                        {work.work_name || "N/A"}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <div className="font-medium">{work.division_name || "N/A"}</div>
+                      <div className="text-gray-600 mt-1">
+                        {work.circle_name && <span>{work.circle_name}</span>}
+                        {work.zone_name && <span> • {work.zone_name}</span>}
+                        {work.district_name && <span> • {work.district_name}</span>}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <div className="font-medium text-gray-900">{formatCurrency(work.work_cost || "0")}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <StatusBadge status={work.award_status || ""} />
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => onViewWork(work.id)}
+                          className="text-[#003087] hover:text-[#00205b] flex items-center gap-1 text-sm font-medium"
+                          title="View Details"
+                        >
+                          <Eye size={16} /> View
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {filteredWorks.length === 0 && (
+            <div className="py-16 text-center text-gray-600">
+              <Package className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+              <p className="text-lg font-medium">
+                {searchTerm || statusFilter !== 'all' || districtFilter !== 'all' 
+                  ? "No matching work packages found"
+                  : "No work packages found"
+                }
               </p>
-              {(!searchTerm && statusFilter === "all") && (
+              <p className="mt-1 text-gray-500">
+                {searchTerm || statusFilter !== 'all' || districtFilter !== 'all' 
+                  ? 'Try adjusting your search or filters'
+                  : 'Create your first work package to get started'
+                }
+              </p>
+              {(!searchTerm && statusFilter === 'all' && districtFilter === 'all') && (
                 <button
                   onClick={onCreateWork}
-                  className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-200 font-medium"
+                  className="mt-6 px-6 py-2 bg-[#003087] text-white font-medium rounded hover:bg-[#00205b] inline-flex items-center gap-2"
                 >
-                  <Plus className="w-5 h-5 mr-2 inline" />
-                  Create New Work Package
+                  <Plus size={18} />
+                  Create First Work Package
                 </button>
               )}
             </div>
           )}
-        </div>
-      </div>
-    );
-  };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 md:p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Work Package Management</h1>
-              <p className="text-gray-600 mt-1">
-                Manage and track all your work packages in one place
-              </p>
+          {/* Pagination */}
+          {filteredWorks.length > 0 && (
+            <div className="px-6 py-4 border-t border-gray-300 bg-gray-50">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="text-sm text-gray-700">
+                  Showing <strong>{(currentPage - 1) * itemsPerPage + 1}</strong> to{" "}
+                  <strong>{Math.min(currentPage * itemsPerPage, filteredWorks.length)}</strong> of{" "}
+                  <strong>{filteredWorks.length}</strong> work packages
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center mr-4">
+                    <label className="text-sm text-gray-700 mr-2">Rows per page:</label>
+                    <select
+                      value={itemsPerPage}
+                      onChange={handleItemsPerPageChange}
+                      className="px-3 py-1 border border-gray-400 rounded text-sm focus:border-[#003087]"
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                    </select>
+                  </div>
+                  
+                  <button
+                    onClick={() => handlePageChange(1)}
+                    disabled={currentPage === 1}
+                    className={`p-2 ${currentPage === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'} rounded border border-gray-400`}
+                  >
+                    <ChevronsLeft className="w-4 h-4" />
+                  </button>
+                  
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className={`p-2 ${currentPage === 1 ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'} rounded border border-gray-400`}
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  
+                  <div className="flex items-center space-x-1">
+                    {(() => {
+                      const pageNumbers = [];
+                      const maxPageButtons = 5;
+                      
+                      if (totalPages <= maxPageButtons) {
+                        for (let i = 1; i <= totalPages; i++) {
+                          pageNumbers.push(i);
+                        }
+                      } else {
+                        let startPage = Math.max(1, currentPage - Math.floor(maxPageButtons / 2));
+                        let endPage = startPage + maxPageButtons - 1;
+                        
+                        if (endPage > totalPages) {
+                          endPage = totalPages;
+                          startPage = Math.max(1, endPage - maxPageButtons + 1);
+                        }
+                        
+                        for (let i = startPage; i <= endPage; i++) {
+                          pageNumbers.push(i);
+                        }
+                      }
+                      
+                      return pageNumbers.map(page => (
+                        <button
+                          key={page}
+                          onClick={() => handlePageChange(page)}
+                          className={`w-8 h-8 flex items-center justify-center rounded text-sm font-medium border ${
+                            currentPage === page
+                              ? 'bg-[#003087] text-white border-[#003087]'
+                              : 'text-gray-700 hover:bg-gray-100 border-gray-400'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      ));
+                    })()}
+                  </div>
+                  
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className={`p-2 ${currentPage === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'} rounded border border-gray-400`}
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                  
+                  <button
+                    onClick={() => handlePageChange(totalPages)}
+                    disabled={currentPage === totalPages}
+                    className={`p-2 ${currentPage === totalPages ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'} rounded border border-gray-400`}
+                  >
+                    <ChevronsRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
+      </main>
 
-        {renderWorkList()}
-      </div>
+      
     </div>
   );
 };
