@@ -559,54 +559,7 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
         </div>
       )}
 
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
-        {/* Stats Cards */}
-        {/* <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
-          {[
-            { 
-              title: "Total Estimated Cost", 
-              value: stats?.totalCost || "₹0", 
-              icon: DollarSign, 
-              color: "blue",
-              subtitle: "Overall budget"
-            },
-            { 
-              title: "Total Beneficiaries", 
-              value: stats?.totalBeneficiaries || "0", 
-              icon: Users, 
-              color: "green",
-              subtitle: "Population covered"
-            },
-            { 
-              title: "Villages Covered", 
-              value: stats?.totalVillages || 0, 
-              icon: Home, 
-              color: "orange",
-              subtitle: "Areas covered"
-            },
-            { 
-              title: "Total Components", 
-              value: stats?.totalComponents || 0, 
-              icon: Package, 
-              color: "purple",
-              subtitle: "Work components"
-            },
-          ].map((stat, i) => (
-            <div key={i} className="bg-white border border-gray-300 rounded shadow-sm p-5 hover:border-[#003087] transition-colors">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm text-gray-600">{stat.title}</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
-                  <p className="text-xs text-gray-500 mt-1">{stat.subtitle}</p>
-                </div>
-                <div className={`p-3 bg-${stat.color}-50 rounded`}>
-                  <stat.icon className={`w-8 h-8 text-${stat.color}-600`} />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div> */}
-
+      <main className="min-h-screen bg-gray-100 flex flex-col py-3">
         {/* Status and Action Bar */}
         <div className="bg-white border border-gray-300 rounded shadow-sm p-6 mb-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">

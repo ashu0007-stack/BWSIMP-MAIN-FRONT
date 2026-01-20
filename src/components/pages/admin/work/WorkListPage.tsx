@@ -192,54 +192,7 @@ const WorkListPage: React.FC<WorkListPageProps> = ({ onViewWork, onCreateWork, o
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-6">
-        {/* Government Stats Cards */}
-        {/* <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
-          {[
-            { 
-              title: "Total Work Packages", 
-              value: totalWorks, 
-              icon: Package, 
-              color: "blue",
-              subtitle: "All works"
-            },
-            { 
-              title: "Total Estimated Cost", 
-              value: formatCurrency(totalCost.toString()), 
-              icon: DollarSign, 
-              color: "green",
-              subtitle: "Overall budget"
-            },
-            { 
-              title: "Awarded Works", 
-              value: awardedWorks, 
-              icon: Award, 
-              color: "orange",
-              subtitle: "Successfully awarded"
-            },
-            { 
-              title: "In Progress", 
-              value: inProgressWorks, 
-              icon: BarChart3, 
-              color: "purple",
-              subtitle: "Ongoing works"
-            },
-          ].map((stat, i) => (
-            <div key={i} className="bg-white border border-gray-300 rounded shadow-sm p-5 hover:border-[#003087] transition-colors">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm text-gray-600">{stat.title}</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
-                  <p className="text-xs text-gray-500 mt-1">{stat.subtitle}</p>
-                </div>
-                <div className={`p-3 bg-${stat.color}-50 rounded`}>
-                  <stat.icon className={`w-8 h-8 text-${stat.color}-600`} />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div> */}
-
+      <main className="min-h-screen bg-gray-100 flex flex-col py-3">
         {/* Government Filter Panel */}
         <div className="bg-white border border-gray-300 rounded shadow-sm p-6 mb-6">
           <div className="flex flex-wrap gap-4 items-end">

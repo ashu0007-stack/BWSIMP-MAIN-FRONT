@@ -1,6 +1,6 @@
 // DmsPage.tsx
 import React, { useState, useEffect, useRef } from "react";
-import { Upload, Trash2, FileText, File, Download, Eye, X, CloudUpload, Search, Folder, Calendar, User, Share, Settings } from "lucide-react";
+import { Upload, Trash2, FileText, File, Download, Eye, X, CloudUpload, Search, Folder, Calendar, User, Share, Settings, Shield } from "lucide-react";
 import { useDms, useUser } from '../../../../hooks/useDms';
 import Select from 'react-select';
 
@@ -611,43 +611,29 @@ const DmsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header with User Controls */}
-        <div className="text-center mb-12">
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex-1">
-              <h1 className="text-4xl font-bold text-gray-900">Document Management System</h1>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto mt-2">
-                Securely upload, manage, and access documents in one place
-              </p>
-            </div>
-            <div className="w-64">
-              {!currentUser && (
-                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                  <p className="text-xs text-orange-800 text-center">
-                    <strong>Note:</strong> Set a user to enable upload and sharing features
-                  </p>
-                </div>
-              )}
+   
+      <div className="min-h-screen bg-gray-100 flex flex-col">
+        <header className="bg-[#003087] text-white border-b-4 border-[#FF9933]">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            {/* Government Logo/Emblem Placeholder */}
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 p-2 rounded">
+                <Shield className="w-8 h-8" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold">Upload New Document</h1>
+                <p className="text-sm text-blue-100">Manage and track all Documents</p>
+              </div>
             </div>
           </div>
         </div>
+      </header>
+        
 
         {/* Upload Section */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 mb-12 border border-gray-200">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <CloudUpload className="w-7 h-7 text-blue-600" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">Upload New Document</h2>
-              <p className="text-gray-500">
-                {/* {currentUser ? `Uploading as: ${currentUser.name}` : "Please set a user to upload documents"} */}
-              </p>
-            </div>
-          </div>
-
+           <main className="min-h-screen bg-gray-100 flex flex-col py-3">
+            <div className="bg-white border border-gray-300 rounded shadow-sm p-6 mb-6">
           <form onSubmit={handleUpload} className="space-y-6">
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* Component Dropdown with Search */}
@@ -887,7 +873,9 @@ const DmsPage: React.FC = () => {
               )}
             </button>
           </form>
-        </div>
+          </div>
+          </main>
+       
 
         {/* Document List - Grid Layout */}
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-200">
@@ -1107,7 +1095,7 @@ const DmsPage: React.FC = () => {
           currentUser={currentUser}
         />
       </div>
-    </div>
+   
   );
 };
 

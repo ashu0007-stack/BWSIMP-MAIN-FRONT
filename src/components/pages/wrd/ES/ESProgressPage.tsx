@@ -127,14 +127,27 @@ export default function ESProgressPage({ id, onClose }: ESProgressPageProps) {
   // ✅ FIX: Better check for selectedProject
   if (!selectedProject || selectedProject === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-4 md:p-6">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Social & Environmental (E&S) MIS Reporting</h1>
-          <p className="text-gray-600">Monitor and report environmental and social indicators</p>
-        </div>
+     <div className="min-h-screen bg-gray-100 flex flex-col">
+                <header className="bg-[#003087] text-white border-b-4 border-[#FF9933]">
+                <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    {/* Government Logo/Emblem Placeholder */}
+                    <div className="flex items-center gap-3">
+                      <div className="bg-white/20 p-2 rounded">
+                        <Shield className="w-8 h-8" />
+                      </div>
+                      <div>
+                        <h1 className="text-xl font-bold">Social & Environmental (E&S) MIS Reporting</h1>
+                        <p className="text-sm text-blue-100">Monitor and report environmental and social indicators</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </header>
+       
 
         {/* Project Selection */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+        <div className="min-h-screen bg-gray-100 flex flex-col py-3">
           <h2 className="text-lg font-semibold mb-4 text-blue-800 flex items-center gap-2">
             <Home className="w-5 h-5" />
             Select Project/Scheme

@@ -1359,11 +1359,11 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
         </div>
       )}
 
-      <main className="flex-1 max-w-[1800px] mx-auto w-full px-4 py-6">
+      <main className="min-h-screen bg-gray-100 flex flex-col py-3">
         {/* Form Container */}
         <div className="bg-white border border-gray-300 rounded shadow-sm overflow-hidden">
           {/* Form Header Banner */}
-          <div className="bg-gradient-to-r from-[#003087] to-[#0056b3] text-white p-6 border-b border-[#FF9933]">
+          {/* <div className="bg-gradient-to-r from-[#003087] to-[#0056b3] text-white p-6 border-b border-[#FF9933]">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold mb-2">Create New Work Package</h2>
@@ -1375,7 +1375,7 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                 <FileCheck className="w-8 h-8" />
               </div>
             </div>
-          </div>
+          </div> */}
 
           {/* Navigation Tabs */}
           <div className="border-b border-gray-300">
