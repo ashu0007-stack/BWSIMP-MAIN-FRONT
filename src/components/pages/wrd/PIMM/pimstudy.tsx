@@ -63,6 +63,14 @@ interface ImpactArea {
   icon: React.ReactNode;
 }
 
+interface Statistics {
+  totalRecords: number;
+  positiveImpact: number;
+  negativeImpact: number;
+  neutralImpact: number;
+  positivePercentage: string;
+}
+
 const PimComparativeStudy: React.FC = () => {
   const { data: comparativeData = [], isLoading, refetch } = useComparativeData();
   const createRecordMutation = useCreateComparativeRecord();
@@ -196,7 +204,7 @@ const PimComparativeStudy: React.FC = () => {
   };
 
   // Filtered data based on search and year
-  const filteredData = comparativeData.filter((record: ComparativeData) => {
+  const filteredData = (comparativeData as ComparativeData[]).filter((record: ComparativeData) => {
     const matchesSearch = searchTerm === '' || 
       getImpactAreaLabel(record.impact_area).toLowerCase().includes(searchTerm.toLowerCase()) ||
       record.remarks?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -207,16 +215,16 @@ const PimComparativeStudy: React.FC = () => {
   });
 
   // Calculate overall statistics
-  const getStatistics = () => {
-    const positiveImpact = filteredData.filter((record: { difference_percent: string; }) => 
+  const getStatistics = (): Statistics => {
+    const positiveImpact = filteredData.filter((record: ComparativeData) => 
       parseFloat(record.difference_percent) > 0
     ).length;
     
-    const negativeImpact = filteredData.filter((record: { difference_percent: string; }) => 
+    const negativeImpact = filteredData.filter((record: ComparativeData) => 
       parseFloat(record.difference_percent) < 0
     ).length;
     
-    const neutralImpact = filteredData.filter((record: { difference_percent: string; }) => 
+    const neutralImpact = filteredData.filter((record: ComparativeData) => 
       parseFloat(record.difference_percent) === 0
     ).length;
     
@@ -235,7 +243,6 @@ const PimComparativeStudy: React.FC = () => {
   const stats = getStatistics();
 
   const inputClass = "w-full px-4 py-2 border border-gray-400 rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087]";
-  const sectionClass = "bg-gray-50 border border-gray-300 rounded p-6";
   const sectionHeaderClass = "text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2";
 
   return (
@@ -324,8 +331,8 @@ const PimComparativeStudy: React.FC = () => {
               <div className="p-6 border-b border-gray-300 bg-gray-50">
                 <div className="flex justify-between items-center">
                   <h2 className={sectionHeaderClass}>
-                    {editingId ? <Edit3 className="w-5 h-5 text-[#003087]" /> : ''}
-                    {editingId ? 'Edit Comparative Record' : ''}
+                    {editingId ? <Edit3 className="w-5 h-5 text-[#003087]" /> : <Plus className="w-5 h-5 text-[#003087]" />}
+                    {editingId ? 'Edit Comparative Record' : 'Add New Comparative Record'}
                   </h2>
                   {editingId && (
                     <button
@@ -336,7 +343,6 @@ const PimComparativeStudy: React.FC = () => {
                     </button>
                   )}
                 </div>
-                ?
               </div>
               
               <div className="p-6">
@@ -447,9 +453,9 @@ const PimComparativeStudy: React.FC = () => {
                         value={formData.difference_percent}
                         readOnly
                         className={`w-full px-4 py-2 border rounded focus:outline-none font-medium ${
-                          parseFloat(formData.difference_percent) > 0 
+                          parseFloat(formData.difference_percent || '0') > 0 
                             ? 'bg-green-50 border-green-300 text-green-700' 
-                            : parseFloat(formData.difference_percent) < 0 
+                            : parseFloat(formData.difference_percent || '0') < 0 
                             ? 'bg-red-50 border-red-300 text-red-700' 
                             : 'bg-gray-100 border-gray-400 text-gray-600'
                         }`}
@@ -537,10 +543,10 @@ const PimComparativeStudy: React.FC = () => {
                         className="pl-10 pr-8 py-2 border border-gray-400 rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] appearance-none"
                       >
                         <option value="">All Years</option>
-                        {Array.from(new Set(comparativeData.map((r: ComparativeData) => r.year)))
+                        {Array.from(new Set((comparativeData as ComparativeData[]).map((r: ComparativeData) => r.year)))
                           .sort((a, b) => b - a)
                           .map(year => (
-                            <option key={year} value={year}>{year}</option>
+                            <option key={year} value={year.toString()}>{year}</option>
                           ))
                         }
                       </select>
