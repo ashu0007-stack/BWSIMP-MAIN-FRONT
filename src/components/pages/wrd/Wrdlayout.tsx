@@ -21,6 +21,7 @@ import VLCParent from "./PIMM/vlc/vlcParent";
 import SLCManagement from "./PIMM/slc/slcParent";
 import WUACreationContainer from "./PIMM/wua/WUACreationContainer";
 import App from "../admin/work/work";
+import ESProgressPage from "./ES/ESProgressPage";
 export default function WrdLayout() {
   const [activeTab, setActiveTab] = useState("dashboard");
  // Load active tab from localStorage
@@ -66,6 +67,8 @@ export default function WrdLayout() {
         return <UserDetails/>;
         case "Doc":
         return <DmsPage/>;
+      case "ESReport":
+         return <ESProgressPage/>
         case "pimw" :
          return <Dashboard/>
       default:
