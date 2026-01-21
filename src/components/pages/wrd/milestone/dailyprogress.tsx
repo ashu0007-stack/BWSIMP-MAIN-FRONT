@@ -9,7 +9,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { Eye, Download, Plus, ArrowLeft, ChevronDown, X } from "lucide-react";
+import { Eye, Download, Plus, ArrowLeft, ChevronDown, X, Shield, Home, Phone, Mail, Globe } from "lucide-react";
 import AddProgressForm from "../milestone/MilestoneProgress";
 import {
   usePackageProgress,
@@ -20,7 +20,6 @@ import {
 } from "@/hooks/wrdHooks/useMilestones";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-
 import * as ExcelJS from 'exceljs';
 
 interface MilestonePageProps {
@@ -30,6 +29,7 @@ interface MilestonePageProps {
   contractorName?: string;
   onClose?: () => void;
 }
+
 interface Milestone {
   work_name: string;
   contractor_name: string;
@@ -139,7 +139,6 @@ export default function MilestonePage({
 
   const saveProgressMutation = useSaveMilestoneProgress();
 
-
   useEffect(() => {
     if (components && Array.isArray(components) && components.length > 0) {
       const formatted = components.map((comp: any) => ({
@@ -157,7 +156,6 @@ export default function MilestonePage({
     }
   }, [components]);
 
-
   useEffect(() => {
     if (packageMilestones && Array.isArray(packageMilestones) && packageMilestones.length > 0) {
       const milestoneNumbers = new Set<number>();
@@ -174,7 +172,6 @@ export default function MilestonePage({
     }
   }, [packageMilestones]);
 
-
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (downloadMenuRef.current && !downloadMenuRef.current.contains(event.target as Node)) {
@@ -189,7 +186,6 @@ export default function MilestonePage({
   }, []);
 
   // MilestonePage.tsx में handleAddProgress function update करें
-
   const handleAddProgress = (formData: any) => {
     if (!selectedPackage) {
       alert("Please select a package first!");
@@ -663,9 +659,7 @@ export default function MilestonePage({
       }
 
       doc.save(`${selectedPackage}_Color_Progress_Report.pdf`);
-
-    }
-    else {
+    } else {
       // Excel Download with Colors using ExcelJS
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Milestone Progress Report');
@@ -1074,8 +1068,8 @@ export default function MilestonePage({
         <button
           key={i}
           onClick={() => setSelectedMilestone(i)}
-          className={`px-4 py-2 rounded-lg font-medium transition-all ${selectedMilestone === i
-              ? 'bg-blue-600 text-white shadow-md'
+          className={`px-4 py-2 rounded font-medium transition-colors ${selectedMilestone === i
+              ? 'bg-[#003087] text-white'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
         >
@@ -1089,8 +1083,8 @@ export default function MilestonePage({
       <button
         key="cumulative"
         onClick={() => setSelectedMilestone(0)}
-        className={`px-4 py-2 rounded-lg font-medium transition-all ${selectedMilestone === 0
-            ? 'bg-green-600 text-white shadow-md'
+        className={`px-4 py-2 rounded font-medium transition-colors ${selectedMilestone === 0
+            ? 'bg-[#FF9933] text-white'
             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
       >
@@ -1133,26 +1127,26 @@ export default function MilestonePage({
 
         return (
           <tr key={component.component_id || index} className="hover:bg-gray-50">
-            <td className="px-6 py-4 border text-center">{index + 1}</td>
-            <td className="px-6 py-4 border font-medium text-gray-900">
+            <td className="px-6 py-4 border border-gray-300 text-center">{index + 1}</td>
+            <td className="px-6 py-4 border border-gray-300 font-medium text-gray-900">
               {component.name}
             </td>
-            <td className="px-6 py-4 border text-gray-700 text-center">
+            <td className="px-6 py-4 border border-gray-300 text-gray-700 text-center">
               {component.unit}
             </td>
-            <td className="px-6 py-4 border text-gray-900 text-right">
+            <td className="px-6 py-4 border border-gray-300 text-gray-900 text-right">
               {totalQty.toLocaleString()}
             </td>
-            <td className="px-6 py-4 border text-gray-700 text-right">
+            <td className="px-6 py-4 border border-gray-300 text-gray-700 text-right">
               {previousMonthTotal.toLocaleString()}
             </td>
-            <td className="px-6 py-4 border text-gray-700 text-right">
+            <td className="px-6 py-4 border border-gray-300 text-gray-700 text-right">
               {currentMonthTotal.toLocaleString()}
             </td>
-            <td className="px-6 py-4 border font-medium text-gray-900 text-right">
+            <td className="px-6 py-4 border border-gray-300 font-medium text-gray-900 text-right">
               {cumulativeTotal.toLocaleString()}
             </td>
-            <td className="px-6 py-4 border">
+            <td className="px-6 py-4 border border-gray-300">
               <div className="flex items-center gap-2">
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
@@ -1198,34 +1192,34 @@ export default function MilestonePage({
 
       return (
         <tr key={component.component_id || index} className="hover:bg-gray-50">
-          <td className="px-6 py-4 border text-center">{index + 1}</td>
-          <td className="px-6 py-4 border font-medium text-gray-900">
+          <td className="px-6 py-4 border border-gray-300 text-center">{index + 1}</td>
+          <td className="px-6 py-4 border border-gray-300 font-medium text-gray-900">
             {component.name}
           </td>
-          <td className="px-6 py-4 border text-gray-700 text-center">
+          <td className="px-6 py-4 border border-gray-300 text-gray-700 text-center">
             {component.unit}
           </td>
-          <td className="px-6 py-4 border text-gray-900 text-right">
+          <td className="px-6 py-4 border border-gray-300 text-gray-900 text-right">
             {totalQty.toLocaleString()}
           </td>
-          <td className="px-6 py-4 border text-center">
-            <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+          <td className="px-6 py-4 border border-gray-300 text-center">
+            <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">
               {milestonePercentage.toFixed(1)}%
             </span>
           </td>
-          <td className="px-6 py-4 border font-medium text-gray-900 text-right">
+          <td className="px-6 py-4 border border-gray-300 font-medium text-gray-900 text-right">
             {milestoneQty.toLocaleString()}
           </td>
-          <td className="px-6 py-4 border text-gray-700 text-right">
+          <td className="px-6 py-4 border border-gray-300 text-gray-700 text-right">
             {(Number(milestoneData.previous_month_qty) || 0).toLocaleString()}
           </td>
-          <td className="px-6 py-4 border text-gray-700 text-right">
+          <td className="px-6 py-4 border border-gray-300 text-gray-700 text-right">
             {(Number(milestoneData.current_month_qty) || 0).toLocaleString()}
           </td>
-          <td className="px-6 py-4 border font-medium text-gray-900 text-right">
+          <td className="px-6 py-4 border border-gray-300 font-medium text-gray-900 text-right">
             {(Number(milestoneData.cumulative_qty) || 0).toLocaleString()}
           </td>
-          <td className="px-6 py-4 border">
+          <td className="px-6 py-4 border border-gray-300">
             <div className="flex items-center gap-2">
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
@@ -1289,399 +1283,405 @@ export default function MilestonePage({
 
   if (worksLoading) return (
     <div className="flex items-center justify-center min-h-screen">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#003087]"></div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-4 md:p-6">
-      {/* Header with close button for embedded view */}
-      {onClose && (
-        <div className="flex justify-between items-center mb-6">
-          <button
-            onClick={onClose}
-            className="inline-flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5" />
-            Close
-          </button>
-        </div>
-      )}
-
-      {!selectedPackage ? (
-        <>
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">Milestone Progress Dashboard</h1>
-            <p className="text-gray-600">Track and manage project milestones efficiently</p>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Package Number
-                </label>
-                <input
-                  type="text"
-                  placeholder="Enter package number..."
-                  value={searchPackage}
-                  onChange={(e) => setSearchPackage(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                />
+    <div className="min-h-screen bg-gray-100 flex flex-col">
+      {/* Government Header */}
+      <header className="bg-[#003087] text-white border-b-4 border-[#FF9933]">
+        <div className="max-w-[1800px] mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 p-2 rounded">
+                <Shield className="w-8 h-8" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Contractor Name
-                </label>
-                <input
-                  type="text"
-                  placeholder="Enter contractor name..."
-                  value={searchContractor}
-                  onChange={(e) => setSearchContractor(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                />
+                <h1 className="text-xl font-bold">Milestone Progress Monitoring</h1>
               </div>
             </div>
           </div>
+        </div>
+      </header>
 
-         
-            <div className="overflow-x-auto rounded-xl border mb-4">
-             <table className="w-full">
-                  <thead className="bg-blue-600 text-white">
-               <tr>
-                    <th className="border p-2 whitespace-nowrap">Package No.</th>
-                    <th className="border p-2">Work Name</th>
-                    <th className="border p-2 whitespace-nowrap">Agency Name</th>
-                    <th className="border p-2">Agreement Number</th>
-                    <th className="border p-2">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredWorks.length > 0 ? (
-                    filteredWorks.map((row: any, i: number) => (
-                      <tr key={i} className="hover:bg-gray-50">
-                        <td className="border p-2">{row.package_number}</td>
-                        <td className="border p-2">{row.work_name}</td>
-                        <td className="border p-2">{row.contractor_name}</td>
-                        <td className="border p-2">{row.agreement_no}</td>
-                        <td className="px-6 py-4 text-center">
-                          <button className="relative flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 text-white px-4 py-2 rounded-xl hover:shadow-lg transition-all duration-300 group overflow-hidden"
-                            onClick={() => setSelectedPackage(row.package_number)}
-                            title="View Details"
-                          >
-                            <div className="relative z-10 flex items-center gap-2">
-                              <Eye className="w-3 h-3" />
+      <main className="flex-1 max-w-[1800px] mx-auto w-full px-4 py-6">
+        {/* Header with close button for embedded view */}
+        {onClose && (
+          <div className="flex justify-between items-center mb-6">
+            <button
+              onClick={onClose}
+              className="flex items-center gap-2 px-4 py-2 border border-gray-400 text-gray-700 rounded hover:bg-gray-50 transition-colors"
+            >
+              <X className="w-5 h-5" />
+              Close
+            </button>
+          </div>
+        )}
 
-                            </div>
-                          </button>
+        {!selectedPackage ? (
+          <>
+
+            <div className="bg-white border border-gray-300 rounded shadow-sm p-6 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Package Number
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter package number..."
+                    value={searchPackage}
+                    onChange={(e) => setSearchPackage(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-400 rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Contractor Name
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter contractor name..."
+                    value={searchContractor}
+                    onChange={(e) => setSearchContractor(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-400 rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white border border-gray-300 rounded shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse border border-gray-400">
+                  <thead>
+                    <tr className="bg-gray-100 text-gray-800">
+                      <th className="border border-gray-400 p-3 font-semibold">Package No.</th>
+                      <th className="border border-gray-400 p-3 font-semibold">Work Name</th>
+                      <th className="border border-gray-400 p-3 font-semibold">Agency Name</th>
+                      <th className="border border-gray-400 p-3 font-semibold">Agreement Number</th>
+                      <th className="border border-gray-400 p-3 font-semibold">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredWorks.length > 0 ? (
+                      filteredWorks.map((row: any, i: number) => (
+                        <tr key={i} className="hover:bg-gray-50">
+                          <td className="border border-gray-400 p-3">{row.package_number}</td>
+                          <td className="border border-gray-400 p-3">{row.work_name}</td>
+                          <td className="border border-gray-400 p-3">{row.contractor_name}</td>
+                          <td className="border border-gray-400 p-3">{row.agreement_no}</td>
+                          <td className="px-6 py-4 text-center">
+                            <button className="flex items-center justify-center gap-2 bg-[#003087] text-white px-4 py-2 rounded hover:bg-[#00205b] transition-colors"
+                              onClick={() => setSelectedPackage(row.package_number)}
+                              title="View Details"
+                            >
+                              <Eye className="w-4 h-4" />
+                              View Details
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-8 text-center">
+                          <div className="text-gray-500">
+                            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <p className="mt-2">No projects found</p>
+                          </div>
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={5} className="px-6 py-8 text-center">
-                        <div className="text-gray-500">
-                          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                          <p className="mt-2">No projects found</p>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          
-        </>
-      ) : (
-        <>
-          {/* Back button (only show if not in embedded mode) */}
-          {!onClose && (
-            <div className="mb-6">
-              <button
-                onClick={() => setSelectedPackage(null)}
-                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-              >
-                ⬅ Back
-              </button>
-            </div>
-          )}
-
-          {selectedWork && (
-            <div className="bg-white rounded-xl shadow-lg p-6 mb-6 border-l-4 border-blue-500">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
-                <div>
-                  <h3 className="font-bold text-gray-800 text-lg mb-2">Work Details</h3>
-                  <p className="text-gray-700 mb-1">
-                    <span className="font-bold">Package No.:</span> {selectedWork.package_number}
-                  </p>
-                  <p className="text-gray-700">
-                    {selectedWork.work_name}
-                  </p>
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-800 text-lg mb-2">Contractor</h3>
-                  <p className="text-gray-700 mb-1">
-                    <span className="font-bold">Contractor Name:</span> {selectedWork.contractor_name}
-                  </p>
-                  <p className="text-gray-700">
-                    <span className="font-bold">Agreement No:</span> {selectedWork.agreement_no}
-                  </p>
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-800 text-lg mb-2">Financial</h3>
-                  <p className="text-gray-700 mb-1">
-                    <span className="font-bold">Contract Value (Cr.):</span>
-                  </p>
-                  <p className="text-xl font-bold text-green-600">
-                    ₹{selectedWork.contract_awarded_amount}
-                  </p>
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-800 text-lg mb-2">Timeline</h3>
-                  <p className="text-gray-700">
-                    <span className="font-bold">Start Date of Work:</span> {selectedWork.work_commencement_date}
-                  </p>
-                  <p className="text-gray-700">
-                    <span className="font-bold">Stipulated Date of Work:</span> {selectedWork.work_stipulated_date}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
-            <div className="flex items-center gap-4">
-              <h3 className="text-xl font-semibold text-gray-800">Milestone Progress</h3>
-
-              <div className="flex gap-2 flex-wrap">
-                {renderMilestoneButtons()}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              {canAddProgress() && (
-                <button
-                  onClick={() => setShowModal(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-300 shadow-md hover:shadow-lg"
-                >
-                  <Plus className="w-4 h-4" />
-                  Add Progress
-                </button>
-              )}
-              <div className="relative download-menu">
-                <button
-                  onClick={() => setShowDownloadOptions(!showDownloadOptions)}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 transition-all duration-300 shadow-md hover:shadow-lg"
-                >
-                  <Download className="w-4 h-4" />
-                  Download
-                  <ChevronDown className="w-4 h-4" />
-                </button>
-                {showDownloadOptions && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-xl z-10 overflow-hidden">
-                    <button
-                      onClick={() => handleDownload("pdf")}
-                      className="flex items-center gap-3 w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100"
-                    >
-                      <div className="w-8 h-8 flex items-center justify-center bg-red-100 text-red-600 rounded">
-                        📄
-                      </div>
-                      <div>
-                        <div className="font-medium">PDF Report</div>
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => handleDownload("excel")}
-                      className="flex items-center gap-3 w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors"
-                    >
-                      <div className="w-8 h-8 flex items-center justify-center bg-green-100 text-green-600 rounded">
-                        📊
-                      </div>
-                      <div>
-                        <div className="font-medium">Excel Report</div>
-                      </div>
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-            <div className="lg:col-span-2">
-              <div className="bg-white rounded-xl shadow-lg p-6 h-full">
-                <h4 className="text-lg font-semibold text-gray-800 mb-4">Progress Overview</h4>
-                <div className="h-80">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: 'white',
-                          border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                        }}
-                      />
-                      <Legend />
-                      <Bar
-                        dataKey="total"
-                        name="Total Quantity"
-                        fill="#3b82f6"
-                        radius={[4, 4, 0, 0]}
-                      />
-                      <Bar
-                        dataKey="cumulative"
-                        name="Cumulative"
-                        fill="#10b981"
-                        radius={[4, 4, 0, 0]}
-                      />
-                      <Bar
-                        dataKey="current"
-                        name="Current Month"
-                        fill="#f59e0b"
-                        radius={[4, 4, 0, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {milestoneCardsData().map((milestone) => (
-                <div
-                  key={milestone.milestone_number}
-                  className="bg-white rounded-xl shadow-lg p-5 border-l-4"
-                  style={{
-                    borderLeftColor:
-                      milestone.status === "Completed"
-                        ? "#10b981"
-                        : milestone.status === "In Progress"
-                          ? "#f59e0b"
-                          : "#ef4444",
-                  }}
-                >
-                  <div className="flex justify-between items-start mb-3">
-                    <h5 className="font-semibold text-gray-800">{milestone.milestone_name}</h5>
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${milestone.status === "Completed"
-                          ? "bg-green-100 text-green-800"
-                          : milestone.status === "In Progress"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                    >
-                      {milestone.status}
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className="h-2 rounded-full transition-all duration-500"
-                        style={{
-                          width: `${milestone.achievement_percentage}%`,
-                          backgroundColor:
-                            milestone.achievement_percentage >= 80
-                              ? "#10b981"
-                              : milestone.achievement_percentage >= 50
-                                ? "#f59e0b"
-                                : "#ef4444",
-                        }}
-                      ></div>
-                    </div>
-                    <div className="text-right text-sm text-gray-600">
-                      {milestone.achievement_percentage.toFixed(1)}% Complete
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Excel जैसा टेबल लेआउट */}
-          <div className="bg-white rounded-xl shadow-lg overflow-hidden mb-6">
-            {/* Header - एक्सेल की तरह */}
-            <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
-              <div className="flex items-center gap-4 mb-2">
-                <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-lg font-bold">
-                  Bihar Water Security & Irrigation Modernisation Project
-                </div>
-                <div className="text-sm text-gray-600">
-                  Package: {selectedPackage} | Contractor: {selectedWork?.contractor_name}
-                </div>
-              </div>
-              <h4 className="text-lg font-bold text-gray-800">
-                {selectedMilestone === 0
-                  ? "CUMULATIVE PROGRESS"
-                  : `PHYSICAL PROGRESS - MILESTONE ${selectedMilestone}`}
-              </h4>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-gray-100 border-t border-b border-gray-300">
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 border-r border-gray-300">
-                      Sno
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 border-r border-gray-300">
-                      Item of the Work
-                    </th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 border-r border-gray-300">
-                      Unit
-                    </th>
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700 border-r border-gray-300">
-                      Total Quantity
-                    </th>
-
-                    {selectedMilestone > 0 && (
-                      <>
-                        <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 border-r border-gray-300">
-                          % of Milestone as per Agreement
-                        </th>
-                        <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700 border-r border-gray-300">
-                          Qty as per Milestone
-                        </th>
-                      </>
                     )}
-
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700 border-r border-gray-300">
-                      Previous Month
-                    </th>
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700 border-r border-gray-300">
-                      Current Month
-                    </th>
-                    <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700 border-r border-gray-300">
-                      Cumulative
-                    </th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">
-                      Achieved %
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {renderMilestoneTable()}
-                </tbody>
-              </table>
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
-        </>
-      )}
+          </>
+        ) : (
+          <>
+            {/* Back button (only show if not in embedded mode) */}
+            {!onClose && (
+              <div className="mb-6">
+                <button
+                  onClick={() => setSelectedPackage(null)}
+                  className="flex items-center gap-2 px-4 py-2 border border-gray-400 text-gray-700 rounded hover:bg-gray-50 transition-colors"
+                >
+                  ← Back
+                </button>
+              </div>
+            )}
 
-      {/* Add Progress Modal */}
-      <AddProgressForm
-        showModal={showModal}
-        setShowModal={setShowModal}
-        onAddProgress={handleAddProgress}
-        components={formattedComponents}
-        selectedPackage={selectedPackage}
-        selectedMilestone={selectedMilestone}
-        packageMilestones={packageMilestones}
-      />
+            {selectedWork && (
+              <div className="bg-white border border-gray-300 rounded shadow-sm p-6 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div>
+                    <h3 className="font-bold text-gray-800 text-lg mb-3">Work Details</h3>
+                    <p className="text-gray-700 mb-1">
+                      <span className="font-semibold">Package No.:</span> {selectedWork.package_number}
+                    </p>
+                    <p className="text-gray-700">
+                      {selectedWork.work_name}
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-800 text-lg mb-3">Contractor</h3>
+                    <p className="text-gray-700 mb-1">
+                      <span className="font-semibold">Contractor Name:</span> {selectedWork.contractor_name}
+                    </p>
+                    <p className="text-gray-700">
+                      <span className="font-semibold">Agreement No:</span> {selectedWork.agreement_no}
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-800 text-lg mb-3">Financial</h3>
+                    <p className="text-gray-700 mb-1">
+                      <span className="font-semibold">Contract Value (Cr.):</span>
+                    </p>
+                    <p className="text-xl font-bold text-green-700">
+                      ₹{selectedWork.contract_awarded_amount}
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-gray-800 text-lg mb-3">Timeline</h3>
+                    <p className="text-gray-700">
+                      <span className="font-semibold">Start Date of Work:</span> {selectedWork.work_commencement_date}
+                    </p>
+                    <p className="text-gray-700">
+                      <span className="font-semibold">Stipulated Date of Work:</span> {selectedWork.work_stipulated_date}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
+              <div className="flex items-center gap-4">
+                <h3 className="text-xl font-semibold text-gray-800">Milestone Progress</h3>
+
+                <div className="flex gap-2 flex-wrap">
+                  {renderMilestoneButtons()}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                {canAddProgress() && (
+                  <button
+                    onClick={() => setShowModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-[#003087] text-white rounded hover:bg-[#00205b] transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Progress
+                  </button>
+                )}
+                <div className="relative download-menu" ref={downloadMenuRef}>
+                  <button
+                    onClick={() => setShowDownloadOptions(!showDownloadOptions)}
+                    className="flex items-center gap-2 px-4 py-2 bg-[#003087] text-white rounded hover:bg-[#00205b] transition-colors"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+                  {showDownloadOptions && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-300 rounded shadow-sm z-10 overflow-hidden">
+                      <button
+                        onClick={() => handleDownload("pdf")}
+                        className="flex items-center gap-3 w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors border-b border-gray-200 text-blue-700"
+                      >
+                        <div className="w-8 h-8 flex items-center justify-center bg-red-100 text-red-600 rounded">
+                          📄
+                        </div>
+                        <div>
+                          <div className="font-medium">PDF Report</div>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => handleDownload("excel")}
+                        className="flex items-center gap-3 w-full text-left px-4 py-3 hover:bg-green-50 transition-colors text-green-700"
+                      >
+                        <div className="w-8 h-8 flex items-center justify-center bg-green-100 text-green-600 rounded">
+                          📊
+                        </div>
+                        <div>
+                          <div className="font-medium">Excel Report</div>
+                        </div>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+              <div className="lg:col-span-2">
+                <div className="bg-white border border-gray-300 rounded shadow-sm p-6 h-full">
+                  <h4 className="text-lg font-semibold text-gray-800 mb-4">Progress Overview</h4>
+                  <div className="h-80">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: 'white',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                          }}
+                        />
+                        <Legend />
+                        <Bar
+                          dataKey="total"
+                          name="Total Quantity"
+                          fill="#3b82f6"
+                          radius={[4, 4, 0, 0]}
+                        />
+                        <Bar
+                          dataKey="cumulative"
+                          name="Cumulative"
+                          fill="#10b981"
+                          radius={[4, 4, 0, 0]}
+                        />
+                        <Bar
+                          dataKey="current"
+                          name="Current Month"
+                          fill="#f59e0b"
+                          radius={[4, 4, 0, 0]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {milestoneCardsData().map((milestone) => (
+                  <div
+                    key={milestone.milestone_number}
+                    className="bg-white border border-gray-300 rounded shadow-sm p-5"
+                  >
+                    <div className="flex justify-between items-start mb-3">
+                      <h5 className="font-semibold text-gray-800">{milestone.milestone_name}</h5>
+                      <span
+                        className={`px-3 py-1 rounded text-xs font-medium ${milestone.status === "Completed"
+                            ? "bg-green-100 text-green-800 border border-green-300"
+                            : milestone.status === "In Progress"
+                              ? "bg-yellow-100 text-yellow-800 border border-yellow-300"
+                              : "bg-red-100 text-red-800 border border-red-300"
+                          }`}
+                      >
+                        {milestone.status}
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="h-2 rounded-full transition-all duration-500"
+                          style={{
+                            width: `${milestone.achievement_percentage}%`,
+                            backgroundColor:
+                              milestone.achievement_percentage >= 80
+                                ? "#10b981"
+                                : milestone.achievement_percentage >= 50
+                                  ? "#f59e0b"
+                                  : "#ef4444",
+                          }}
+                        ></div>
+                      </div>
+                      <div className="text-right text-sm text-gray-600">
+                        {milestone.achievement_percentage.toFixed(1)}% Complete
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Excel जैसा टेबल लेआउट */}
+            <div className="bg-white border border-gray-300 rounded shadow-sm overflow-hidden mb-6">
+              {/* Header - एक्सेल की तरह */}
+              <div className="px-6 py-4 border-b border-gray-300 bg-gray-100">
+                <div className="flex items-center gap-4 mb-2">
+                  <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded font-bold border border-blue-300">
+                    Bihar Water Security & Irrigation Modernisation Project
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    Package: {selectedPackage} | Contractor: {selectedWork?.contractor_name}
+                  </div>
+                </div>
+                <h4 className="text-lg font-bold text-gray-800">
+                  {selectedMilestone === 0
+                    ? "CUMULATIVE PROGRESS"
+                    : `PHYSICAL PROGRESS - MILESTONE ${selectedMilestone}`}
+                </h4>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-gray-100 border-t border-b border-gray-300">
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 border-r border-gray-300">
+                        Sno
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 border-r border-gray-300">
+                        Item of the Work
+                      </th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 border-r border-gray-300">
+                        Unit
+                      </th>
+                      <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700 border-r border-gray-300">
+                        Total Quantity
+                      </th>
+
+                      {selectedMilestone > 0 && (
+                        <>
+                          <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 border-r border-gray-300">
+                            % of Milestone as per Agreement
+                          </th>
+                          <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700 border-r border-gray-300">
+                            Qty as per Milestone
+                          </th>
+                        </>
+                      )}
+
+                      <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700 border-r border-gray-300">
+                        Previous Month
+                      </th>
+                      <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700 border-r border-gray-300">
+                        Current Month
+                      </th>
+                      <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700 border-r border-gray-300">
+                        Cumulative
+                      </th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">
+                        Achieved %
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {renderMilestoneTable()}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Add Progress Modal */}
+        <AddProgressForm
+          showModal={showModal}
+          setShowModal={setShowModal}
+          onAddProgress={handleAddProgress}
+          components={formattedComponents}
+          selectedPackage={selectedPackage}
+          selectedMilestone={selectedMilestone}
+          packageMilestones={packageMilestones}
+        />
+      </main>
+
+      
     </div>
   );
 }
