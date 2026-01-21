@@ -8,7 +8,7 @@ import MilestonePage from "./milestone/dailyprogress";
 import { UserCreate} from "../admin/usermanagement/userCreate";
 import { UserDetails} from "../admin/usermanagement/userDetails";
 import DmsPage from "../admin/dms/DmsPage";
-import CreateWorkPackages from "../admin/work/work";
+//import CreateWorkPackages from "../admin/work/CreateWorkPage";
 
 //import VLCFormation from "./PIMM/vlc";
 //import SLCFormation from "./PIMM/slc";
@@ -20,6 +20,7 @@ import MeetingTraining from "./PIMM/meeting";
 import VLCParent from "./PIMM/vlc/vlcParent";
 import SLCManagement from "./PIMM/slc/slcParent";
 import WUACreationContainer from "./PIMM/wua/WUACreationContainer";
+import App from "../admin/work/work";
 export default function WrdLayout() {
   const [activeTab, setActiveTab] = useState("dashboard");
  // Load active tab from localStorage
@@ -42,7 +43,7 @@ export default function WrdLayout() {
       case "contractform":
         return <ContractForm />;
       case "work":
-        return <CreateWorkPackages />;
+        return <App />;
       case "length":
         return <LengthPage />;
       case "milestone":
