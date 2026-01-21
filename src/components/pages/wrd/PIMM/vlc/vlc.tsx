@@ -24,7 +24,14 @@ import {
   AlertCircle,
   CheckCircle,
   XCircle,
-  Eye
+  Eye,
+  FileCheck,
+  Landmark,
+  Home,
+  Phone,
+  Mail,
+  Globe,
+  UserCircle
 } from "lucide-react";
 
 interface FormData {
@@ -311,20 +318,28 @@ const VLCFormation: React.FC<VLCFormationProps> = ({ editId, preselectedWUA, onS
         if (!value) return 'Category is required';
         return null;
      
-      case 'khata_no':
-        if (!isLandless && value && !/^\d+$/.test(value)) return 'Khata number should contain only numbers';
+       case 'khata_no':
+      if (!isLandless && !value.trim()) return 'Khata number is required for non-landless members';
+      if (!isLandless && value && !/^\d+$/.test(value)) return 'Khata number should contain only numbers';
+      return null;
+   
+    case 'plot_no':
+      if (!isLandless && !value.trim()) return 'Plot number is required for non-landless members';
+      if (!isLandless && value && !/^\d+$/.test(value)) return 'Plot number should contain only numbers';
+      return null;
+   
+    case 'rakaba':
+      if (!isLandless && !value.trim()) return 'Rakaba is required for non-landless members';
+      if (!isLandless && value && !/^\d*\.?\d+$/.test(value)) return 'Rakaba should be a valid decimal number';
+      return null;
+   
+    case 'land_size':
+      if (!isLandless && !value.trim()) return 'Land size is required for non-landless members';
+      return null;
+   
+    default:
         return null;
-     
-      case 'plot_no':
-        if (!isLandless && value && !/^\d+$/.test(value)) return 'Plot number should contain only numbers';
-        return null;
-     
-      case 'rakaba':
-        if (!isLandless && value && !/^\d*\.?\d+$/.test(value)) return 'Rakaba should be a valid decimal number';
-        return null;
-     
-      default:
-        return null;
+      
     }
   };
 
@@ -765,42 +780,48 @@ const VLCFormation: React.FC<VLCFormationProps> = ({ editId, preselectedWUA, onS
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-6">
-      <div className="max-w-[1800px] mx-auto px-4">
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-          {/* Header Banner */}
-          <div className="bg-gradient-to-r from-blue-600 to-cyan-600 px-8 py-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-white/20 rounded-lg">
-                  <Users className="w-6 h-6" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold">VLC Formation</h1>
-                  <p className="text-green-100">Create Single VLC for One Village</p>
-                </div>
+    <div className="min-h-screen bg-gray-100 flex flex-col">
+      {/* Government Header */}
+      <header className="bg-[#003087] text-white border-b-4 border-[#FF9933]">
+        <div className="max-w-[1800px] mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 p-2 rounded">
+                <Shield className="w-8 h-8" />
               </div>
-              <button
-                type="button"
-                onClick={handleViewVLCs}
-                className="flex items-center gap-2 px-6 py-3 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors border border-white/30"
-              >
-                <Eye className="w-5 h-5" />
-                View VLCs
-              </button>
+              <div>
+                <h1 className="text-xl font-bold">Village Level Committee Formation</h1>
+              </div>
             </div>
           </div>
 
+          <button
+            type="button"
+            onClick={handleViewVLCs}
+            className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded transition-colors"
+          >
+            <Eye className="w-5 h-5" />
+            View VLCs
+          </button>
+        </div>
+      </header>
+
+      <main className="flex-1 max-w-[1800px] mx-auto w-full px-4 py-6">
+        {/* Form Container */}
+        <div className="bg-white border border-gray-300 rounded shadow-sm overflow-hidden">
+          {/* Form Header Banner */}
+          
+
           {/* Validation Summary */}
           {showValidationSummary && Object.keys(validationErrors).length > 0 && (
-            <div className="bg-red-50 border border-red-200 rounded-lg mx-6 mt-6 p-4">
+            <div className="mx-6 mt-6 p-4 bg-red-50 border border-red-300 rounded">
               <div className="flex items-center gap-2 mb-3">
-                <AlertCircle className="w-5 h-5 text-red-600" />
-                <h3 className="text-lg font-semibold text-red-800">Please fix the following errors:</h3>
+                <AlertCircle className="w-5 h-5 text-red-700" />
+                <h3 className="text-lg font-semibold text-red-800">Form Validation Errors</h3>
               </div>
               <div className="space-y-2 max-h-60 overflow-y-auto">
                 {Object.entries(validationErrors).map(([field, errors]) => (
-                  <div key={field} className="border-l-4 border-red-500 pl-3">
+                  <div key={field} className="border-l-4 border-red-700 pl-3">
                     <h4 className="font-medium text-red-700 capitalize">{field.replace(/([A-Z])/g, ' $1')}:</h4>
                     <ul className="list-disc list-inside text-red-600 text-sm">
                       {errors.map((error, index) => (
@@ -814,16 +835,16 @@ const VLCFormation: React.FC<VLCFormationProps> = ({ editId, preselectedWUA, onS
           )}
 
           <form onSubmit={handleSubmit} className="p-6 space-y-8">
-            {/* WUA Selection */}
-            <section className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+            {/* WUA Selection Section */}
+            <section className="bg-gray-50 border border-gray-300 rounded p-6">
               <div className="flex items-center gap-3 mb-4">
-                <Building className="w-5 h-5 text-green-600" />
-                <h2 className="text-lg font-semibold text-gray-800">Associated WUA</h2>
+                <Building className="w-5 h-5 text-[#003087]" />
+                <h2 className="text-lg font-semibold text-gray-800">Associated Water Users' Association</h2>
                 <span className="text-red-500">*</span>
               </div>
              
               {wuasError && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                <div className="bg-red-50 border border-red-300 rounded p-3 mb-4">
                   <p className="text-red-700 text-sm">
                     Error loading WUA data: {wuasError.message}
                   </p>
@@ -836,58 +857,51 @@ const VLCFormation: React.FC<VLCFormationProps> = ({ editId, preselectedWUA, onS
                 onChange={handleWUAChange}
                 required
                 disabled={wuasLoading || !!preselectedWUA}
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 ${
-                  validationErrors.wua_id ? 'border-red-500' : 'border-gray-300'
+                className={`w-full px-4 py-3 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                  validationErrors.wua_id ? 'border-red-500' : 'border-gray-400'
                 }`}
               >
-                <option value="">Select WUA</option>
+                <option value="">Select Water Users' Association</option>
                 {wuaMaster?.map((wua: { id: React.Key | readonly string[] | null | undefined; wua_name: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; division_name: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; ayacut_area_ha: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; }) => (
                   <option key={String(wua.id)} value={String(wua.id)}>
-                  
-                    
-                    
                     {wua.wua_name} - {wua.division_name} ({wua.ayacut_area_ha} Ha)
                   </option>
                 ))}
               </select>
              
               {validationErrors.wua_id && (
-                <div className="flex items-center gap-1 mt-1 text-red-600 text-sm">
+                <div className="flex items-center gap-1 mt-2 text-red-600 text-sm">
                   <AlertCircle className="w-4 h-4" />
                   {validationErrors.wua_id[0]}
                 </div>
               )}
              
               {wuasLoading && (
-                <div className="text-green-600 text-sm mt-2 flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                <div className="text-[#003087] text-sm mt-2 flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#003087]"></div>
                   Loading WUAs...
                 </div>
               )}
              
               {selectedWUADetails && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-4">
-                  <h4 className="font-semibold text-green-800 mb-2">Selected WUA Details:</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 text-sm">
-                    <div><span className="font-medium">WUA Name:</span> {selectedWUADetails.wua_name}</div>
-                    <div><span className="font-medium">Division:</span> {selectedWUADetails.division_name}</div>
-                    <div><span className="font-medium">Sub-Division:</span> {selectedWUADetails.subdivision_name}</div>
-                    <div><span className="font-medium">Circle:</span> {selectedWUADetails.circle_name}</div>
-                    <div><span className="font-medium">Zone:</span> {selectedWUADetails.ce_zone}</div>
-                    <div><span className="font-medium">Ayacut Area:</span> {selectedWUADetails.ayacut_area_ha} Ha</div>
-                    <div><span className="font-medium">Villages:</span> {selectedWUADetails.villages_covered}</div>
-                    <div><span className="font-medium">Gram Panchayats:</span> {selectedWUADetails.gram_panchayats}</div>
-                    <div><span className="font-medium">Block:</span> {selectedWUADetails.block_name}</div>
-                    <div><span className="font-medium">District:</span> {selectedWUADetails.district_name}</div>
+                <div className="bg-blue-50 border border-blue-300 rounded p-4 mt-4">
+                  <h4 className="font-semibold text-blue-800 mb-2">Selected WUA Details:</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                    <div><span className="font-medium text-blue-700">WUA Name:</span> {selectedWUADetails.wua_name}</div>
+                    <div><span className="font-medium text-blue-700">Division:</span> {selectedWUADetails.division_name}</div>
+                    <div><span className="font-medium text-blue-700">Ayacut Area:</span> {selectedWUADetails.ayacut_area_ha} Ha</div>
+                    <div><span className="font-medium text-blue-700">Sub-Division:</span> {selectedWUADetails.subdivision_name}</div>
+                    <div><span className="font-medium text-blue-700">Block:</span> {selectedWUADetails.block_name}</div>
+                    <div><span className="font-medium text-blue-700">District:</span> {selectedWUADetails.district_name}</div>
                   </div>
                 </div>
               )}
             </section>
 
             {/* VLC Basic Info and Village Details */}
-            <section className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+            <section className="bg-gray-50 border border-gray-300 rounded p-6">
               <div className="flex items-center gap-3 mb-4">
-                <MapPin className="w-5 h-5 text-green-600" />
+                <MapPin className="w-5 h-5 text-[#003087]" />
                 <h2 className="text-lg font-semibold text-gray-800">VLC Basic Information</h2>
               </div>
               
@@ -903,8 +917,8 @@ const VLCFormation: React.FC<VLCFormationProps> = ({ editId, preselectedWUA, onS
                     value={formData.vlc_name}
                     onChange={handleChange}
                     required
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-                      validationErrors.vlc_name ? 'border-red-500' : 'border-gray-300'
+                    className={`w-full px-4 py-2 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                      validationErrors.vlc_name ? 'border-red-500' : 'border-gray-400'
                     }`}
                   />
                   {validationErrors.vlc_name && (
@@ -918,14 +932,14 @@ const VLCFormation: React.FC<VLCFormationProps> = ({ editId, preselectedWUA, onS
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Formation Date</label>
                   <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
                     <input
                       type="date"
                       name="formation_date"
                       value={formData.formation_date}
                       onChange={handleChange}
-                      className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-                        validationErrors.formation_date ? 'border-red-500' : 'border-gray-300'
+                      className={`w-full pl-10 pr-4 py-2 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                        validationErrors.formation_date ? 'border-red-500' : 'border-gray-400'
                       }`}
                     />
                   </div>
@@ -938,7 +952,7 @@ const VLCFormation: React.FC<VLCFormationProps> = ({ editId, preselectedWUA, onS
                 </div>
               </div>
               
-              <div className="border-t border-gray-200 pt-6">
+              <div className="border-t border-gray-300 pt-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Village Details</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -950,8 +964,8 @@ const VLCFormation: React.FC<VLCFormationProps> = ({ editId, preselectedWUA, onS
                       value={village.village_name}
                       onChange={(e) => handleVillageChange("village_name", e.target.value)}
                       required
-                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-                        validationErrors.village_name ? 'border-red-500' : 'border-gray-300'
+                      className={`w-full px-4 py-2 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                        validationErrors.village_name ? 'border-red-500' : 'border-gray-400'
                       }`}
                       placeholder="Enter village name"
                     />
@@ -969,7 +983,7 @@ const VLCFormation: React.FC<VLCFormationProps> = ({ editId, preselectedWUA, onS
                       type="text"
                       value={village.gp_name}
                       onChange={(e) => handleVillageChange("gp_name", e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-400 rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
                       placeholder="Enter Gram Panchayat name"
                     />
                   </div>
@@ -980,7 +994,7 @@ const VLCFormation: React.FC<VLCFormationProps> = ({ editId, preselectedWUA, onS
                       type="text"
                       value={village.block_name}
                       onChange={(e) => handleVillageChange("block_name", e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-400 rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
                       placeholder="Enter Block name"
                     />
                   </div>
@@ -991,7 +1005,7 @@ const VLCFormation: React.FC<VLCFormationProps> = ({ editId, preselectedWUA, onS
                       type="text"
                       value={village.district_name}
                       onChange={(e) => handleVillageChange("district_name", e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-400 rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
                       placeholder="Enter District name"
                     />
                   </div>
@@ -1000,10 +1014,10 @@ const VLCFormation: React.FC<VLCFormationProps> = ({ editId, preselectedWUA, onS
             </section>
 
             {/* Members Section with Tabs */}
-            <section className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+            <section className="bg-gray-50 border border-gray-300 rounded p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <UserCheck className="w-5 h-5 text-green-600" />
+                  <UserCheck className="w-5 h-5 text-[#003087]" />
                   <h2 className="text-lg font-semibold text-gray-800">
                     VLC Members Management
                   </h2>
@@ -1016,21 +1030,20 @@ const VLCFormation: React.FC<VLCFormationProps> = ({ editId, preselectedWUA, onS
               </div>
 
               {/* Executive Body Requirements */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <div className="bg-blue-50 border border-blue-300 rounded p-4 mb-6">
                 <h4 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
                   <Award className="w-4 h-4" />
-                  Executive Body Information:
+                  Executive Body Requirements:
                 </h4>
                 <ul className="text-sm text-blue-700 space-y-1">
                   <li>• Select Executive Members from GB Members by clicking the checkbox</li>
-                  <li>• <strong>Recommended office bearers:</strong> Chairman, Secretary, Treasurer</li>
+                  <li>• <strong>Office bearers:</strong> Chairman, Secretary, Treasurer (maximum one each)</li>
                   <li>• Remaining members can be designated as Executive Members</li>
-                  <li>• <strong>No minimum requirement</strong> - You can have 0 or more executive members</li>
+                  <li>• Executive members are optional - VLC can be formed without executive committee</li>
                 </ul>
                
-                {/* Executive Statistics */}
                 {executiveMembers.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-blue-200">
+                  <div className="mt-3 pt-3 border-t border-blue-300">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                       <div className="text-blue-600">
                         <span className="font-medium">Total Executive:</span> {executiveMembers.length}
@@ -1051,38 +1064,38 @@ const VLCFormation: React.FC<VLCFormationProps> = ({ editId, preselectedWUA, onS
 
               {/* Tabs */}
               <div className="mb-6">
-                <div className="flex border-b border-gray-200">
+                <div className="flex border-b border-gray-300">
                   <button
                     type="button"
                     onClick={() => setActiveTab('gb')}
-                    className={`flex items-center gap-2 px-4 py-2 font-medium text-sm ${
+                    className={`flex items-center gap-2 px-4 py-3 font-medium ${
                       activeTab === 'gb'
-                        ? 'border-b-2 border-green-500 text-green-600'
-                        : 'text-gray-500 hover:text-gray-700'
+                        ? 'border-b-2 border-[#003087] text-[#003087] bg-blue-50'
+                        : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
                     }`}
                   >
                     <Users className="w-4 h-4" />
                     General Body Members ({gbMembers.length})
-                    {validationErrors.gbMembers && <XCircle className="w-4 h-4 text-red-500" />}
+                    {validationErrors.gbMembers && <XCircle className="w-4 h-4 text-red-600" />}
                   </button>
                   <button
                     type="button"
                     onClick={() => setActiveTab('executive')}
-                    className={`flex items-center gap-2 px-4 py-2 font-medium text-sm ${
+                    className={`flex items-center gap-2 px-4 py-3 font-medium ${
                       activeTab === 'executive'
-                        ? 'border-b-2 border-blue-500 text-blue-600'
-                        : 'text-gray-500 hover:text-gray-700'
+                        ? 'border-b-2 border-[#003087] text-[#003087] bg-blue-50'
+                        : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
                     }`}
                   >
                     <Award className="w-4 h-4" />
                     Executive Body ({executiveMembers.length})
-                    {validationErrors.executiveMembers && <XCircle className="w-4 h-4 text-red-500" />}
+                    {validationErrors.executiveMembers && <XCircle className="w-4 h-4 text-red-600" />}
                   </button>
                 </div>
               </div>
 
               {!formData.wua_id && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                <div className="bg-yellow-50 border border-yellow-300 rounded p-3 mb-4">
                   <p className="text-yellow-700 text-sm">
                     Please select a WUA first to add members
                   </p>
@@ -1093,33 +1106,33 @@ const VLCFormation: React.FC<VLCFormationProps> = ({ editId, preselectedWUA, onS
               {activeTab === 'gb' && (
                 <div>
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold text-gray-800">General Body Members</h3>
+                    <h3 className="text-lg font-semibold text-gray-800">General Body Members List</h3>
                     <button
                       type="button"
                       onClick={addGBMember}
                       disabled={!formData.wua_id}
-                      className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex items-center gap-2 px-4 py-2 bg-[#003087] text-white rounded hover:bg-[#00205b] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <Plus className="w-4 h-4" />
                       Add GB Member
                     </button>
                   </div>
                   
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                  <div className="bg-yellow-50 border border-yellow-300 rounded p-3 mb-4">
                     <p className="text-yellow-700 text-sm">
                       <strong>Validation Rules:</strong><br/>
                       1. Name: Only alphabets and spaces<br/>
                       2. Contact: Exactly 10 digits<br/>
                       3. Khata/Plot: Only numbers (required if not landless)<br/>
                       4. Rakaba: Decimal numbers (required if not landless)<br/>
-                      5. If Landless is checked, land-related fields will be hidden
+                      5. If Landless is checked, land-related fields will be disabled
                     </p>
                   </div>
                   
                   {validationErrors.gbMembers && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                    <div className="bg-red-50 border border-red-300 rounded p-3 mb-4">
                       <div className="flex items-center gap-2 mb-2">
-                        <AlertCircle className="w-4 h-4 text-red-600" />
+                        <AlertCircle className="w-4 h-4 text-red-700" />
                         <h4 className="font-medium text-red-800">GB Member Validation Errors:</h4>
                       </div>
                       <ul className="list-disc list-inside text-red-600 text-sm">
@@ -1131,92 +1144,89 @@ const VLCFormation: React.FC<VLCFormationProps> = ({ editId, preselectedWUA, onS
                   )}
                   
                   <div className="overflow-x-auto">
-                    <table className="w-full border-collapse border border-gray-300">
+                    <table className="w-full border-collapse border border-gray-400">
                       <thead>
                         <tr className="bg-gray-100">
-                          <th className="border border-gray-300 p-2 text-sm font-semibold text-gray-700">
+                          <th className="border border-gray-400 p-3 text-sm font-semibold text-gray-700">
                             Executive
                           </th>
-                          <th className="border border-gray-300 p-2 text-sm font-semibold text-gray-700">
+                          <th className="border border-gray-400 p-3 text-sm font-semibold text-gray-700">
                             <Hash className="w-4 h-4 inline mr-1" />
                             Sl No
                           </th>
-                          <th className="border border-gray-300 p-2 text-sm font-semibold text-gray-700">
+                          <th className="border border-gray-400 p-3 text-sm font-semibold text-gray-700">
                             Name of Village Member *
                           </th>
-                          <th className="border border-gray-300 p-2 text-sm font-semibold text-gray-700">
+                          <th className="border border-gray-400 p-3 text-sm font-semibold text-gray-700">
                             Male/Female *
                           </th>
-                          <th className="border border-gray-300 p-2 text-sm font-semibold text-gray-700">
+                          <th className="border border-gray-400 p-3 text-sm font-semibold text-gray-700">
                             Category *
                           </th>
-                          <th className="border border-gray-300 p-2 text-sm font-semibold text-gray-700">
+                          <th className="border border-gray-400 p-3 text-sm font-semibold text-gray-700">
                             Landless
                           </th>
-                          {!gbMembers.some(m => m.landless) && (
-                            <>
-                              <th className="border border-gray-300 p-2 text-sm font-semibold text-gray-700">
-                                Khata No
-                              </th>
-                              <th className="border border-gray-300 p-2 text-sm font-semibold text-gray-700">
-                                Plot No
-                              </th>
-                              <th className="border border-gray-300 p-2 text-sm font-semibold text-gray-700">
-                                Rakaba
-                              </th>
-                              <th className="border border-gray-300 p-2 text-sm font-semibold text-gray-700">
-                                Land Size
-                              </th>
-                            </>
-                          )}
-                          <th className="border border-gray-300 p-2 text-sm font-semibold text-gray-700">
+                          <th className="border border-gray-400 p-3 text-sm font-semibold text-gray-700">
+                            Khata No
+                          </th>
+                          <th className="border border-gray-400 p-3 text-sm font-semibold text-gray-700">
+                            Plot No
+                          </th>
+                          <th className="border border-gray-400 p-3 text-sm font-semibold text-gray-700">
+                            Rakaba
+                          </th>
+                          <th className="border border-gray-400 p-3 text-sm font-semibold text-gray-700">
+                            Land Size
+                          </th>
+                          <th className="border border-gray-400 p-3 text-sm font-semibold text-gray-700">
                             Position
                           </th>
-                          <th className="border border-gray-300 p-2 text-sm font-semibold text-gray-700">
+                          <th className="border border-gray-400 p-3 text-sm font-semibold text-gray-700">
                             Seasonal Migrant
                           </th>
-                          <th className="border border-gray-300 p-2 text-sm font-semibold text-gray-700">
+                          <th className="border border-gray-400 p-3 text-sm font-semibold text-gray-700">
                             Ration Card
                           </th>
-                          <th className="border border-gray-300 p-2 text-sm font-semibold text-gray-700">
+                          <th className="border border-gray-400 p-3 text-sm font-semibold text-gray-700">
                             Contact No
                           </th>
-                          <th className="border border-gray-300 p-2 text-sm font-semibold text-gray-700">
+                          <th className="border border-gray-400 p-3 text-sm font-semibold text-gray-700">
                             Action
                           </th>
                         </tr>
                       </thead>
                       <tbody>
                         {gbMembers.map((member, index) => (
-                          <tr key={member.sl_no} className={`bg-white hover:bg-gray-50 ${member.is_executive ? 'bg-blue-50' : ''}`}>
-                            <td className="border border-gray-300 p-2 text-center">
+                          <tr key={member.sl_no} className={`${member.is_executive ? 'bg-blue-50' : 'bg-white'} hover:bg-gray-50`}>
+                            <td className="border border-gray-400 p-2 text-center">
                               <button
                                 type="button"
                                 onClick={() => toggleExecutiveMember(index)}
                                 disabled={!member.name.trim()}
-                                className={`p-1 rounded transition-colors ${
+                                className={`p-1.5 rounded border ${
                                   member.is_executive
-                                    ? 'text-green-600 hover:text-green-800'
-                                    : 'text-gray-400 hover:text-gray-600'
+                                    ? 'text-green-700 border-green-400 bg-green-50 hover:bg-green-100'
+                                    : 'text-gray-500 border-gray-300 hover:border-gray-400 hover:text-gray-700'
                                 } disabled:opacity-30 disabled:cursor-not-allowed`}
+                                title={member.is_executive ? "Remove from Executive" : "Add to Executive"}
                               >
-                                {member.is_executive ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5" />}
+                                {member.is_executive ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
                               </button>
                             </td>
                            
-                            <td className="border border-gray-300 p-2 text-center">
+                            <td className="border border-gray-400 p-2 text-center font-medium">
                               {member.sl_no}
                             </td>
                            
-                            <td className="border border-gray-300 p-2">
+                            <td className="border border-gray-400 p-2">
                               <input
                                 type="text"
                                 value={member.name}
                                 onChange={(e) => handleGBInputChange(index, "name", e.target.value)}
-                                className={`w-full px-2 py-1 border rounded focus:outline-none focus:ring-1 focus:ring-green-500 ${
-                                  !member.name.trim() && showValidationSummary ? 'border-red-500' : 'border-gray-300'
+                                className={`w-full px-2 py-1.5 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                                  !member.name.trim() && showValidationSummary ? 'border-red-500' : 'border-gray-400'
                                 }`}
-                                placeholder="Full name (alphabets only)"
+                                placeholder="Full name"
                                 disabled={!formData.wua_id}
                               />
                               {member.name && !/^[A-Za-z\s]+$/.test(member.name.trim()) && (
@@ -1224,12 +1234,12 @@ const VLCFormation: React.FC<VLCFormationProps> = ({ editId, preselectedWUA, onS
                               )}
                             </td>
                            
-                            <td className="border border-gray-300 p-2">
+                            <td className="border border-gray-400 p-2">
                               <select
                                 value={member.gender}
                                 onChange={(e) => handleGBChange(index, "gender", e.target.value)}
-                                className={`w-full px-2 py-1 border rounded focus:outline-none focus:ring-1 focus:ring-green-500 ${
-                                  !member.gender && showValidationSummary ? 'border-red-500' : 'border-gray-300'
+                                className={`w-full px-2 py-1.5 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                                  !member.gender && showValidationSummary ? 'border-red-500' : 'border-gray-400'
                                 }`}
                                 disabled={!formData.wua_id}
                               >
@@ -1240,12 +1250,12 @@ const VLCFormation: React.FC<VLCFormationProps> = ({ editId, preselectedWUA, onS
                               </select>
                             </td>
                            
-                            <td className="border border-gray-300 p-2">
+                            <td className="border border-gray-400 p-2">
                               <select
                                 value={member.category}
                                 onChange={(e) => handleGBChange(index, "category", e.target.value)}
-                                className={`w-full px-2 py-1 border rounded focus:outline-none focus:ring-1 focus:ring-green-500 ${
-                                  !member.category && showValidationSummary ? 'border-red-500' : 'border-gray-300'
+                                className={`w-full px-2 py-1.5 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                                  !member.category && showValidationSummary ? 'border-red-500' : 'border-gray-400'
                                 }`}
                                 disabled={!formData.wua_id}
                               >
@@ -1256,88 +1266,85 @@ const VLCFormation: React.FC<VLCFormationProps> = ({ editId, preselectedWUA, onS
                               </select>
                             </td>
                            
-                            <td className="border border-gray-300 p-2 text-center">
+                            <td className="border border-gray-400 p-2 text-center">
                               <input
                                 type="checkbox"
                                 checked={member.landless}
                                 onChange={(e) => handleGBChange(index, "landless", e.target.checked)}
-                                className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                                className="h-4 w-4 text-[#003087] focus:ring-[#003087] border-gray-400 rounded"
                                 disabled={!formData.wua_id}
                               />
                             </td>
                            
-                            {/* Land-related fields - only show if not landless */}
-                            {!member.landless && (
-                              <>
-                                <td className="border border-gray-300 p-2">
-                                  <input
-                                    type="text"
-                                    value={member.khata_no}
-                                    onChange={(e) => handleGBInputChange(index, "khata_no", e.target.value)}
-                                    className={`w-full px-2 py-1 border rounded focus:outline-none focus:ring-1 focus:ring-green-500 ${
-                                      member.khata_no && !/^\d+$/.test(member.khata_no) && showValidationSummary ? 'border-red-500' : 'border-gray-300'
-                                    }`}
-                                    placeholder="Numbers only"
-                                    disabled={!formData.wua_id}
-                                  />
-                                  {member.khata_no && !/^\d+$/.test(member.khata_no) && (
-                                    <div className="text-red-500 text-xs mt-1">Only numbers allowed</div>
-                                  )}
-                                </td>
-                               
-                                <td className="border border-gray-300 p-2">
-                                  <input
-                                    type="text"
-                                    value={member.plot_no}
-                                    onChange={(e) => handleGBInputChange(index, "plot_no", e.target.value)}
-                                    className={`w-full px-2 py-1 border rounded focus:outline-none focus:ring-1 focus:ring-green-500 ${
-                                      member.plot_no && !/^\d+$/.test(member.plot_no) && showValidationSummary ? 'border-red-500' : 'border-gray-300'
-                                    }`}
-                                    placeholder="Numbers only"
-                                    disabled={!formData.wua_id}
-                                  />
-                                  {member.plot_no && !/^\d+$/.test(member.plot_no) && (
-                                    <div className="text-red-500 text-xs mt-1">Only numbers allowed</div>
-                                  )}
-                                </td>
-                               
-                                <td className="border border-gray-300 p-2">
-                                  <input
-                                    type="text"
-                                    value={member.rakaba}
-                                    onChange={(e) => handleGBInputChange(index, "rakaba", e.target.value)}
-                                    className={`w-full px-2 py-1 border rounded focus:outline-none focus:ring-1 focus:ring-green-500 ${
-                                      member.rakaba && !/^\d*\.?\d+$/.test(member.rakaba) && showValidationSummary ? 'border-red-500' : 'border-gray-300'
-                                    }`}
-                                    placeholder="Decimal number"
-                                    disabled={!formData.wua_id}
-                                  />
-                                  {member.rakaba && !/^\d*\.?\d+$/.test(member.rakaba) && (
-                                    <div className="text-red-500 text-xs mt-1">Valid decimal number required</div>
-                                  )}
-                                </td>
-                               
-                                <td className="border border-gray-300 p-2">
-                                  <select
-                                    value={member.land_size}
-                                    onChange={(e) => handleGBChange(index, "land_size", e.target.value)}
-                                    className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500"
-                                    disabled={!formData.wua_id}
-                                  >
-                                    <option value="">Select</option>
-                                    {landSizeOptions.map(option => (
-                                      <option key={option} value={option}>{option}</option>
-                                    ))}
-                                  </select>
-                                </td>
-                              </>
-                            )}
+                            <td className="border border-gray-400 p-2">
+                              <input
+                                type="text"
+                                value={member.landless ? "" : member.khata_no}
+                                onChange={(e) => handleGBInputChange(index, "khata_no", e.target.value)}
+                                className={`w-full px-2 py-1.5 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                                  member.khata_no && !/^\d+$/.test(member.khata_no) && showValidationSummary ? 'border-red-500' : 'border-gray-400'
+                                } ${member.landless ? 'bg-gray-100 text-gray-500' : ''}`}
+                                placeholder={member.landless ? "Landless" : "Numbers only"}
+                                disabled={!formData.wua_id || member.landless}
+                              />
+                              {!member.landless && member.khata_no && !/^\d+$/.test(member.khata_no) && (
+                                <div className="text-red-500 text-xs mt-1">Only numbers allowed</div>
+                              )}
+                            </td>
                            
-                            <td className="border border-gray-300 p-2">
+                            <td className="border border-gray-400 p-2">
+                              <input
+                                type="text"
+                                value={member.landless ? "" : member.plot_no}
+                                onChange={(e) => handleGBInputChange(index, "plot_no", e.target.value)}
+                                className={`w-full px-2 py-1.5 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                                  member.plot_no && !/^\d+$/.test(member.plot_no) && showValidationSummary ? 'border-red-500' : 'border-gray-400'
+                                } ${member.landless ? 'bg-gray-100 text-gray-500' : ''}`}
+                                placeholder={member.landless ? "Landless" : "Numbers only"}
+                                disabled={!formData.wua_id || member.landless}
+                              />
+                              {!member.landless && member.plot_no && !/^\d+$/.test(member.plot_no) && (
+                                <div className="text-red-500 text-xs mt-1">Only numbers allowed</div>
+                              )}
+                            </td>
+                           
+                            <td className="border border-gray-400 p-2">
+                              <input
+                                type="text"
+                                value={member.landless ? "" : member.rakaba}
+                                onChange={(e) => handleGBInputChange(index, "rakaba", e.target.value)}
+                                className={`w-full px-2 py-1.5 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                                  member.rakaba && !/^\d*\.?\d+$/.test(member.rakaba) && showValidationSummary ? 'border-red-500' : 'border-gray-400'
+                                } ${member.landless ? 'bg-gray-100 text-gray-500' : ''}`}
+                                placeholder={member.landless ? "Landless" : "Decimal number"}
+                                disabled={!formData.wua_id || member.landless}
+                              />
+                              {!member.landless && member.rakaba && !/^\d*\.?\d+$/.test(member.rakaba) && (
+                                <div className="text-red-500 text-xs mt-1">Valid decimal number required</div>
+                              )}
+                            </td>
+                           
+                            <td className="border border-gray-400 p-2">
+                              <select
+                                value={member.landless ? "" : member.land_size}
+                                onChange={(e) => handleGBChange(index, "land_size", e.target.value)}
+                                className={`w-full px-2 py-1.5 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                                  member.landless ? 'bg-gray-100 text-gray-500' : 'border-gray-400'
+                                }`}
+                                disabled={!formData.wua_id || member.landless}
+                              >
+                                <option value="">Select</option>
+                                {landSizeOptions.map(option => (
+                                  <option key={option} value={option}>{option}</option>
+                                ))}
+                              </select>
+                            </td>
+                           
+                            <td className="border border-gray-400 p-2">
                               <select
                                 value={member.position}
                                 onChange={(e) => handleGBChange(index, "position", e.target.value)}
-                                className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500"
+                                className="w-full px-2 py-1.5 border border-gray-400 rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
                                 disabled={!formData.wua_id}
                               >
                                 <option value="">Select</option>
@@ -1347,21 +1354,21 @@ const VLCFormation: React.FC<VLCFormationProps> = ({ editId, preselectedWUA, onS
                               </select>
                             </td>
                            
-                            <td className="border border-gray-300 p-2 text-center">
+                            <td className="border border-gray-400 p-2 text-center">
                               <input
                                 type="checkbox"
                                 checked={member.seasonal_migrant}
                                 onChange={(e) => handleGBChange(index, "seasonal_migrant", e.target.checked)}
-                                className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                                className="h-4 w-4 text-[#003087] focus:ring-[#003087] border-gray-400 rounded"
                                 disabled={!formData.wua_id}
                               />
                             </td>
                            
-                            <td className="border border-gray-300 p-2">
+                            <td className="border border-gray-400 p-2">
                               <select
                                 value={member.ration_card}
                                 onChange={(e) => handleGBChange(index, "ration_card", e.target.value)}
-                                className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500"
+                                className="w-full px-2 py-1.5 border border-gray-400 rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
                                 disabled={!formData.wua_id}
                               >
                                 <option value="">Select</option>
@@ -1371,14 +1378,14 @@ const VLCFormation: React.FC<VLCFormationProps> = ({ editId, preselectedWUA, onS
                               </select>
                             </td>
                            
-                            <td className="border border-gray-300 p-2">
+                            <td className="border border-gray-400 p-2">
                               <input
                                 type="text"
                                 value={member.contact_no}
                                 onChange={(e) => handleGBInputChange(index, "contact_no", e.target.value)}
                                 maxLength={10}
-                                className={`w-full px-2 py-1 border rounded focus:outline-none focus:ring-1 focus:ring-green-500 ${
-                                  member.contact_no && !/^\d{10}$/.test(member.contact_no.replace(/\D/g, '')) && showValidationSummary ? 'border-red-500' : 'border-gray-300'
+                                className={`w-full px-2 py-1.5 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                                  member.contact_no && !/^\d{10}$/.test(member.contact_no.replace(/\D/g, '')) && showValidationSummary ? 'border-red-500' : 'border-gray-400'
                                 }`}
                                 placeholder="10 digits"
                                 disabled={!formData.wua_id}
@@ -1388,13 +1395,14 @@ const VLCFormation: React.FC<VLCFormationProps> = ({ editId, preselectedWUA, onS
                               )}
                             </td>
                            
-                            <td className="border border-gray-300 p-2 text-center">
+                            <td className="border border-gray-400 p-2 text-center">
                               {gbMembers.length > 1 && (
                                 <button
                                   type="button"
                                   onClick={() => removeGBMember(index)}
-                                  className="p-1 text-red-600 hover:text-red-800 transition-colors"
+                                  className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded border border-red-300 transition-colors"
                                   disabled={!formData.wua_id}
+                                  title="Remove member"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </button>
@@ -1412,16 +1420,16 @@ const VLCFormation: React.FC<VLCFormationProps> = ({ editId, preselectedWUA, onS
               {activeTab === 'executive' && (
                 <div>
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold text-gray-800">Executive Body Members</h3>
-                    <div className="text-sm text-blue-600">
+                    <h3 className="text-lg font-semibold text-gray-800">Executive Committee Members</h3>
+                    <div className="text-sm text-[#003087] font-medium">
                       {executiveMembers.length} members selected from GB
                     </div>
                   </div>
                   
                   {validationErrors.executiveMembers && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                    <div className="bg-red-50 border border-red-300 rounded p-3 mb-4">
                       <div className="flex items-center gap-2 mb-2">
-                        <AlertCircle className="w-4 h-4 text-red-600" />
+                        <AlertCircle className="w-4 h-4 text-red-700" />
                         <h4 className="font-medium text-red-800">Executive Body Validation Errors:</h4>
                       </div>
                       <ul className="list-disc list-inside text-red-600 text-sm">
@@ -1433,8 +1441,8 @@ const VLCFormation: React.FC<VLCFormationProps> = ({ editId, preselectedWUA, onS
                   )}
                   
                   {executiveMembers.length === 0 ? (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-                      <Award className="w-12 h-12 text-yellow-500 mx-auto mb-3" />
+                    <div className="bg-yellow-50 border border-yellow-300 rounded p-6 text-center">
+                      <Award className="w-12 h-12 text-yellow-600 mx-auto mb-3" />
                       <h4 className="text-lg font-semibold text-yellow-800 mb-2">No Executive Members Selected</h4>
                       <p className="text-yellow-700">
                         You can select Executive Members from the <strong>General Body Members</strong> tab by clicking the checkbox in the first column.
@@ -1444,29 +1452,29 @@ const VLCFormation: React.FC<VLCFormationProps> = ({ editId, preselectedWUA, onS
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
-                      <table className="w-full border-collapse border border-gray-300">
+                      <table className="w-full border-collapse border border-gray-400">
                         <thead>
                           <tr className="bg-blue-50">
-                            <th className="border border-gray-300 p-2 text-sm font-semibold text-gray-700">
+                            <th className="border border-gray-400 p-3 text-sm font-semibold text-gray-700">
                               <Hash className="w-4 h-4 inline mr-1" />
                               Sl No
                             </th>
-                            <th className="border border-gray-300 p-2 text-sm font-semibold text-gray-700">
+                            <th className="border border-gray-400 p-3 text-sm font-semibold text-gray-700">
                               Name
                             </th>
-                            <th className="border border-gray-300 p-2 text-sm font-semibold text-gray-700">
+                            <th className="border border-gray-400 p-3 text-sm font-semibold text-gray-700">
                               Designation
                             </th>
-                            <th className="border border-gray-300 p-2 text-sm font-semibold text-gray-700">
+                            <th className="border border-gray-400 p-3 text-sm font-semibold text-gray-700">
                               Election Date
                             </th>
-                            <th className="border border-gray-300 p-2 text-sm font-semibold text-gray-700">
+                            <th className="border border-gray-400 p-3 text-sm font-semibold text-gray-700">
                               Gender
                             </th>
-                            <th className="border border-gray-300 p-2 text-sm font-semibold text-gray-700">
+                            <th className="border border-gray-400 p-3 text-sm font-semibold text-gray-700">
                               Category
                             </th>
-                            <th className="border border-gray-300 p-2 text-sm font-semibold text-gray-700">
+                            <th className="border border-gray-400 p-3 text-sm font-semibold text-gray-700">
                               Action
                             </th>
                           </tr>
@@ -1476,19 +1484,19 @@ const VLCFormation: React.FC<VLCFormationProps> = ({ editId, preselectedWUA, onS
                             const originalIndex = gbMembers.findIndex(m => m.sl_no === member.sl_no);
                             return (
                               <tr key={member.sl_no} className="bg-white hover:bg-blue-50">
-                                <td className="border border-gray-300 p-2 text-center">
+                                <td className="border border-gray-400 p-2 text-center font-medium">
                                   {member.sl_no}
                                 </td>
                                
-                                <td className="border border-gray-300 p-2 font-medium">
+                                <td className="border border-gray-400 p-2 font-medium">
                                   {member.name}
                                 </td>
                                
-                                <td className="border border-gray-300 p-2">
+                                <td className="border border-gray-400 p-2">
                                   <select
                                     value={member.executive_designation || "Member"}
                                     onChange={(e) => handleExecutiveDesignationChange(originalIndex, e.target.value)}
-                                    className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="w-full px-2 py-1.5 border border-gray-400 rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
                                     disabled={!formData.wua_id}
                                   >
                                     {executiveDesignations.map(designation => (
@@ -1499,30 +1507,39 @@ const VLCFormation: React.FC<VLCFormationProps> = ({ editId, preselectedWUA, onS
                                   </select>
                                 </td>
                                
-                                <td className="border border-gray-300 p-2">
+                                <td className="border border-gray-400 p-2">
                                   <input
                                     type="date"
                                     value={member.election_date || formData.formation_date || new Date().toISOString().split('T')[0]}
                                     onChange={(e) => handleExecutiveElectionDateChange(originalIndex, e.target.value)}
-                                    className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    className="w-full px-2 py-1.5 border border-gray-400 rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
                                     disabled={!formData.wua_id}
                                   />
                                 </td>
                                
-                                <td className="border border-gray-300 p-2">
-                                  {member.gender}
+                                <td className="border border-gray-400 p-2">
+                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                    member.gender === 'Male' ? 'bg-blue-100 text-blue-800 border border-blue-300' :
+                                    member.gender === 'Female' ? 'bg-pink-100 text-pink-800 border border-pink-300' :
+                                    'bg-gray-100 text-gray-800 border border-gray-300'
+                                  }`}>
+                                    {member.gender}
+                                  </span>
                                 </td>
                                
-                                <td className="border border-gray-300 p-2">
-                                  {member.category}
+                                <td className="border border-gray-400 p-2">
+                                  <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full border border-gray-300">
+                                    {member.category}
+                                  </span>
                                 </td>
                                
-                                <td className="border border-gray-300 p-2 text-center">
+                                <td className="border border-gray-400 p-2 text-center">
                                   <button
                                     type="button"
                                     onClick={() => toggleExecutiveMember(originalIndex)}
-                                    className="p-1 text-red-600 hover:text-red-800 transition-colors"
+                                    className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded border border-red-300 transition-colors"
                                     disabled={!formData.wua_id}
+                                    title="Remove from Executive"
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </button>
@@ -1539,12 +1556,12 @@ const VLCFormation: React.FC<VLCFormationProps> = ({ editId, preselectedWUA, onS
             </section>
 
             {/* Form Actions */}
-            <div className="flex justify-between items-center pt-6 border-t border-gray-200">
+            <div className="flex justify-between items-center pt-6 border-t border-gray-300">
               <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={handleCancel}
-                  className="flex items-center gap-2 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-2 px-6 py-3 border border-gray-400 text-gray-700 rounded hover:bg-gray-50 transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   Back
@@ -1552,7 +1569,7 @@ const VLCFormation: React.FC<VLCFormationProps> = ({ editId, preselectedWUA, onS
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="px-6 py-3 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors"
+                  className="px-6 py-3 border border-red-400 text-red-700 rounded hover:bg-red-50 transition-colors"
                 >
                   Reset Form
                 </button>
@@ -1562,14 +1579,14 @@ const VLCFormation: React.FC<VLCFormationProps> = ({ editId, preselectedWUA, onS
                 <button
                   type="button"
                   onClick={() => setShowValidationSummary(true)}
-                  className="px-6 py-3 border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors"
+                  className="px-6 py-3 border border-blue-400 text-blue-700 rounded hover:bg-blue-50 transition-colors"
                 >
                   Validate Form
                 </button>
                 <button
                   type="submit"
                   disabled={isPending || !formData.wua_id}
-                  className="flex items-center gap-2 px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-8 py-3 bg-[#003087] text-white rounded hover:bg-[#00205b] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Save className="w-4 h-4" />
                   {isPending ? 'Creating VLC...' : 'Create VLC'}
@@ -1578,7 +1595,7 @@ const VLCFormation: React.FC<VLCFormationProps> = ({ editId, preselectedWUA, onS
             </div>
           </form>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

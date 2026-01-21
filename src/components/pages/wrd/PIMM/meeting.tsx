@@ -3,6 +3,35 @@ import { useMeetings, useCreateMeeting, useUpdateMeeting, useDeleteMeeting, useU
 import { downloadDocument, getMeetingById } from '@/services/api/wrdApi/pim/meetingApi';
 import { useWUAs } from '@/hooks/wrdHooks/useWuaMaster';
 
+import {
+  Calendar,
+  Users,
+  FileText,
+  DownloadIcon,
+  Trash2,
+  Edit3,
+  Search,
+  Filter,
+  Eye,
+  CheckCircle,
+  XCircle,
+  Clock,
+  AlertCircle,
+  Plus,
+  Shield,
+  Building,
+  MapPin,
+  UserCheck,
+  IndianRupee,
+  Wrench,
+  MessageSquare,
+  ArrowLeft,
+  Save,
+  RefreshCw,
+  Upload,
+  List
+} from 'lucide-react';
+
 interface FormData {
   meeting_date: string;
   agenda_topic: string;
@@ -373,110 +402,134 @@ const MeetingTraining: React.FC<MeetingTrainingProps> = ({ editId, onSuccess }) 
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'approved': return 'bg-green-100 text-green-800';
-      case 'submitted': return 'bg-blue-100 text-blue-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      default: return 'bg-yellow-100 text-yellow-800';
+      case 'approved': return 'bg-green-100 text-green-800 border border-green-300';
+      case 'submitted': return 'bg-blue-100 text-blue-800 border border-blue-300';
+      case 'rejected': return 'bg-red-100 text-red-800 border border-red-300';
+      default: return 'bg-yellow-100 text-yellow-800 border border-yellow-300';
     }
   };
 
+  const inputClass = "w-full px-4 py-2 border border-gray-400 rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087]";
+  const sectionClass = "bg-gray-50 border border-gray-300 rounded p-6";
+  const sectionHeaderClass = "text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2";
+
   if (!showForm) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
-          <div className="w-20 h-20 mx-auto mb-6 bg-indigo-100 rounded-full flex items-center justify-center">
-            <svg className="w-10 h-10 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
+      <div className="min-h-screen bg-gray-100 flex flex-col">
+        <header className="bg-[#003087] text-white border-b-4 border-[#FF9933]">
+          <div className="max-w-[1800px] mx-auto px-4 py-3">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 p-2 rounded">
+                <Shield className="w-8 h-8" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold">Meeting & Training Management</h1>
+                <p className="text-blue-200 text-sm">The meeting and training management form is currently closed</p>
+              </div>
+            </div>
           </div>
-          <h3 className="text-2xl font-bold text-gray-800 mb-4">Meeting/Training Form Closed</h3>
-          <p className="text-gray-600 mb-6">The meeting and training management form is currently closed.</p>
-          <button
-            onClick={() => setShowForm(true)}
-            className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl font-semibold"
-          >
-            Reopen Meeting Form
-          </button>
-        </div>
+        </header>
+
+        <main className="flex-1 max-w-[1800px] mx-auto w-full px-4 py-6">
+          <div className="bg-white border border-gray-300 rounded shadow-sm overflow-hidden text-center p-8">
+            <div className="w-20 h-20 mx-auto mb-6 bg-blue-100 rounded-full flex items-center justify-center border border-blue-300">
+              <Calendar className="w-10 h-10 text-[#003087]" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-800 mb-4">Meeting/Training Form Closed</h3>
+            <p className="text-gray-600 mb-6">The meeting and training management form is currently closed.</p>
+            <button
+              onClick={() => setShowForm(true)}
+              className="bg-[#003087] text-white px-8 py-3 rounded hover:bg-[#00205b] transition-colors font-medium"
+            >
+              Reopen Meeting Form
+            </button>
+          </div>
+        </main>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-6">
-      <div className="max-w-[1800px] mx-auto px-4">
-        {/* Header Card */}
-        <div className="bg-white rounded-2xl shadow-2xl mb-8 overflow-hidden">
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-8 text-white">
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-              <div>
-                <h1 className="text-3xl font-bold mb-2">Meeting & Training Management</h1>
-                <p className="text-indigo-100">Step 5: Track meetings, trainings, and water user interactions</p>
+    <div className="min-h-screen bg-gray-100 flex flex-col">
+      {/* Government Header */}
+      <header className="bg-[#003087] text-white border-b-4 border-[#FF9933]">
+        <div className="max-w-[1800px] mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 p-2 rounded">
+                <Shield className="w-8 h-8" />
               </div>
-              <div className="flex gap-4">
-                <button
-                  onClick={() => setShowForm(false)}
-                  className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl transition-all duration-200 font-semibold"
-                >
-                  Close Form
-                </button>
+              <div>
+                <h1 className="text-xl font-bold">Meeting & Training Management</h1>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          <button
+            onClick={() => setShowForm(false)}
+            className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            Close Form
+          </button>
+        </div>
+      </header>
+
+      <main className="flex-1 max-w-[1800px] mx-auto w-full px-4 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Sidebar Stats */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl shadow-xl p-6 sticky top-8">
+            <div className="bg-white border border-gray-300 rounded shadow-sm p-6 sticky top-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Quick Overview</h3>
               <div className="space-y-4">
-                <div className="bg-indigo-50 p-4 rounded-xl">
-                  <div className="text-2xl font-bold text-indigo-600">{meetings.length}</div>
-                  <div className="text-sm text-indigo-800">Total Meetings</div>
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-300">
+                  <div className="text-2xl font-bold text-[#003087]">{meetings.length}</div>
+                  <div className="text-sm text-blue-800">Total Meetings</div>
                 </div>
-                <div className="bg-purple-50 p-4 rounded-xl">
-                  <div className="text-2xl font-bold text-purple-600">
+                <div className="bg-green-50 p-4 rounded-lg border border-green-300">
+                  <div className="text-2xl font-bold text-green-600">
                     {meetings.filter((m: Meeting) => m.status === 'approved').length}
                   </div>
-                  <div className="text-sm text-purple-800">Approved</div>
+                  <div className="text-sm text-green-800">Approved</div>
                 </div>
-                <div className="bg-green-50 p-4 rounded-xl">
-                  <div className="text-2xl font-bold text-green-600">
+                <div className="bg-purple-50 p-4 rounded-lg border border-purple-300">
+                  <div className="text-2xl font-bold text-purple-600">
                     {meetings.reduce((sum: number, meeting: Meeting) => sum + (meeting.total_attendance || 0), 0)}
                   </div>
-                  <div className="text-sm text-green-800">Total Attendance</div>
+                  <div className="text-sm text-purple-800">Total Attendance</div>
                 </div>
-                <div className="bg-blue-50 p-4 rounded-xl">
-                  <div className="text-2xl font-bold text-blue-600">
+                <div className="bg-orange-50 p-4 rounded-lg border border-orange-300">
+                  <div className="text-2xl font-bold text-orange-600">
                     {meetings.filter((m: Meeting) => (m.document_count || 0) > 0).length}
                   </div>
-                  <div className="text-sm text-blue-800">With Documents</div>
+                  <div className="text-sm text-orange-800">With Documents</div>
                 </div>
               </div>
 
               {/* Navigation Tabs */}
-              <div className="mt-6 border-t pt-6">
-                <div className="flex space-x-2 bg-gray-100 p-1 rounded-lg">
+              <div className="mt-6 border-t border-gray-300 pt-6">
+                <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg border border-gray-300">
                   <button
                     onClick={() => setActiveTab('form')}
-                    className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all duration-200 ${
+                    className={`flex-1 py-2 px-3 rounded text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
                       activeTab === 'form'
-                        ? 'bg-white text-indigo-700 shadow-sm'
+                        ? 'bg-white text-[#003087] shadow-sm border border-gray-300'
                         : 'text-gray-600 hover:text-gray-800'
                     }`}
                   >
-                    📝 Form
+                    <FileText className="w-4 h-4" />
+                    Form
                   </button>
                   <button
                     onClick={() => setActiveTab('list')}
-                    className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all duration-200 ${
+                    className={`flex-1 py-2 px-3 rounded text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
                       activeTab === 'list'
-                        ? 'bg-white text-indigo-700 shadow-sm'
+                        ? 'bg-white text-[#003087] shadow-sm border border-gray-300'
                         : 'text-gray-600 hover:text-gray-800'
                     }`}
                   >
-                    📋 List
+                    <List className="w-4 h-4" />
+                    List
                   </button>
                 </div>
               </div>
@@ -487,17 +540,19 @@ const MeetingTraining: React.FC<MeetingTrainingProps> = ({ editId, onSuccess }) 
           <div className="lg:col-span-3">
             {activeTab === 'form' ? (
               /* Form View */
-              <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-                <div className="p-6 border-b border-gray-200">
+              <div className="bg-white border border-gray-300 rounded shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-gray-300 bg-gray-50">
                   <div className="flex justify-between items-center">
-                    <h2 className="text-2xl font-bold text-gray-800">
+                    <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                      <Calendar className="w-5 h-5 text-[#003087]" />
                       {editingId ? 'Edit Meeting/Training' : 'Create New Meeting/Training'}
                     </h2>
                     <button
                       onClick={() => setActiveTab('list')}
-                      className="text-gray-400 hover:text-gray-600 text-xl transition-colors duration-200"
+                      className="text-gray-500 hover:text-gray-700 text-sm flex items-center gap-2"
                     >
-                      📋
+                      <Eye className="w-4 h-4" />
+                      View List
                     </button>
                   </div>
                 </div>
@@ -505,17 +560,20 @@ const MeetingTraining: React.FC<MeetingTrainingProps> = ({ editId, onSuccess }) 
                 <div className="p-6">
                   <form onSubmit={handleSubmit}>
                     {/* Basic Information */}
-                    <div className="mb-8">
-                      <h3 className="text-xl font-semibold text-indigo-700 mb-4">📋 Basic Information</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                    <div className={sectionClass}>
+                      <h3 className={sectionHeaderClass}>
+                        <Building className="w-5 h-5 text-[#003087]" />
+                        Basic Information
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
                             Select WUA *
                           </label>
                           <select 
                             value={selectedWua} 
                             onChange={(e) => setSelectedWua(e.target.value)}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                            className={`${inputClass} ${wuasLoading ? 'bg-gray-100' : ''}`}
                             required
                             disabled={wuasLoading}
                           >
@@ -529,21 +587,24 @@ const MeetingTraining: React.FC<MeetingTrainingProps> = ({ editId, onSuccess }) 
                         </div>
 
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
                             Meeting Date *
                           </label>
-                          <input
-                            type="date"
-                            name="meeting_date"
-                            value={formData.meeting_date}
-                            onChange={handleInputChange}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
-                            required
-                          />
+                          <div className="relative">
+                            <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input
+                              type="date"
+                              name="meeting_date"
+                              value={formData.meeting_date}
+                              onChange={handleInputChange}
+                              className={`${inputClass} pl-10`}
+                              required
+                            />
+                          </div>
                         </div>
 
                         <div className="md:col-span-2">
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
                             Agenda/Topic *
                           </label>
                           <input
@@ -552,13 +613,13 @@ const MeetingTraining: React.FC<MeetingTrainingProps> = ({ editId, onSuccess }) 
                             placeholder="Enter meeting agenda or training topic"
                             value={formData.agenda_topic}
                             onChange={handleInputChange}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                            className={inputClass}
                             required
                           />
                         </div>
 
                         <div className="md:col-span-2">
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
                             Venue
                           </label>
                           <input
@@ -567,41 +628,49 @@ const MeetingTraining: React.FC<MeetingTrainingProps> = ({ editId, onSuccess }) 
                             placeholder="Enter meeting venue"
                             value={formData.venue}
                             onChange={handleInputChange}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                            className={inputClass}
                           />
                         </div>
                       </div>
                     </div>
 
                     {/* Documents Upload */}
-                    <div className="mb-8">
-                      <h3 className="text-xl font-semibold text-indigo-700 mb-4">📎 Documents Upload</h3>
-                      <div className="border-2 border-dashed border-gray-300 rounded-2xl p-6 bg-gray-50/50 hover:bg-gray-50 transition-all duration-200">
-                        <input
-                          type="file"
-                          multiple
-                          accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
-                          onChange={handleFileChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        />
-                        <p className="text-sm text-gray-500 mt-2">
-                          Supported formats: JPG, PNG, PDF, DOC, DOCX (Max 10MB each)
-                        </p>
+                    <div className={sectionClass}>
+                      <h3 className={sectionHeaderClass}>
+                        <Upload className="w-5 h-5 text-[#003087]" />
+                        Documents Upload
+                      </h3>
+                      <div className="border-2 border-dashed border-gray-400 rounded-lg p-6 bg-gray-50 hover:bg-gray-100 transition-all duration-200">
+                        <div className="mb-4">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Upload Meeting Documents
+                          </label>
+                          <input
+                            type="file"
+                            multiple
+                            accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+                            onChange={handleFileChange}
+                            className="w-full px-3 py-2 border border-gray-400 rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
+                          />
+                          <p className="text-sm text-gray-500 mt-2">
+                            Supported formats: JPG, PNG, PDF, DOC, DOCX (Max 10MB each)
+                          </p>
+                        </div>
                         
                         {/* New Documents Preview */}
                         {documents.length > 0 && (
                           <div className="mt-4">
-                            <p className="font-semibold text-sm mb-2">Files to upload:</p>
+                            <p className="font-medium text-gray-700 mb-2 text-sm">Files to upload:</p>
                             <div className="space-y-2">
                               {documents.map((file, index) => (
-                                <div key={index} className="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm">
-                                  <span className="text-sm">{file.name} ({formatFileSize(file.size)})</span>
+                                <div key={index} className="flex justify-between items-center bg-white p-3 rounded border border-gray-300">
+                                  <span className="text-sm truncate max-w-xs">{file.name} ({formatFileSize(file.size)})</span>
                                   <button
                                     type="button"
                                     onClick={() => removeDocument(index)}
-                                    className="text-red-600 hover:text-red-800 text-sm font-semibold"
+                                    className="text-red-600 hover:text-red-800 text-sm font-medium"
                                   >
-                                    Remove
+                                    <Trash2 className="w-4 h-4" />
                                   </button>
                                 </div>
                               ))}
@@ -612,25 +681,27 @@ const MeetingTraining: React.FC<MeetingTrainingProps> = ({ editId, onSuccess }) 
                         {/* Existing Documents */}
                         {existingDocuments.length > 0 && (
                           <div className="mt-4">
-                            <p className="font-semibold text-sm mb-2">Existing documents:</p>
+                            <p className="font-medium text-gray-700 mb-2 text-sm">Existing documents:</p>
                             <div className="space-y-2">
                               {existingDocuments.map((doc) => (
-                                <div key={doc.id} className="flex justify-between items-center bg-blue-50 p-3 rounded-lg">
-                                  <span className="text-sm">{doc.original_name} ({formatFileSize(doc.file_size)})</span>
+                                <div key={doc.id} className="flex justify-between items-center bg-blue-50 p-3 rounded border border-blue-300">
+                                  <span className="text-sm truncate max-w-xs">{doc.original_name} ({formatFileSize(doc.file_size)})</span>
                                   <div className="flex gap-2">
                                     <button
                                       type="button"
                                       onClick={() => handleDownloadDocument(doc.id, doc.original_name)}
-                                      className="text-blue-600 hover:text-blue-800 text-sm font-semibold"
+                                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                      title="Download"
                                     >
-                                      Download
+                                      <DownloadIcon className="w-4 h-4" />
                                     </button>
                                     <button
                                       type="button"
                                       onClick={() => removeExistingDocument(doc.id)}
-                                      className="text-red-600 hover:text-red-800 text-sm font-semibold"
+                                      className="text-red-600 hover:text-red-800 text-sm font-medium"
+                                      title="Delete"
                                     >
-                                      Delete
+                                      <Trash2 className="w-4 h-4" />
                                     </button>
                                   </div>
                                 </div>
@@ -642,11 +713,14 @@ const MeetingTraining: React.FC<MeetingTrainingProps> = ({ editId, onSuccess }) 
                     </div>
 
                     {/* Attendance Details */}
-                    <div className="mb-8">
-                      <h3 className="text-xl font-semibold text-indigo-700 mb-4">👥 Attendance Details</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className={sectionClass}>
+                      <h3 className={sectionHeaderClass}>
+                        <Users className="w-5 h-5 text-[#003087]" />
+                        Attendance Details
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
                             Male Attendance
                           </label>
                           <input
@@ -656,11 +730,11 @@ const MeetingTraining: React.FC<MeetingTrainingProps> = ({ editId, onSuccess }) 
                             value={formData.attendance_male}
                             onChange={handleInputChange}
                             min="0"
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                            className={inputClass}
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
                             Female Attendance
                           </label>
                           <input
@@ -670,29 +744,32 @@ const MeetingTraining: React.FC<MeetingTrainingProps> = ({ editId, onSuccess }) 
                             value={formData.attendance_female}
                             onChange={handleInputChange}
                             min="0"
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                            className={inputClass}
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
                             Total Attendance
                           </label>
                           <input
                             type="number"
                             value={totalAttendance}
                             disabled
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100 text-gray-700"
+                            className={`${inputClass} bg-gray-100 text-gray-600`}
                           />
                         </div>
                       </div>
                     </div>
 
                     {/* Meeting Outcome & Training Feedback */}
-                    <div className="mb-8">
-                      <h3 className="text-xl font-semibold text-indigo-700 mb-4">📝 Meeting Outcome & Training Feedback</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className={sectionClass}>
+                      <h3 className={sectionHeaderClass}>
+                        <FileText className="w-5 h-5 text-[#003087]" />
+                        Meeting Outcome & Training Feedback
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
                             Meeting Outcome (Minutes)
                           </label>
                           <textarea
@@ -701,11 +778,11 @@ const MeetingTraining: React.FC<MeetingTrainingProps> = ({ editId, onSuccess }) 
                             value={formData.meeting_outcome}
                             onChange={handleInputChange}
                             rows={4}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                            className={inputClass}
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
                             Training Feedback
                           </label>
                           <textarea
@@ -714,32 +791,35 @@ const MeetingTraining: React.FC<MeetingTrainingProps> = ({ editId, onSuccess }) 
                             value={formData.training_feedback}
                             onChange={handleInputChange}
                             rows={4}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                            className={inputClass}
                           />
                         </div>
                       </div>
                     </div>
 
                     {/* Financial Details */}
-                    <div className="mb-8">
-                      <h3 className="text-xl font-semibold text-indigo-700 mb-4">💰 Financial Details</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className={sectionClass}>
+                      <h3 className={sectionHeaderClass}>
+                        <IndianRupee className="w-5 h-5 text-[#003087]" />
+                        Financial Details
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
                             Water Tax Collected
                           </label>
                           <select
                             name="water_tax_collected"
                             value={formData.water_tax_collected}
                             onChange={handleInputChange}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                            className={inputClass}
                           >
                             <option value="No">No</option>
                             <option value="Yes">Yes</option>
                           </select>
                         </div>
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
                             Water Tax Remarks
                           </label>
                           <input
@@ -748,25 +828,25 @@ const MeetingTraining: React.FC<MeetingTrainingProps> = ({ editId, onSuccess }) 
                             placeholder="Enter remarks about water tax collection"
                             value={formData.water_tax_remarks}
                             onChange={handleInputChange}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                            className={inputClass}
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
                             Maintenance Fund Received
                           </label>
                           <select
                             name="maintenance_fund_received"
                             value={formData.maintenance_fund_received}
                             onChange={handleInputChange}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                            className={inputClass}
                           >
                             <option value="No">No</option>
                             <option value="Yes">Yes</option>
                           </select>
                         </div>
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
                             Maintenance Fund Remarks
                           </label>
                           <input
@@ -775,46 +855,49 @@ const MeetingTraining: React.FC<MeetingTrainingProps> = ({ editId, onSuccess }) 
                             placeholder="Enter remarks about maintenance fund"
                             value={formData.maintenance_fund_remarks}
                             onChange={handleInputChange}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                            className={inputClass}
                           />
                         </div>
                       </div>
                     </div>
 
                     {/* Work & Communication */}
-                    <div className="mb-8">
-                      <h3 className="text-xl font-semibold text-indigo-700 mb-4">🔧 Work & Communication</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className={sectionClass}>
+                      <h3 className={sectionHeaderClass}>
+                        <Wrench className="w-5 h-5 text-[#003087]" />
+                        Work & Communication
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
                             OFD Work Identified
                           </label>
                           <select
                             name="ofd_work_identified"
                             value={formData.ofd_work_identified}
                             onChange={handleInputChange}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                            className={inputClass}
                           >
                             <option value="No">No</option>
                             <option value="Yes">Yes</option>
                           </select>
                         </div>
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
                             Communication Done
                           </label>
                           <select
                             name="communication_done"
                             value={formData.communication_done}
                             onChange={handleInputChange}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                            className={inputClass}
                           >
                             <option value="No">No</option>
                             <option value="Yes">Yes</option>
                           </select>
                         </div>
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
                             Communicated To
                           </label>
                           <input
@@ -823,28 +906,31 @@ const MeetingTraining: React.FC<MeetingTrainingProps> = ({ editId, onSuccess }) 
                             placeholder="WRD/RDD/DM/Mukhia"
                             value={formData.communicated_to}
                             onChange={handleInputChange}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                            className={inputClass}
                           />
                         </div>
                       </div>
                     </div>
 
                     {/* Status Field */}
-                    <div className="mb-8">
-                      <h3 className="text-xl font-semibold text-indigo-700 mb-4">📊 Status</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className={sectionClass}>
+                      <h3 className={sectionHeaderClass}>
+                        <CheckCircle className="w-5 h-5 text-[#003087]" />
+                        Status
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
                             Meeting Status
                           </label>
                           <select
                             name="status"
                             value={formData.status}
                             onChange={handleInputChange}
-                            className={`w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 ${
-                              formData.status === 'draft' ? 'bg-yellow-50 border-yellow-200' : 
-                              formData.status === 'submitted' ? 'bg-blue-50 border-blue-200' : 
-                              formData.status === 'approved' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                            className={`${inputClass} ${
+                              formData.status === 'draft' ? 'bg-yellow-50 border-yellow-400' : 
+                              formData.status === 'submitted' ? 'bg-blue-50 border-blue-400' : 
+                              formData.status === 'approved' ? 'bg-green-50 border-green-400' : 'bg-red-50 border-red-400'
                             }`}
                           >
                             <option value="draft">Draft</option>
@@ -857,36 +943,32 @@ const MeetingTraining: React.FC<MeetingTrainingProps> = ({ editId, onSuccess }) 
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+                    <div className="flex justify-end gap-4 pt-6 border-t border-gray-300">
                       <button
                         type="button"
                         onClick={resetForm}
-                        className="px-8 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 font-semibold shadow-sm hover:shadow-md"
+                        className="px-6 py-3 border border-gray-400 text-gray-700 rounded hover:bg-gray-50 transition-colors font-medium"
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
                         disabled={createMeetingMutation.isPending || updateMeetingMutation.isPending}
-                        className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex items-center gap-2 px-8 py-3 bg-[#003087] text-white rounded hover:bg-[#00205b] disabled:opacity-50 transition-colors font-medium"
                       >
                         {createMeetingMutation.isPending || updateMeetingMutation.isPending ? (
                           <>
-                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                             <span>{editingId ? 'Updating...' : 'Creating...'}</span>
                           </>
                         ) : editingId ? (
                           <>
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
+                            <Save className="w-4 h-4" />
                             <span>Update Meeting</span>
                           </>
                         ) : (
                           <>
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                            </svg>
+                            <Plus className="w-4 h-4" />
                             <span>Create Meeting</span>
                           </>
                         )}
@@ -897,75 +979,86 @@ const MeetingTraining: React.FC<MeetingTrainingProps> = ({ editId, onSuccess }) 
               </div>
             ) : (
               /* List View */
-              <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-                <div className="p-6 border-b border-gray-200">
-                  <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-                    <h2 className="text-2xl font-bold text-gray-800">Meetings & Trainings List</h2>
+              <div className="bg-white border border-gray-300 rounded shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-gray-300 bg-gray-50">
+                  <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-4">
+                    <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                      <List className="w-5 h-5 text-[#003087]" />
+                      Meetings & Trainings List
+                    </h2>
                     <div className="flex gap-3">
                       <button
                         onClick={exportToExcel}
-                        className="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all duration-200 font-semibold flex items-center space-x-2"
+                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors font-medium"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <span>Export Excel</span>
+                        <DownloadIcon className="w-4 h-4" />
+                        Export Excel
                       </button>
                       <button
                         onClick={() => setActiveTab('form')}
-                        className="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all duration-200 font-semibold flex items-center space-x-2"
+                        className="flex items-center gap-2 px-4 py-2 bg-[#003087] text-white rounded hover:bg-[#00205b] transition-colors font-medium"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
-                        <span>New Meeting</span>
+                        <Plus className="w-4 h-4" />
+                        New Meeting
                       </button>
                     </div>
                   </div>
 
                   {/* Filters */}
-                  <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Search</label>
-                      <input
-                        type="text"
-                        placeholder="Search by WUA, agenda, venue..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                          type="text"
+                          placeholder="Search by WUA, agenda, venue..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="w-full pl-10 pr-4 py-2 border border-gray-400 rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
+                        />
+                      </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Status</label>
-                      <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      >
-                        <option value="">All Status</option>
-                        <option value="draft">Draft</option>
-                        <option value="submitted">Submitted</option>
-                        <option value="approved">Approved</option>
-                        <option value="rejected">Rejected</option>
-                      </select>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                      <div className="relative">
+                        <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <select
+                          value={statusFilter}
+                          onChange={(e) => setStatusFilter(e.target.value)}
+                          className="w-full pl-10 pr-8 py-2 border border-gray-400 rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] appearance-none"
+                        >
+                          <option value="">All Status</option>
+                          <option value="draft">Draft</option>
+                          <option value="submitted">Submitted</option>
+                          <option value="approved">Approved</option>
+                          <option value="rejected">Rejected</option>
+                        </select>
+                      </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">From Date</label>
-                      <input
-                        type="date"
-                        value={dateFilter.from}
-                        onChange={(e) => setDateFilter(prev => ({ ...prev, from: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+                      <div className="relative">
+                        <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                          type="date"
+                          value={dateFilter.from}
+                          onChange={(e) => setDateFilter(prev => ({ ...prev, from: e.target.value }))}
+                          className="w-full pl-10 pr-4 py-2 border border-gray-400 rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
+                        />
+                      </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">To Date</label>
-                      <input
-                        type="date"
-                        value={dateFilter.to}
-                        onChange={(e) => setDateFilter(prev => ({ ...prev, to: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">To Date</label>
+                      <div className="relative">
+                        <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                          type="date"
+                          value={dateFilter.to}
+                          onChange={(e) => setDateFilter(prev => ({ ...prev, to: e.target.value }))}
+                          className="w-full pl-10 pr-4 py-2 border border-gray-400 rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -976,65 +1069,71 @@ const MeetingTraining: React.FC<MeetingTrainingProps> = ({ editId, onSuccess }) 
                     <thead className="bg-gray-50">
                       <tr>
                         <th 
-                          className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                          className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-300 cursor-pointer hover:bg-gray-100"
                           onClick={() => handleSort('wua_name')}
                         >
                           <div className="flex items-center space-x-1">
+                            <Building className="w-3 h-3" />
                             <span>WUA</span>
                             {sortConfig.key === 'wua_name' && (
-                              <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                              <span className="text-xs">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
                             )}
                           </div>
                         </th>
                         <th 
-                          className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                          className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-300 cursor-pointer hover:bg-gray-100"
                           onClick={() => handleSort('meeting_date')}
                         >
                           <div className="flex items-center space-x-1">
+                            <Calendar className="w-3 h-3" />
                             <span>Date</span>
                             {sortConfig.key === 'meeting_date' && (
-                              <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                              <span className="text-xs">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
                             )}
                           </div>
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-300">
                           Agenda
                         </th>
                         <th 
-                          className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                          className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-300 cursor-pointer hover:bg-gray-100"
                           onClick={() => handleSort('total_attendance')}
                         >
                           <div className="flex items-center space-x-1">
+                            <Users className="w-3 h-3" />
                             <span>Attendance</span>
                             {sortConfig.key === 'total_attendance' && (
-                              <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                              <span className="text-xs">{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
                             )}
                           </div>
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-300">
                           Status
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-300">
                           Actions
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="bg-white divide-y divide-gray-300">
                       {filteredMeetings.length === 0 ? (
                         <tr>
                           <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
                             {meetingsLoading ? (
                               <div className="flex justify-center">
-                                <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                                <div className="w-8 h-8 border-2 border-[#003087] border-t-transparent rounded-full animate-spin"></div>
                               </div>
                             ) : (
-                              'No meetings found'
+                              <div className="text-center py-6">
+                                <FileText className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                                <p className="text-gray-600">No meetings found</p>
+                              </div>
                             )}
                           </td>
                         </tr>
                       ) : (
                         filteredMeetings.map((meeting: Meeting) => (
-                          <tr key={meeting.id} className="hover:bg-gray-50 transition-colors duration-150">
+                          <tr key={meeting.id} className="hover:bg-gray-50">
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="text-sm font-medium text-gray-900">{meeting.wua_name}</div>
                             </td>
@@ -1045,7 +1144,7 @@ const MeetingTraining: React.FC<MeetingTrainingProps> = ({ editId, onSuccess }) 
                             </td>
                             <td className="px-6 py-4">
                               <div 
-                                className="text-sm text-gray-900 max-w-xs truncate" 
+                                className="text-sm text-gray-900 font-medium" 
                                 title={meeting.agenda_topic || ''}
                               >
                                 {meeting.agenda_topic}
@@ -1053,7 +1152,7 @@ const MeetingTraining: React.FC<MeetingTrainingProps> = ({ editId, onSuccess }) 
                               <div className="text-sm text-gray-500">{meeting.venue}</div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="text-sm text-gray-900">
+                              <div className="text-sm text-gray-900 font-medium">
                                 {meeting.total_attendance || 0} total
                               </div>
                               <div className="text-xs text-gray-500">
@@ -1064,7 +1163,7 @@ const MeetingTraining: React.FC<MeetingTrainingProps> = ({ editId, onSuccess }) 
                               <select
                                 value={meeting.status}
                                 onChange={(e) => handleStatusUpdate(meeting.id, e.target.value)}
-                                className={`text-xs font-medium px-2 py-1 rounded-full ${getStatusColor(meeting.status)} border-0 focus:ring-2 focus:ring-indigo-500`}
+                                className={`text-xs font-medium px-2 py-1 rounded-full ${getStatusColor(meeting.status)} focus:ring-2 focus:ring-[#003087]`}
                               >
                                 <option value="draft">Draft</option>
                                 <option value="submitted">Submitted</option>
@@ -1076,14 +1175,18 @@ const MeetingTraining: React.FC<MeetingTrainingProps> = ({ editId, onSuccess }) 
                               <div className="flex space-x-2">
                                 <button
                                   onClick={() => editMeeting(meeting.id)}
-                                  className="text-indigo-600 hover:text-indigo-900 font-semibold"
+                                  className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
+                                  title="Edit"
                                 >
+                                  <Edit3 className="w-4 h-4" />
                                   Edit
                                 </button>
                                 <button
                                   onClick={() => handleDeleteMeeting(meeting.id)}
-                                  className="text-red-600 hover:text-red-900 font-semibold"
+                                  className="text-red-600 hover:text-red-800 font-medium flex items-center gap-1"
+                                  title="Delete"
                                 >
+                                  <Trash2 className="w-4 h-4" />
                                   Delete
                                 </button>
                               </div>
@@ -1096,7 +1199,7 @@ const MeetingTraining: React.FC<MeetingTrainingProps> = ({ editId, onSuccess }) 
                 </div>
 
                 {/* Pagination */}
-                <div className="px-6 py-4 border-t border-gray-200">
+                <div className="px-6 py-4 border-t border-gray-300 bg-gray-50">
                   <div className="flex justify-between items-center">
                     <div className="text-sm text-gray-700">
                       Showing <span className="font-semibold">{filteredMeetings.length}</span> of{' '}
@@ -1108,7 +1211,7 @@ const MeetingTraining: React.FC<MeetingTrainingProps> = ({ editId, onSuccess }) 
             )}
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

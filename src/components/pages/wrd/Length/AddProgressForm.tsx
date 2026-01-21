@@ -2,6 +2,17 @@
 
 import { useState, useEffect } from "react";
 
+interface Spur {
+  id: number;
+  spur_name: string;
+  spur_length_km: number;
+}
+
+interface SpurProgress {
+  spur_id: number;
+  completed_km: number;
+}
+
 interface AddProgressFormProps {
   showModal: boolean;
   onAddProgress: (data: any) => void;
@@ -12,6 +23,7 @@ interface AddProgressFormProps {
   totalEarthwork: number;
   totalLining: number;
   progressEntries: any[];
+  
 }
 
 export default function AddProgressForm({

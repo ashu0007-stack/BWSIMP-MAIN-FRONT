@@ -9,15 +9,17 @@ import { UserCreate} from "../admin/usermanagement/userCreate";
 import { UserDetails} from "../admin/usermanagement/userDetails";
 import DmsPage from "../admin/dms/DmsPage";
 import CreateWorkPackages from "../admin/work/work";
-import WUACreation from "./PIMM/wua";
-import VLCFormation from "./PIMM/vlc";
-import SLCFormation from "./PIMM/slc";
+
+//import VLCFormation from "./PIMM/vlc";
+//import SLCFormation from "./PIMM/slc";
 import AllFarmersPage from "./PIMM/farmer";
 import PimComparativeStudy from "./PIMM/pimstudy";
 import Reports from "./PIMM/report";
 import Dashboard from "./PIMM/wuApim";
 import MeetingTraining from "./PIMM/meeting";
-import ESProgressPage from "./ES/ESProgressPage";
+import VLCParent from "./PIMM/vlc/vlcParent";
+import SLCManagement from "./PIMM/slc/slcParent";
+import WUACreationContainer from "./PIMM/wua/WUACreationContainer";
 export default function WrdLayout() {
   const [activeTab, setActiveTab] = useState("dashboard");
  // Load active tab from localStorage
@@ -46,11 +48,11 @@ export default function WrdLayout() {
       case "milestone":
         return <MilestonePage />;
      case "wua":
-        return <WUACreation />
+        return <WUACreationContainer />
        case "vlc":
-        return <VLCFormation />
+        return <VLCParent />
       case "slc":
-        return <SLCFormation/>
+        return <SLCManagement/>
       case "farmer":
        return <AllFarmersPage/>
       case "meeting":
@@ -63,8 +65,6 @@ export default function WrdLayout() {
         return <UserDetails/>;
         case "Doc":
         return <DmsPage/>;
-        case "ESReport":
-          return <ESProgressPage />
         case "pimw" :
          return <Dashboard/>
       default:
