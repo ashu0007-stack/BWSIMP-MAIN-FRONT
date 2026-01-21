@@ -1,5 +1,5 @@
 import { JSX, useEffect, useMemo, useState } from "react";
-import { ChevronDown, Building, User, MapPin, Phone, Mail, Eye, Printer,Calendar, Clock, BadgeCheck, IndianRupee, Plus, X, Trees, Users, FileText, ShieldCheck, Edit, History, Filter, Search, Layers } from "lucide-react";
+import { ChevronDown, Building, User, MapPin, Phone, Mail, Eye, Printer, Calendar, Clock, BadgeCheck, IndianRupee, Plus, X, Trees, Users, FileText, ShieldCheck, Edit, History, Filter, Search, Layers, Shield } from "lucide-react";
 import { useTenderByWorkId } from "@/hooks/wrdHooks/useTenders";
 import { useContracts, useCreateContract, useWorkTender, useContractById, useUpdateContract } from "@/hooks/wrdHooks/useContracts";
 import ContractHistory from "@/components/pages/wrd/ProcueMent/ContractHistory";
@@ -304,34 +304,38 @@ function ContractsList({
   user: any;
 }) {
   return (
-   <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30">
-       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-         <div className="flex items-center gap-4">
- <div className="p-3 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl shadow-lg">
-                <Layers className="w-8 h-8 text-white" />
+    <div className="min-h-screen bg-gray-100 flex flex-col">
+      <header className="bg-[#003087] text-white border-b-4 border-[#FF9933]">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            {/* Government Logo/Emblem Placeholder */}
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 p-2 rounded">
+                <Shield className="w-8 h-8" />
               </div>
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800">Contract Management</h1>
-          <p className="text-gray-600 mt-2">View and manage all contractor contracts</p>
+              <div>
+                <h1 className="text-xl font-bold">Contract Management</h1>
+                <p className="text-sm text-blue-100">View and manage all contractor contracts</p>
+              </div>
+            </div>
+          </div>
+
+          {user.role_id === 5 && (
+            <button
+              onClick={onAddNew}
+              className="flex items-center px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-medium"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Add New Contract
+            </button>
+          )}
         </div>
-
-         </div>
-        
-
-        {user.role_id === 5 && (
-          <button
-            onClick={onAddNew}
-            className="flex items-center px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-medium"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            Add New Contract
-          </button>
-        )}
-      </div>
+      </header>
+      <main className="min-h-screen bg-gray-100 flex flex-col py-3">
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-         <div className="flex items-center gap-4"> 
-             <div className="flex flex-col lg:flex-row gap-4">
-                <div className="flex-1">
+          <div className="flex items-center gap-4">
+            <div className="flex flex-col lg:flex-row gap-4">
+              <div className="flex-1">
                 <div className="relative">
                   <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
@@ -343,69 +347,69 @@ function ContractsList({
                   />
                 </div>
               </div>
-           </div>
-         </div>
-      </div>
-      <div className="p-4">  </div>
-      <div className="bg-white rounded-3xl shadow-xl p-6">
-        <div className="flex items-center mb-6">
-          <div className="w-2 h-8 bg-blue-500 rounded-full mr-3" />
-          <h2 className="text-2xl font-bold text-gray-800">Contractor List</h2>
+            </div>
+          </div>
         </div>
-        {contracts?.length ? (
-          <div className="overflow-x-auto rounded-xl border">
+        <div className="p-2">  </div>
+        <div className="bg-white rounded-3xl shadow-xl p-6">
+          {/* <div className="flex items-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-800">Contractor List</h2>
+          </div> */}
+          {contracts?.length ? (
+            <div className="overflow-x-auto rounded-xl border mb-4">
             <table className="w-full">
               <thead className="bg-blue-600 text-white">
                 <tr>
-                  <th className="p-4 text-left font-semibold whitespace-nowrap">Tender Ref. No</th>
-                  <th className="p-4 text-left font-semibold whitespace-nowrap">Name of Work</th>
-                  <th className="p-4 text-left font-semibold whitespace-nowrap">Contractor Name</th>
-                  <th className="p-4 text-left font-semibold whitespace-nowrap">Agreement Amount (Cr.)</th>
-                  <th className="p-4 text-left font-semibold whitespace-nowrap">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {contracts.map((contract: Contract, index: number) => (
-                  <tr
-                    key={contract.id}
-                    className={`${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'} hover:bg-blue-50 transition-colors`}
-                  >
-                    <td className="p-4">{contract.tenderrefno || '-'}</td>
-                    <td className="p-4">{contract.work_name || '-'}</td>
-                    <td className="p-4">{contract.contractor_name || '-'}</td>
-                    <td className="p-4 text-green-700 font-semibold">₹{contract.contract_awarded_amount || '0'}</td>
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={() => onViewContract(contract)}
-                         title="View Details"
-                          className="p-2.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                    </td>
+                   <th className="p-4 text-left font-semibold whitespace-nowrap">Tender Ref. No</th>
+                   <th className="p-4 text-left font-semibold whitespace-nowrap">Name of Work</th>
+                   <th className="p-4 text-left font-semibold whitespace-nowrap">Contractor Name</th>
+                   <th className="p-4 text-left font-semibold whitespace-nowrap">Agreement Amount (Cr.)</th>
+                   <th className="p-4 text-left font-semibold whitespace-nowrap">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <div className="text-gray-400 mb-4">
-              <Building className="w-16 h-16 mx-auto opacity-50" />
+                </thead>
+                <tbody>
+                  {contracts.map((contract: Contract, index: number) => (
+                    <tr
+                      key={contract.id}
+                      className={`${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'} hover:bg-blue-50 transition-colors`}
+                    >
+                      <td className="p-4">{contract.tenderrefno || '-'}</td>
+                      <td className="p-4">{contract.work_name || '-'}</td>
+                      <td className="p-4">{contract.contractor_name || '-'}</td>
+                      <td className="p-4 text-green-700 font-semibold text-center">₹{contract.contract_awarded_amount || '0'}</td>
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => onViewContract(contract)}
+                          title="View Details"
+                          className="p-2.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            <p className="text-gray-500 text-lg">No contracts found.</p>
-            <p className="text-gray-400 mt-2">Start by creating your first contract.</p>
-             {user.role_id === 5 && (
-            <button
-              onClick={onAddNew}
-              className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
-            >
-              <Plus className="w-5 h-5 mr-2 inline" />
-              Add New Contract
-            </button>)}
-          </div>
-        )}
-      </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="text-gray-400 mb-4">
+                <Building className="w-16 h-16 mx-auto opacity-50" />
+              </div>
+              <p className="text-gray-500 text-lg">No contracts found.</p>
+              <p className="text-gray-400 mt-2">Start by creating your first contract.</p>
+              {user.role_id === 5 && (
+                <button
+                  onClick={onAddNew}
+                  className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+                >
+                  <Plus className="w-5 h-5 mr-2 inline" />
+                  Add New Contract
+                </button>)}
+            </div>
+          )}
+        </div>
+      </main>
     </div>
   );
 }
@@ -432,7 +436,7 @@ function ContractorFormComponent({
   onBackToList?: () => void;
   onViewHistory?: () => void;
   user: any;
-  workOptions:any;
+  workOptions: any;
 }) {
   const [formData, setFormData] = useState<FormData>(initialForm);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -1073,14 +1077,14 @@ function ContractorFormComponent({
     e: React.ChangeEvent<HTMLInputElement>,
     type: 'social' | 'environmental' | 'work_methodology',
     index: number,
-    existingDocumentPath?: string 
+    existingDocumentPath?: string
   ) => {
     const file = e.target.files?.[0];
 
     if (!file) {
-   
+
       if (existingDocumentPath) {
-       
+
         if (type === 'social') {
           handleUpdateSocialData(index, 'document', existingDocumentPath);
         } else if (type === 'environmental') {
@@ -1123,7 +1127,7 @@ function ContractorFormComponent({
       alert('Error uploading file. Please try again.');
     }
   };
- 
+
   // const renderFileInput = (
   //   type: 'social' | 'environmental' | 'work_methodology',
   //   index: number,
@@ -1263,7 +1267,7 @@ function ContractorFormComponent({
   // const workOptions = tendercontracts.map((work: any) => ({
   //   value: work.id.toString(),
   //   label: work.work_name || "Unnamed Work",
-    
+
   // }));
 
   const renderInputField = (
@@ -1304,9 +1308,9 @@ function ContractorFormComponent({
         <div>
           <button
             onClick={onBackToList}
-             className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+            className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
           >
-             ⬅ Back
+            ⬅ Back
           </button>
         </div>
         <div className="flex items-center gap-3">
@@ -1574,7 +1578,7 @@ function ContractorFormComponent({
           </div>
         )}
 
-         {/* Environment & Social Safeguard Tabs */}
+        {/* Environment & Social Safeguard Tabs */}
         <div className="bg-white rounded-xl border p-6">
           <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
             <ShieldCheck className="w-5 h-5 mr-2 text-emerald-500" />
@@ -2230,7 +2234,7 @@ function ContractorFormComponent({
                   </div>
                 </div>
 
-                 {/* Environment & Social Safeguard Section - UPDATED FORMAT */}
+                {/* Environment & Social Safeguard Section - UPDATED FORMAT */}
                 <div className="space-y-6">
                   <div className="flex items-center">
                     <div className="w-2 h-8 bg-emerald-500 rounded-full mr-3" />
@@ -2846,9 +2850,9 @@ export default function ContractorForm() {
   const updateContractMutation = useUpdateContract(); // ✅ Added update hook
   const { data: contractDetails, isLoading: isContractLoading, refetch } = useContractById(selectedContractId);
 
-  
 
-    const filteredContracts = useMemo(() => {
+
+  const filteredContracts = useMemo(() => {
     if (!contracts || contracts.length === 0) return [];
     if (user?.division_id) {
       const userDivisionContracts = contracts.filter((contract: any) => {
@@ -2885,9 +2889,9 @@ export default function ContractorForm() {
     return contracts;
   }, [contracts, user?.division_id, user?.circle_id, user?.zone_id]);
 
-const filteredWorks  = useMemo(() => {
+  const filteredWorks = useMemo(() => {
     if (!allWorks || allWorks.length === 0) return [];
-    
+
     if (user?.division_id) {
       return allWorks.filter((work: any) => {
         // Division-based filtering
@@ -2904,7 +2908,7 @@ const filteredWorks  = useMemo(() => {
         return work.zone_id === user.zone_id;
       });
     }
-    
+
     return allWorks;
   }, [allWorks, user?.division_id, user?.circle_id, user?.zone_id]);
 
@@ -3192,10 +3196,10 @@ const filteredWorks  = useMemo(() => {
             onViewHistory={handleViewHistory}
             user={user}
             workOptions={filteredWorks.map((work: any) => ({
-             value: work.id.toString(),
-               label: work.work_name || "Unnamed Work",
-                       }))}
-            
+              value: work.id.toString(),
+              label: work.work_name || "Unnamed Work",
+            }))}
+
           />
         )}
       </div>

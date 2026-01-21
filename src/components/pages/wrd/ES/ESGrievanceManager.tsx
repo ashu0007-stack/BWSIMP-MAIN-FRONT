@@ -2,11 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { Search, Filter, Plus, Edit, Trash2, CheckCircle, XCircle, Download, Eye } from "lucide-react";
-import { useGrievances, useAddGrievance, useUpdateGrievance } from "@/hooks/wrdHooks/ES/useESReports";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
-import axiosInstance from "@/apiInterceptor/axiosInterceptor";
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+import { useGrievances, useAddGrievance, useUpdateGrievance, useSubmitGrievance } from "@/hooks/wrdHooks/ES/useESReports";
+
 interface Grievance {
   id: number;
   grievance_id: string;
@@ -38,39 +35,15 @@ export default function ESGrievanceManager({ id }: ESGrievanceManagerProps) {
     endDate: ''
   });
 
-  const queryClient = useQueryClient();
-  
-  // ✅ SAFETY FIX: Check if hooks exist, otherwise use inline mutations
+  // ✅ Use existing hooks directly
   const { data: grievancesData = [], isLoading, refetch } = useGrievances(id, filters);
   
   // ✅ Ensure grievances is always an array
   const grievances: Grievance[] = Array.isArray(grievancesData) ? grievancesData : [];
   
-  // ✅ Fallback if hooks don't exist
-  const addMutation = useAddGrievance ? useAddGrievance() : useMutation({
-    mutationFn: async (grievanceData: any) => {
-      const response = await axiosInstance.post(`${API_URL}/esRoutes/api/es/grievances`, {
-        ...grievanceData,
-        project_id: id
-      });
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['grievances', id] });
-      setShowForm(false);
-    }
-  });
-
-  const updateMutation = useUpdateGrievance ? useUpdateGrievance() : useMutation({
-    mutationFn: async ({ id, updates }: { id: number; updates: any }) => {
-      const response = await axiosInstance.put(`${API_URL}/esRoutes/grievances/${id}`,updates );
-      
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['grievances', id] });
-    }
-  });
+  // ✅ Use your existing hooks - they already exist
+  const addMutation = useAddGrievance();
+  const updateMutation = useUpdateGrievance();
 
   const handleSubmit = (data: any) => {
     const grievanceData = {
@@ -79,6 +52,7 @@ export default function ESGrievanceManager({ id }: ESGrievanceManagerProps) {
     };
 
     if (selectedGrievance) {
+      // Update existing grievance
       updateMutation.mutate(
         { id: selectedGrievance.id, ...grievanceData },
         {
@@ -86,25 +60,52 @@ export default function ESGrievanceManager({ id }: ESGrievanceManagerProps) {
             refetch();
             setShowForm(false);
             setSelectedGrievance(null);
+          },
+          onError: (error) => {
+            console.error('Update grievance error:', error);
+            alert('Failed to update grievance. Please try again.');
           }
         }
       );
     } else {
+      // Add new grievance
       addMutation.mutate(grievanceData, {
         onSuccess: () => {
           refetch();
           setShowForm(false);
+        },
+        onError: (error) => {
+          console.error('Add grievance error:', error);
+          alert('Failed to add grievance. Please try again.');
         }
       });
     }
   };
 
-  const handleResolve = (id: number, status: string) => {
-    updateMutation.mutate(
-      { id, status, resolution_date: new Date().toISOString().split('T')[0] },
-      { onSuccess: () => refetch() }
-    );
+ const handleResolve = (grievanceId: number, status: 'resolved' | 'rejected') => {
+  const updateData: any = {
+    id: grievanceId,
+    status: status,
+    resolution_date: new Date().toISOString().split('T')[0]
   };
+  
+  // Add resolution_details only for resolved status
+  if (status === 'resolved') {
+    updateData.resolution_details = "Resolved by administrator";
+  } else if (status === 'rejected') {
+    updateData.resolution_details = "Grievance rejected";
+  }
+  
+  updateMutation.mutate(updateData, {
+    onSuccess: () => {
+      refetch();
+    },
+    onError: (error) => {
+      console.error('Resolve grievance error:', error);
+      alert('Failed to update grievance status.');
+    }
+  });
+};
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -126,7 +127,11 @@ export default function ESGrievanceManager({ id }: ESGrievanceManagerProps) {
   };
 
   const exportToExcel = () => {
-    // Export logic
+    if (grievances.length === 0) {
+      alert('No grievances to export.');
+      return;
+    }
+    
     const csvData = grievances.map(g => ({
       'Grievance ID': g.grievance_id,
       'Date': g.received_date,
@@ -140,8 +145,14 @@ export default function ESGrievanceManager({ id }: ESGrievanceManagerProps) {
     }));
 
     const csv = convertToCSV(csvData);
-    downloadCSV(csv, `grievances_${id}.csv`);
+    downloadCSV(csv, `grievances_project_${id}.csv`);
   };
+
+  // ✅ Calculate statistics safely
+  const totalGrievances = grievances.length;
+  const resolvedCount = grievances.filter(g => g.status === 'resolved').length;
+  const pendingCount = grievances.filter(g => g.status === 'pending' || g.status === 'in_progress').length;
+  const highPriorityCount = grievances.filter(g => g.priority === 'high').length;
 
   if (isLoading) {
     return (
@@ -150,37 +161,6 @@ export default function ESGrievanceManager({ id }: ESGrievanceManagerProps) {
       </div>
     );
   }
-
-  // ✅ Show empty state
-  if (grievances.length === 0 && !isLoading) {
-    return (
-      <div className="text-center py-12">
-        <div className="mb-6">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Search className="w-8 h-8 text-gray-400" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">No Grievances Found</h3>
-          <p className="text-gray-500 mb-6">No grievances have been registered for this project yet.</p>
-          <button
-            onClick={() => {
-              setSelectedGrievance(null);
-              setShowForm(true);
-            }}
-            className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 flex items-center gap-2 mx-auto"
-          >
-            <Plus className="w-5 h-5" />
-            Register First Grievance
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // ✅ Calculate statistics safely
-  const totalGrievances = grievances.length;
-  const resolvedCount = grievances.filter(g => g.status === 'resolved').length;
-  const pendingCount = grievances.filter(g => g.status === 'pending').length;
-  const highPriorityCount = grievances.filter(g => g.priority === 'high').length;
 
   return (
     <div>
@@ -194,7 +174,7 @@ export default function ESGrievanceManager({ id }: ESGrievanceManagerProps) {
         <div className="flex gap-3">
           <button
             onClick={exportToExcel}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={grievances.length === 0}
           >
             <Download className="w-4 h-4" />
@@ -283,7 +263,7 @@ export default function ESGrievanceManager({ id }: ESGrievanceManagerProps) {
         </div>
       </div>
 
-      {/* Statistics - ✅ FIXED: Using pre-calculated values */}
+      {/* Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white p-4 rounded-lg shadow">
           <div className="text-2xl font-bold text-blue-600">
@@ -303,7 +283,7 @@ export default function ESGrievanceManager({ id }: ESGrievanceManagerProps) {
           <div className="text-2xl font-bold text-yellow-600">
             {pendingCount}
           </div>
-          <div className="text-sm text-gray-600">Pending</div>
+          <div className="text-sm text-gray-600">Pending/In Progress</div>
         </div>
         
         <div className="bg-white p-4 rounded-lg shadow">
@@ -335,12 +315,12 @@ export default function ESGrievanceManager({ id }: ESGrievanceManagerProps) {
                   <td className="p-3 font-mono">{grievance.grievance_id}</td>
                   <td className="p-3">{new Date(grievance.received_date).toLocaleDateString()}</td>
                   <td className="p-3">
-                    <div>{grievance.complainant_name}</div>
+                    <div className="font-medium">{grievance.complainant_name}</div>
                     {grievance.contact_number && (
                       <div className="text-sm text-gray-500">{grievance.contact_number}</div>
                     )}
                   </td>
-                  <td className="p-3">{grievance.category}</td>
+                  <td className="p-3 capitalize">{grievance.category}</td>
                   <td className="p-3">
                     <span className={`px-2 py-1 rounded-full text-xs ${getPriorityColor(grievance.priority)}`}>
                       {grievance.priority}
@@ -364,7 +344,7 @@ export default function ESGrievanceManager({ id }: ESGrievanceManagerProps) {
                         <Eye className="w-4 h-4" />
                       </button>
                       
-                      {grievance.status === 'pending' && (
+                      {(grievance.status === 'pending' || grievance.status === 'in_progress') && (
                         <>
                           <button
                             onClick={() => handleResolve(grievance.id, 'resolved')}
@@ -390,7 +370,16 @@ export default function ESGrievanceManager({ id }: ESGrievanceManagerProps) {
               {grievances.length === 0 && (
                 <tr>
                   <td colSpan={7} className="p-6 text-center text-gray-500">
-                    No grievances found
+                    <div className="flex flex-col items-center justify-center py-6">
+                      <Search className="w-12 h-12 text-gray-300 mb-3" />
+                      <p className="text-gray-500 mb-4">No grievances found matching your filters</p>
+                      <button
+                        onClick={() => setFilters({status: '', category: '', search: '', startDate: '', endDate: ''})}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        Clear filters
+                      </button>
+                    </div>
                   </td>
                 </tr>
               )}
@@ -432,38 +421,65 @@ function GrievanceForm({ grievance, onClose, onSubmit }: any) {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Basic validation
+    if (!formData.complainant_name.trim()) {
+      alert('Please enter complainant name');
+      return;
+    }
+    
+    if (!formData.description.trim()) {
+      alert('Please enter grievance description');
+      return;
+    }
+    
     onSubmit(formData);
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="p-6">
-          <h3 className="text-lg font-bold mb-4">
-            {grievance ? 'Edit Grievance' : 'Register New Grievance'}
-          </h3>
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-bold">
+              {grievance ? 'Edit Grievance' : 'Register New Grievance'}
+            </h3>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              ✕
+            </button>
+          </div>
           
-          <div className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Date</label>
+                <label className="block text-sm font-medium mb-1">
+                  Received Date *
+                </label>
                 <input
                   type="date"
                   name="received_date"
                   value={formData.received_date}
                   onChange={handleChange}
                   className="w-full border rounded px-3 py-2"
+                  required
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-1">Category</label>
+                <label className="block text-sm font-medium mb-1">
+                  Category *
+                </label>
                 <select
                   name="category"
                   value={formData.category}
                   onChange={handleChange}
                   className="w-full border rounded px-3 py-2"
+                  required
                 >
                   <option value="labour">Labour</option>
                   <option value="environment">Environment</option>
@@ -475,7 +491,9 @@ function GrievanceForm({ grievance, onClose, onSubmit }: any) {
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-1">Complainant Name</label>
+                <label className="block text-sm font-medium mb-1">
+                  Complainant Name *
+                </label>
                 <input
                   type="text"
                   name="complainant_name"
@@ -483,27 +501,34 @@ function GrievanceForm({ grievance, onClose, onSubmit }: any) {
                   onChange={handleChange}
                   className="w-full border rounded px-3 py-2"
                   required
+                  placeholder="Enter full name"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-1">Contact Number</label>
+                <label className="block text-sm font-medium mb-1">
+                  Contact Number
+                </label>
                 <input
                   type="tel"
                   name="contact_number"
                   value={formData.contact_number}
                   onChange={handleChange}
                   className="w-full border rounded px-3 py-2"
+                  placeholder="Enter phone number"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-1">Priority</label>
+                <label className="block text-sm font-medium mb-1">
+                  Priority *
+                </label>
                 <select
                   name="priority"
                   value={formData.priority}
                   onChange={handleChange}
                   className="w-full border rounded px-3 py-2"
+                  required
                 >
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
@@ -512,12 +537,15 @@ function GrievanceForm({ grievance, onClose, onSubmit }: any) {
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-1">Status</label>
+                <label className="block text-sm font-medium mb-1">
+                  Status *
+                </label>
                 <select
                   name="status"
                   value={formData.status}
                   onChange={handleChange}
                   className="w-full border rounded px-3 py-2"
+                  required
                 >
                   <option value="pending">Pending</option>
                   <option value="in_progress">In Progress</option>
@@ -528,43 +556,51 @@ function GrievanceForm({ grievance, onClose, onSubmit }: any) {
             </div>
             
             <div>
-              <label className="block text-sm font-medium mb-1">Description</label>
+              <label className="block text-sm font-medium mb-1">
+                Description *
+              </label>
               <textarea
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
                 className="w-full border rounded px-3 py-2 h-32"
                 required
+                placeholder="Enter detailed description of the grievance"
               />
             </div>
             
             {formData.status === 'resolved' && (
               <div>
-                <label className="block text-sm font-medium mb-1">Resolution Details</label>
+                <label className="block text-sm font-medium mb-1">
+                  Resolution Details *
+                </label>
                 <textarea
                   name="resolution_details"
                   value={formData.resolution_details}
                   onChange={handleChange}
                   className="w-full border rounded px-3 py-2 h-24"
+                  required
+                  placeholder="Enter resolution details"
                 />
               </div>
             )}
             
-            <div className="flex justify-end gap-3 pt-4">
+            <div className="flex justify-end gap-3 pt-4 border-t">
               <button
+                type="button"
                 onClick={onClose}
                 className="px-4 py-2 border rounded-lg hover:bg-gray-50"
               >
                 Cancel
               </button>
               <button
-                onClick={handleSubmit}
+                type="submit"
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
               >
                 {grievance ? 'Update' : 'Register'} Grievance
               </button>
             </div>
-          </div>
+          </form>
         </div>
       </div>
     </div>
@@ -572,28 +608,34 @@ function GrievanceForm({ grievance, onClose, onSubmit }: any) {
 }
 
 // Helper functions
-function convertToCSV(data: any[]) {
+function convertToCSV(data: any[]): string {
   if (data.length === 0) return '';
   
   const headers = Object.keys(data[0]);
   const csvRows = [
     headers.join(','),
     ...data.map(row => 
-      headers.map(header => 
-        JSON.stringify(row[header] || '')
-      ).join(',')
+      headers.map(header => {
+        const value = row[header];
+        // Handle values that might contain commas or quotes
+        const stringValue = String(value);
+        if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+          return `"${stringValue.replace(/"/g, '""')}"`;
+        }
+        return stringValue;
+      }).join(',')
     )
   ];
   
   return csvRows.join('\n');
 }
 
-function downloadCSV(csv: string, filename: string) {
-  const blob = new Blob([csv], { type: 'text/csv' });
+function downloadCSV(csv: string, filename: string): void {
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = filename;
+  link.setAttribute('download', filename);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

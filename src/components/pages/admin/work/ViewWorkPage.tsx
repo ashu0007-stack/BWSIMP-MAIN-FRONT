@@ -72,6 +72,8 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
     package_number: "",
     work_cost: "",
     target_km: "",
+    work_start_range: "",
+    work_end_range: "",
     work_period_months: "",
     zone_id: "",
     circle_id: "",
@@ -100,6 +102,8 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
         package_number: fetchedWorkDetails.package_number || "",
         work_cost: fetchedWorkDetails.work_cost || "",
         target_km: fetchedWorkDetails.target_km || "",
+        work_start_range: fetchedWorkDetails.work_start_range || "",
+        work_end_range: fetchedWorkDetails.work_end_range || "",
         work_period_months: fetchedWorkDetails.work_period_months || "",
         zone_id: fetchedWorkDetails.zone_id?.toString() || "",
         circle_id: fetchedWorkDetails.circle_id?.toString() || "",
@@ -580,6 +584,18 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
                   {workDetails.target_km || "0"} km
                 </span>
               </div>
+               <div>
+                <span className="text-sm text-gray-600 block mb-1">Work start Range</span>
+                <span className="text-lg font-bold text-gray-900">
+                  {workDetails.work_start_range || "0"} km
+                </span>
+              </div>
+               <div>
+                <span className="text-sm text-gray-600 block mb-1">Work end Range</span>
+                <span className="text-lg font-bold text-gray-900">
+                  {workDetails.work_end_range || "0"} km
+                </span>
+              </div>
             </div>
             
             <div className="flex gap-3">
@@ -732,6 +748,46 @@ const ViewWorkPage: React.FC<ViewWorkPageProps> = ({
                           />
                         ) : (
                           <div className="text-lg font-medium text-gray-900">{workDetails.target_km} km</div>
+                        )}
+                      </div>
+
+                       <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <span className="flex items-center gap-1">
+                            <Ruler size={16} />
+                            Work start Range (KM) *
+                          </span>
+                        </label>
+                        {mode === "edit" ? (
+                          <input
+                            type="text"
+                            name="work_start_range"
+                            value={editFormData.work_start_range}
+                            onChange={handleEditChange}
+                            className="w-full px-4 py-2 border border-gray-400 rounded focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
+                          />
+                        ) : (
+                          <div className="text-lg font-medium text-gray-900">{workDetails.work_start_range} km</div>
+                        )}
+                      </div>
+
+                       <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <span className="flex items-center gap-1">
+                            <Ruler size={16} />
+                            Work end Range (KM) *
+                          </span>
+                        </label>
+                        {mode === "edit" ? (
+                          <input
+                            type="text"
+                            name="work_end_range"
+                            value={editFormData.work_end_range}
+                            onChange={handleEditChange}
+                            className="w-full px-4 py-2 border border-gray-400 rounded focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
+                          />
+                        ) : (
+                          <div className="text-lg font-medium text-gray-900">{workDetails.work_end_range} km</div>
                         )}
                       </div>
 

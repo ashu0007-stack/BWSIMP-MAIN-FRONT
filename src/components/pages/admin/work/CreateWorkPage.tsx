@@ -77,15 +77,14 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
     work_name: "",
     work_package_name: "",
     target_km: "",
+    work_start_range: "",
+    work_end_range: "",
     work_period_months: "",
     work_cost: "",
     package_number: "",
     package_details: "",
     district: "",
-    dpr_cost: "",
-    rfp_cost: "",
     Area_Under_improved_Irrigation: "",
-    command_area_after: "",
     award_status: "",
     has_spurs: 0
   });
@@ -132,6 +131,7 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
     {
       spur_name: "Spur 1",
       location_km: "",
+      spurs_length: "",
       is_new: ""
     }
   ]);
@@ -730,7 +730,7 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
         }
       }
 
-      if (["target_km", "work_period_months", "Area_Under_improved_Irrigation", "command_area_after"].includes(name)) {
+      if (["target_km", "work_period_months", "Area_Under_improved_Irrigation"].includes(name)) {
         if (value && !/^\d*\.?\d*$/.test(value)) {
           setValidationErrors(prev => ({
             ...prev,
@@ -1120,15 +1120,14 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
       work_name: "",
       work_package_name: "",
       target_km: "",
+      work_start_range: "",
+      work_end_range: "",
       work_period_months: "",
       work_cost: "",
       package_number: "",
       package_details: "",
       district: "",
-      dpr_cost: "",
-      rfp_cost: "",
       Area_Under_improved_Irrigation: "",
-      command_area_after: "",
       award_status: "",
       has_spurs: 0,
     });
@@ -1170,6 +1169,7 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
     setSpursData([{
       spur_name: "Spur 1",
       location_km: "",
+      spurs_length: "",
       is_new: ""
     }]);
     setSpursErrors([]);
@@ -1362,21 +1362,6 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
       <main className="min-h-screen bg-gray-100 flex flex-col py-3">
         {/* Form Container */}
         <div className="bg-white border border-gray-300 rounded shadow-sm overflow-hidden">
-          {/* Form Header Banner */}
-          {/* <div className="bg-gradient-to-r from-[#003087] to-[#0056b3] text-white p-6 border-b border-[#FF9933]">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold mb-2">Create New Work Package</h2>
-                <p className="opacity-90">
-                  Define complete work package information including location, components, villages, and beneficiaries
-                </p>
-              </div>
-              <div className="bg-white/20 p-3 rounded-lg">
-                <FileCheck className="w-8 h-8" />
-              </div>
-            </div>
-          </div> */}
-
           {/* Navigation Tabs */}
           <div className="border-b border-gray-300">
             <div className="flex">
@@ -1466,101 +1451,6 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
             {/* Basic Information Tab */}
             {activeTab === 'basic' && (
               <div className="space-y-6">
-                {/* Location Section */}
-                <section className="bg-gray-50 border border-gray-300 rounded p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <MapPin className="w-5 h-5 text-[#003087]" />
-                    <h2 className="text-lg font-semibold text-gray-800">Project Implementation Unit</h2>
-                    <span className="text-red-500">*</span>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-700">Zone *</label>
-                      <select
-                        name="zone_id"
-                        value={formData.zone_id}
-                        onChange={(e) => { handleChange(e); setSelectedZoneId(e.target.value) }}
-                        className={`w-full px-4 py-3 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
-                          validationErrors.zone_id ? 'border-red-500' : 'border-gray-400'
-                        }`}
-                        disabled={zonesLoading}
-                      >
-                        <option value="">
-                          {zonesLoading ? "Loading zones..." : "Select Zone"}
-                        </option>
-                        {zones?.data?.map((z: Zone) => (
-                          <option key={z.zone_id} value={z.zone_id}>
-                            {z.zone_name}
-                          </option>
-                        ))}
-                      </select>
-                      {validationErrors.zone_id && (
-                        <div className="flex items-center gap-1 mt-2 text-red-600 text-sm">
-                          <AlertCircle className="w-4 h-4" />
-                          {validationErrors.zone_id}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-700">Circle *</label>
-                      <select
-                        name="circle_id"
-                        value={formData.circle_id}
-                        onChange={(e) => { handleChange(e); setSelectedCircleId(e.target.value) }}
-                        disabled={!formData.zone_id || circlesLoading}
-                        className={`w-full px-4 py-3 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
-                          validationErrors.circle_id ? 'border-red-500' : 'border-gray-400'
-                        }`}
-                      >
-                        <option value="">
-                          {!formData.zone_id ? "Select zone first" : circlesLoading ? "Loading circles..." : "Select Circle"}
-                        </option>
-                        {circles?.data.map((c: Circle) => (
-                          <option key={c.circle_id} value={c.circle_id}>
-                            {c.circle_name}
-                          </option>
-                        ))}
-                      </select>
-                      {validationErrors.circle_id && (
-                        <div className="flex items-center gap-1 mt-2 text-red-600 text-sm">
-                          <AlertCircle className="w-4 h-4" />
-                          {validationErrors.circle_id}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-700">Division *</label>
-                      <select
-                        name="division_id"
-                        value={formData.division_id}
-                        onChange={handleChange}
-                        disabled={!formData.circle_id || divisionsLoading}
-                        className={`w-full px-4 py-3 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
-                          validationErrors.division_id ? 'border-red-500' : 'border-gray-400'
-                        }`}
-                      >
-                        <option value="">
-                          {!formData.circle_id ? "Select circle first" : divisionsLoading ? "Loading divisions..." : "Select Division"}
-                        </option>
-                        {divisions?.data?.map((d: Division) => (
-                          <option key={d.division_id} value={d.division_id}>
-                            {d.division_name}
-                          </option>
-                        ))}
-                      </select>
-                      {validationErrors.division_id && (
-                        <div className="flex items-center gap-1 mt-2 text-red-600 text-sm">
-                          <AlertCircle className="w-4 h-4" />
-                          {validationErrors.division_id}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </section>
-
                 {/* Work Details Section */}
                 <section className="bg-gray-50 border border-gray-300 rounded p-6">
                   <div className="flex items-center gap-3 mb-4">
@@ -1644,6 +1534,135 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                         <div className="flex items-center gap-1 mt-2 text-red-600 text-sm">
                           <AlertCircle className="w-4 h-4" />
                           {validationErrors.workcomponentId}
+                        </div>
+                      )}
+                    </div>
+
+                    
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700">Zone *</label>
+                      <select
+                        name="zone_id"
+                        value={formData.zone_id}
+                        onChange={(e) => { handleChange(e); setSelectedZoneId(e.target.value) }}
+                        className={`w-full px-4 py-3 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                          validationErrors.zone_id ? 'border-red-500' : 'border-gray-400'
+                        }`}
+                        disabled={zonesLoading}
+                      >
+                        <option value="">
+                          {zonesLoading ? "Loading zones..." : "Select Zone"}
+                        </option>
+                        {zones?.data?.map((z: Zone) => (
+                          <option key={z.zone_id} value={z.zone_id}>
+                            {z.zone_name}
+                          </option>
+                        ))}
+                      </select>
+                      {validationErrors.zone_id && (
+                        <div className="flex items-center gap-1 mt-2 text-red-600 text-sm">
+                          <AlertCircle className="w-4 h-4" />
+                          {validationErrors.zone_id}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700">Circle *</label>
+                      <select
+                        name="circle_id"
+                        value={formData.circle_id}
+                        onChange={(e) => { handleChange(e); setSelectedCircleId(e.target.value) }}
+                        disabled={!formData.zone_id || circlesLoading}
+                        className={`w-full px-4 py-3 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                          validationErrors.circle_id ? 'border-red-500' : 'border-gray-400'
+                        }`}
+                      >
+                        <option value="">
+                          {!formData.zone_id ? "Select zone first" : circlesLoading ? "Loading circles..." : "Select Circle"}
+                        </option>
+                        {circles?.data.map((c: Circle) => (
+                          <option key={c.circle_id} value={c.circle_id}>
+                            {c.circle_name}
+                          </option>
+                        ))}
+                      </select>
+                      {validationErrors.circle_id && (
+                        <div className="flex items-center gap-1 mt-2 text-red-600 text-sm">
+                          <AlertCircle className="w-4 h-4" />
+                          {validationErrors.circle_id}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700">Division *</label>
+                      <select
+                        name="division_id"
+                        value={formData.division_id}
+                        onChange={handleChange}
+                        disabled={!formData.circle_id || divisionsLoading}
+                        className={`w-full px-4 py-3 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                          validationErrors.division_id ? 'border-red-500' : 'border-gray-400'
+                        }`}
+                      >
+                        <option value="">
+                          {!formData.circle_id ? "Select circle first" : divisionsLoading ? "Loading divisions..." : "Select Division"}
+                        </option>
+                        {divisions?.data?.map((d: Division) => (
+                          <option key={d.division_id} value={d.division_id}>
+                            {d.division_name}
+                          </option>
+                        ))}
+                      </select>
+                      {validationErrors.division_id && (
+                        <div className="flex items-center gap-1 mt-2 text-red-600 text-sm">
+                          <AlertCircle className="w-4 h-4" />
+                          {validationErrors.division_id}
+                        </div>
+                      )}
+                    </div>
+
+                     <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700 flex items-center">
+                        <Ruler className="w-4 h-4 mr-2 text-gray-500" />
+                        Work Start Range (KM) *
+                      </label>
+                      <input
+                        type="text"
+                        name="work_start_range"
+                        value={formData.work_start_range}
+                        onChange={handleChange}
+                        className={`w-full px-4 py-3 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                          validationErrors.work_start_range ? 'border-red-500' : 'border-gray-400'
+                        }`}
+                      />
+                      {validationErrors.work_start_range && (
+                        <div className="flex items-center gap-1 mt-2 text-red-600 text-sm">
+                          <AlertCircle className="w-4 h-4" />
+                          {validationErrors.work_start_range}
+                        </div>
+                      )}
+                    </div>
+
+                     <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700 flex items-center">
+                        <Ruler className="w-4 h-4 mr-2 text-gray-500" />
+                        Work End Range (KM) *
+                      </label>
+                      <input
+                        type="text"
+                        name="work_end_range"
+                        value={formData.work_end_range}
+                        onChange={handleChange}
+                        className={`w-full px-4 py-3 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                          validationErrors.work_end_range ? 'border-red-500' : 'border-gray-400'
+                        }`}
+                      />
+                      {validationErrors.work_end_range && (
+                        <div className="flex items-center gap-1 mt-2 text-red-600 text-sm">
+                          <AlertCircle className="w-4 h-4" />
+                          {validationErrors.work_end_range}
                         </div>
                       )}
                     </div>
@@ -1777,7 +1796,7 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                   <h2 className="text-lg font-semibold text-gray-800">Beneficiaries Information</h2>
                 </div>
 
-                <div className="bg-blue-50 border border-blue-300 rounded p-4 mb-6">
+                {/* <div className="bg-blue-50 border border-blue-300 rounded p-4 mb-6">
                   <h4 className="font-semibold text-blue-800 mb-2">Auto-calculation Rules:</h4>
                   <ul className="text-sm text-blue-700 space-y-1">
                     <li>• Enter Total Population to auto-calculate other fields</li>
@@ -1785,7 +1804,7 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                     <li>• Male: Remaining population after female calculation</li>
                     <li>• Youth (15-28 years): 29% of total population (rounded)</li>
                   </ul>
-                </div>
+                </div> */}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
@@ -1901,11 +1920,11 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                   </button>
                 </div>
 
-                <div className="bg-yellow-50 border border-yellow-300 rounded p-3 mb-4">
+                {/* <div className="bg-yellow-50 border border-yellow-300 rounded p-3 mb-4">
                   <p className="text-yellow-700 text-sm">
                     <strong>Auto-calculation:</strong> Enter total population to auto-calculate male/female populations (49% female, remaining male)
                   </p>
-                </div>
+                </div> */}
 
                 <div className="space-y-6">
                   {villages.map((village, i) => (
@@ -2321,6 +2340,7 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                                       newSpurs.push({
                                         spur_name: `Spur ${j + 1}`,
                                         location_km: "",
+                                         spurs_length: "",
                                         is_new: ""
                                       });
                                     }
@@ -2345,6 +2365,7 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                                     {
                                       spur_name: `Spur ${spursData.length + 1}`,
                                       location_km: "",
+                                       spurs_length: "",
                                       is_new: ""
                                     }
                                   ]);
@@ -2406,7 +2427,7 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                               )}
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                               <div className="space-y-2">
                                 <label className="block text-sm font-medium text-gray-700">Spur Name *</label>
                                 <input
@@ -2438,6 +2459,27 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                                   />
                                   <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                                     <span className="text-gray-500">KM</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="space-y-2">
+                                <label className="block text-sm font-medium text-gray-700">Length of Spur (Mtr) *</label>
+                                <div className="relative">
+                                  <input
+                                    type="number"
+                                    value={spur.spurs_length}
+                                    onChange={(e) => {
+                                      const updated = [...spursData];
+                                      updated[spurIndex].spurs_length = e.target.value;
+                                      setSpursData(updated);
+                                    }}
+                                    step="0.01"
+                                    min="0"
+                                    className="w-full px-4 py-3 border border-gray-400 rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
+                                  />
+                                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                    <span className="text-gray-500">Mtr</span>
                                   </div>
                                 </div>
                               </div>

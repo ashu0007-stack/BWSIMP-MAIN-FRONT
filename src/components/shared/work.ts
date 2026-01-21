@@ -66,6 +66,8 @@ export interface Work {
   circle_id?: number;
   division_id?: number;
   target_km?: string;
+  work_start_range: string,
+  work_end_range: string,
   work_period_months?: string;
   component_id?: number;
   subcomponent_id?: number;
@@ -94,6 +96,7 @@ export interface Village {
 export interface SpurData {
   spur_name: string;
   location_km: string;
+  spurs_length:string,
   is_new: "new" | "old" | "";
 }
 
@@ -136,15 +139,14 @@ export interface WorkFormData {
   work_name: string;
   work_package_name: string;
   target_km: string;
+  work_start_range: string;
+  work_end_range: string;
   work_period_months: string;
   work_cost: string;
   package_number: string;
   package_details: string;
   district: string;
-  dpr_cost: string;
-  rfp_cost: string;
   Area_Under_improved_Irrigation: string;
-  command_area_after: string;
   award_status: string;
   has_spurs?: number;
 }

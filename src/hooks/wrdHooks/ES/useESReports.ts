@@ -3,7 +3,32 @@ import axiosInstance from "@/apiInterceptor/axiosInterceptor";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+export interface LabourCampFacility {
+  id: number;
+  project_id: number;
+  facility_type: 'accommodation' | 'washroom' | 'water' | 'kitchen' | 'medical' | 'safety' | 'other';
+  facility_name: string;
+  specification?: string;
+  quantity: number;
+  condition: 'good' | 'average' | 'poor' | 'not_available';
+  last_inspection_date?: string;
+  next_inspection_date?: string;
+  remarks?: string;
+  photo_url?: string;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+}
 
+export interface AddLabourCampFacilityData {
+  work_id: number;
+  facility_type: 'accommodation' | 'washroom' | 'water' | 'kitchen' | 'medical' | 'safety' | 'other';
+  facility_name: string;
+  specification?: string;
+  quantity?: number;
+  condition?: 'good' | 'average' | 'poor' | 'not_available';
+  remarks?: string;
+}
 // ============================================
 // PROJECT RELATED HOOKS
 // ============================================
@@ -166,28 +191,50 @@ export const useAddGrievance = () => {
   
   return useMutation({
     mutationFn: async (grievanceData: any) => {
-      const response = await axiosInstance.post(`${API_URL}/esRoutes/grievances`, grievanceData);
-      return response.data;
+      try {
+        console.log('📤 Adding grievance:', grievanceData);
+        const response = await axiosInstance.post(
+          `${API_URL}/esRoutes/grievances`, 
+          grievanceData
+        );
+        console.log('✅ Grievance added successfully:', response.data);
+        return response.data;
+      } catch (error: any) {
+        console.error('❌ Add grievance error:', {
+          message: error.message,
+          response: error.response,
+          status: error.response?.status,
+          data: error.response?.data,
+          config: {
+            url: error.config?.url,
+            method: error.config?.method,
+            data: error.config?.data
+          }
+        });
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['grievances'] });
+      // Also invalidate specific project queries if needed
+      queryClient.invalidateQueries({ queryKey: ['grievances', 'someProjectId'] });
     },
     onError: (error: any) => {
-      console.error('Add grievance error:', error);
+      console.error('💥 Add grievance onError:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
     }
   });
 };
-
 
 export const useSubmitGrievance = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
     mutationFn: async (grievanceData: any) => {
-      const { data } = await axiosInstance.post(
-        `${API_URL}/esRoutes/grievances`,
-        grievanceData
-      );
+      const { data } = await axiosInstance.post(`${API_URL}/esRoutes/grievances`,grievanceData);
       return data;
     },
     onSuccess: (_, variables) => {
@@ -243,6 +290,80 @@ export const useUpdateLabourCamp = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ 
         queryKey: ["labour-camp", variables.project_id] 
+      });
+    },
+  });
+};
+
+export const useAddLabourCampFacility = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (facilityData: AddLabourCampFacilityData) => {
+      console.log('📤 Adding labour camp facility:', facilityData);
+      
+      const { data } = await axiosInstance.post(
+        `${API_URL}/esRoutes/labour-camp/facilities`,
+        facilityData
+      );
+      return data;
+    },
+    onSuccess: (data, variables) => {
+      console.log('✅ Labour camp facility added successfully:', data);
+      
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ 
+        queryKey: ["labour-camp-facilities", variables.work_id] 
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: ["labour-camp", variables.work_id] 
+      });
+    },
+    onError: (error: any) => {
+      console.error('❌ Add labour camp facility error:', error);
+      console.error('Error details:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+      });
+    }
+  });
+};
+
+// Update labour camp facility
+export const useUpdateLabourCampFacility = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, ...updateData }: any) => {
+      const { data } = await axiosInstance.put(
+        `${API_URL}/esRoutes/labour-camp/facilities/${id}`,
+        updateData
+      );
+      return data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ 
+        queryKey: ["labour-camp-facilities"] 
+      });
+    },
+  });
+};
+
+// Delete labour camp facility
+export const useDeleteLabourCampFacility = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const { data } = await axiosInstance.delete(
+        `${API_URL}/esRoutes/labour-camp/facilities/${id}`
+      );
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ 
+        queryKey: ["labour-camp-facilities"] 
       });
     },
   });

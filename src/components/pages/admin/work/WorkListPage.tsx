@@ -264,12 +264,12 @@ const WorkListPage: React.FC<WorkListPageProps> = ({ onViewWork, onCreateWork, o
             <table className="w-full text-sm text-left text-gray-700">
               <thead className="bg-gray-100 text-gray-800">
                 <tr>
-                  <th className="px-6 py-4 font-semibold border-b border-gray-300">Package Details</th>
-                  <th className="px-6 py-4 font-semibold border-b border-gray-300">Work Name</th>
-                  <th className="px-6 py-4 font-semibold border-b border-gray-300">Division & Location</th>
-                  <th className="px-6 py-4 font-semibold border-b border-gray-300">Estimated Cost</th>
-                  <th className="px-6 py-4 font-semibold border-b border-gray-300">Status</th>
-                  <th className="px-6 py-4 font-semibold border-b border-gray-300">Actions</th>
+                  <th className="px-6 py-4 font-semibold border-b border-gray-300 whitespace-nowrap">Package Details</th>
+                  <th className="px-6 py-4 font-semibold border-b border-gray-300 whitespace-nowrap">Work Name</th>
+                  <th className="px-6 py-4 font-semibold border-b border-gray-300 whitespace-nowrap">Division</th>
+                  <th className="px-6 py-4 font-semibold border-b border-gray-300 whitespace-nowrap">Estimated Cost</th>
+                  <th className="px-6 py-4 font-semibold border-b border-gray-300 whitespace-nowrap">Status</th>
+                  <th className="px-6 py-4 font-semibold border-b border-gray-300 whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
