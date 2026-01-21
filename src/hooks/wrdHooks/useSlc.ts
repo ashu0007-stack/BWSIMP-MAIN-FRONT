@@ -76,6 +76,19 @@ export const useSLCsByWUA = (wuaId: string) => {
   });
 };
 
+export const useSLCById = (slcId?: number) => {
+  return useQuery({
+    queryKey: ['slc', slcId],
+    queryFn: async () => {
+      if (!slcId) throw new Error('SLC ID is required');
+      const response = await axiosInstance.get(`/slc/${slcId}`);
+      return response.data;
+    },
+    enabled: !!slcId, // Only run if slcId exists
+    retry: 1
+  });
+};
+
 // ✅ UPDATE SLC HOOK
 export const useUpdateSLC = () => {
   const queryClient = useQueryClient();

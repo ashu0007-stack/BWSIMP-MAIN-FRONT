@@ -11,10 +11,11 @@ import {
   useGenerateStatistics,
   useUpdateStatus,
 } from '@/hooks/wrdHooks/pim/reportsHooks';
-import WUACreation from './wua';
-import VLCFormation from './vlc';
-import SLCFormation from './slc';
+import WUACreationContainer from './wua/WUACreationContainer';
+//import VLCParent from './vlc/vlcParent';
+import SLCManagement from './slc/slcParent';
 import MeetingTraining from './meeting';
+import VLCFormation from './vlc/vlc';
 
 // Interface definitions for the component
 interface WUAData {
@@ -276,7 +277,7 @@ const Reports: React.FC = () => {
 
         {/* Show edit components when in edit mode */}
         {activeReport === 'wua' && editWUAId && (
-          <WUACreation />
+          <WUACreationContainer />
         )}
         
 
@@ -285,7 +286,7 @@ const Reports: React.FC = () => {
         )}
 
         {activeReport === 'slc' && editSLCId && (
-          <SLCFormation/>
+          <SLCManagement/>
         )}
 
         {activeReport === 'meetings' && editMEETINGId && (
