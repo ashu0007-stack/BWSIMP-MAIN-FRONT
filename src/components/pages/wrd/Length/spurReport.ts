@@ -1,12 +1,12 @@
 // report/spurReportGenerator.tsx
 import { useMemo } from 'react';
 import ExcelJS from 'exceljs';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-import autoTable from 'jspdf-autotable';
+// import jsPDF from 'jspdf';
+// import 'jspdf-autotable';
+// import autoTable from 'jspdf-autotable';
 
 // Apply plugin globally
-(jsPDF as any).autoTable = autoTable;
+// (jsPDF as any).autoTable = autoTable;
 
 
 interface SpurData {
@@ -76,196 +76,108 @@ export const useSpurReportGenerator = ({
 
   
   
-  const downloadSpurPDFReport = () => {
+ const downloadSpurPDFReport = async () => {
     if (!selectedPackage || spurs.length === 0) {
       alert("No spur data available for this package.");
       return;
     }
 
-    const doc = new jsPDF("p", "mm", "a4");
-    const leftMargin = 10;
-    const pageWidth = 210;
-    const pageHeight = 297;
-    const tableWidth = 190;
-    let yPos = 10;
+    try {
+      // Dynamically import jsPDF and autoTable to avoid SSR issues
+      const { default: jsPDF } = await import('jspdf');
+      const autoTable = await import('jspdf-autotable');
 
-    // Header
-    doc.setFillColor(22, 101, 52); // Green color
-    doc.rect(0, 0, pageWidth, 20, "F");
-    doc.setFontSize(20);
-    doc.setTextColor(255, 255, 255);
-    doc.setFont("helvetica", "bold");
-    doc.text("SPUR WORK PROGRESS REPORT", pageWidth / 2, 15, { align: "center" });
+      const doc = new jsPDF("p", "mm", "a4");
+      const leftMargin = 10;
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const tableWidth = 190;
+      let yPos = 10;
 
-    yPos = 25;
+      // Header
+      doc.setFillColor(22, 101, 52); // Green color
+      doc.rect(0, 0, pageWidth, 20, "F");
+      doc.setFontSize(20);
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.text("SPUR WORK PROGRESS REPORT", pageWidth / 2, 15, { align: "center" });
 
-    // Project title
-    doc.setFontSize(14);
-    doc.setTextColor(22, 101, 52);
-    doc.setFont("helvetica", "bold");
-    doc.text("Bihar Water Security & Irrigation Modernization Project", pageWidth / 2, yPos, { align: "center" });
-    yPos += 8;
+      yPos = 25;
 
-    // Report metadata
-    doc.setFontSize(10);
-    doc.setTextColor(100, 100, 100);
-    const months = ["January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"];
-    const currentMonth = months[new Date().getMonth()];
-    const currentYear = new Date().getFullYear();
-    
-    doc.text(`Package: ${selectedPackage}`, leftMargin, yPos);
-    doc.text(`Monthly Progress: ${currentMonth}/${currentYear}`, pageWidth - leftMargin, yPos, { align: "right" });
-    yPos += 10;
+      // Project title
+      doc.setFontSize(14);
+      doc.setTextColor(22, 101, 52);
+      doc.setFont("helvetica", "bold");
+      doc.text("Bihar Water Security & Irrigation Modernization Project", pageWidth / 2, yPos, { align: "center" });
+      yPos += 8;
 
-    // Work Information
-    doc.setFillColor(240, 255, 240); // Light green
-    doc.rect(leftMargin, yPos, tableWidth, 40, "F");
-
-    if (selectedWork) {
+      // Report metadata
       doc.setFontSize(10);
-      doc.setTextColor(0, 0, 0);
-      doc.setFont("helvetica", "normal");
-
-      const workNameText = `Work Name: ${selectedWork.work_name}`;
-      const maxWidth = 170;
-      const lineHeight = 5;
-      const workNameLines = doc.splitTextToSize(workNameText, maxWidth);
-      doc.text(workNameLines, leftMargin + 10, yPos + 8);
-      yPos += (workNameLines.length - 1) * lineHeight;
+      doc.setTextColor(100, 100, 100);
+      const months = ["January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"];
+      const currentMonth = months[new Date().getMonth()];
+      const currentYear = new Date().getFullYear();
       
-      doc.text(`Contractor: ${selectedWork.contractor_name}`, leftMargin + 10, yPos + 14);
-      doc.text(`Division: ${selectedWork.division_name || 'N/A'}`, leftMargin + 10, yPos + 20);
-      doc.text(`Work Range: ${workStartRange} Km to ${workEndRange} Km`, leftMargin + 10, yPos + 26);
-      doc.text(`Target Distance: ${targetKm.toFixed(2)} Km`, leftMargin + 10, yPos + 32);
-    }
+      doc.text(`Package: ${selectedPackage}`, leftMargin, yPos);
+      doc.text(`Monthly Progress: ${currentMonth}/${currentYear}`, pageWidth - leftMargin, yPos, { align: "right" });
+      yPos += 10;
 
-    yPos += 50;
+      // Work Information
+      doc.setFillColor(240, 255, 240); // Light green
+      doc.rect(leftMargin, yPos, tableWidth, 40, "F");
 
-    // Summary Statistics
-    // doc.setFontSize(13);
-    // doc.setTextColor(22, 101, 52);
-    // doc.setFont("helvetica", "bold");
-    // doc.text("SPUR PROGRESS SUMMARY", leftMargin, yPos);
-    // yPos += 8;
+      if (selectedWork) {
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        doc.setFont("helvetica", "normal");
 
-    // if (spurStats) {
-    //   doc.setFillColor(245, 255, 245); // Very light green
-    //   doc.rect(leftMargin, yPos, tableWidth, 40, "F");
-
-    //   doc.setFontSize(10);
-    //   doc.setTextColor(0, 0, 0);
-    //   doc.setFont("helvetica", "normal");
-
-    //   const summaryX = leftMargin + 10;
-    //   const columnWidth = 40;
-      
-    //   doc.text(`Total Spurs: ${spurStats.total}`, summaryX, yPos + 8);
-    //   doc.text(`Completed: ${spurStats.completed}`, summaryX + columnWidth, yPos + 8);
-    //   doc.text(`In Progress: ${spurStats.inProgress}`, summaryX + columnWidth * 2, yPos + 8);
-    //   doc.text(`Not Started: ${spurStats.notStarted}`, summaryX + columnWidth * 3, yPos + 8);
-      
-    //   doc.text(`Total Spur Length: ${spurStats.totalSpurLength.toLocaleString()} m`, summaryX, yPos + 18);
-    //   doc.text(`Completed Length: ${spurStats.completedSpurLength.toLocaleString()} m`, summaryX + 60, yPos + 18);
-    //   doc.text(`Completion by Length: ${spurStats.completionByLength.toFixed(1)}%`, summaryX + 120, yPos + 18);
-
-    //   // Progress bar for length completion
-    //   const progressBarWidth = 150;
-    //   const progressBarHeight = 6;
-    //   const completedWidth = (spurStats.completionByLength / 100) * progressBarWidth;
-
-    //   doc.setDrawColor(200, 200, 200);
-    //   doc.setFillColor(230, 230, 230);
-    //   doc.rect(summaryX, yPos + 28, progressBarWidth, progressBarHeight, "FD");
-
-    //   if (spurStats.completionByLength > 0) {
-    //     doc.setFillColor(76, 175, 80); // Green
-    //     doc.rect(summaryX, yPos + 28, completedWidth, progressBarHeight, "F");
-    //   }
-
-    //   yPos += 40;
-    // }
-
-    // Cumulative Progress Summary Table
-    doc.setFontSize(13);
-    doc.setTextColor(22, 101, 52);
-    doc.setFont("helvetica", "bold");
-    doc.text("CUMULATIVE PROGRESS SUMMARY (PER SPUR)", leftMargin, yPos);
-    yPos += 8;
-
-    // Prepare table data
-    const cumulativeTableData = cumulativeSpurData.map((spur, index) => [
-      (index + 1).toString(),
-      spur.spur_name,
-      spur.location_km.toFixed(2),
-      spur.spur_length.toLocaleString(),
-      spur.total_completed_km.toLocaleString(),
-      spur.latest_date ? new Date(spur.latest_date).toLocaleDateString() : '-',
-      `${((spur.total_completed_km / spur.spur_length) * 100).toFixed(1)}%`
-    ]);
-
-    // Add table
-    (doc as any).autoTable({
-      startY: yPos,
-      head: [['S.No.', 'Spur Name', 'Location (Km)', 'Total Length (m)', 'Cumulative Completed (m)', 'Last Date', 'Cumulative %']],
-      body: cumulativeTableData,
-      margin: { left: leftMargin, right: leftMargin },
-      headStyles: {
-        fillColor: [22, 101, 52],
-        textColor: 255,
-        fontStyle: 'bold'
-      },
-      alternateRowStyles: {
-        fillColor: [240, 255, 240]
-      },
-      styles: {
-        fontSize: 8,
-        cellPadding: 2
-      },
-      columnStyles: {
-        0: { cellWidth: 15 },
-        1: { cellWidth: 35 },
-        2: { cellWidth: 25 },
-        3: { cellWidth: 25 },
-        4: { cellWidth: 30 },
-        5: { cellWidth: 25 },
-        6: { cellWidth: 25 }
+        const workNameText = `Work Name: ${selectedWork.work_name}`;
+        const maxWidth = 170;
+        const lineHeight = 5;
+        const workNameLines = doc.splitTextToSize(workNameText, maxWidth);
+        doc.text(workNameLines, leftMargin + 10, yPos + 8);
+        yPos += (workNameLines.length - 1) * lineHeight;
+        
+        doc.text(`Contractor: ${selectedWork.contractor_name}`, leftMargin + 10, yPos + 14);
+        doc.text(`Division: ${selectedWork.division_name || 'N/A'}`, leftMargin + 10, yPos + 20);
+        doc.text(`Work Range: ${workStartRange} Km to ${workEndRange} Km`, leftMargin + 10, yPos + 26);
+        doc.text(`Target Distance: ${targetKm.toFixed(2)} Km`, leftMargin + 10, yPos + 32);
       }
-    });
 
-    yPos = (doc as any).lastAutoTable.finalY + 10;
+      yPos += 50;
 
-    // Spurs with Progress Table
-    if (spursWithProgress.length > 0) {
+      // Cumulative Progress Summary Table
       doc.setFontSize(13);
       doc.setTextColor(22, 101, 52);
       doc.setFont("helvetica", "bold");
-      doc.text("SPURS WITH PROGRESS DETAILS", leftMargin, yPos);
+      doc.text("CUMULATIVE PROGRESS SUMMARY (PER SPUR)", leftMargin, yPos);
       yPos += 8;
 
       // Prepare table data
-      const progressTableData = spursWithProgress.map((spur, index) => [
+      const cumulativeTableData = cumulativeSpurData.map((spur, index) => [
         (index + 1).toString(),
         spur.spur_name,
         spur.location_km.toFixed(2),
-        (spur.spur_length || 0).toLocaleString(),
-        (spur.completed_km || 0).toLocaleString(),
-        spur.progress_date ? new Date(spur.progress_date).toLocaleDateString() : '-'
+        spur.spur_length.toLocaleString(),
+        spur.total_completed_km.toLocaleString(),
+        spur.latest_date ? new Date(spur.latest_date).toLocaleDateString() : '-',
+        `${((spur.total_completed_km / spur.spur_length) * 100).toFixed(1)}%`
       ]);
 
-      // Add table
-      (doc as any).autoTable({
+      // Add table using autoTable as a function (CORRECT WAY)
+      autoTable.default(doc, {
         startY: yPos,
-        head: [['S.No.', 'Spur Name', 'Location (Km)', 'Spur Length (m)', 'Completed (m)', 'Progress Date']],
-        body: progressTableData,
+        head: [['S.No.', 'Spur Name', 'Location (Km)', 'Total Length (m)', 'Cumulative Completed (m)', 'Last Date', 'Cumulative %']],
+        body: cumulativeTableData,
         margin: { left: leftMargin, right: leftMargin },
         headStyles: {
-          fillColor: [0, 102, 204],
+          fillColor: [22, 101, 52],
           textColor: 255,
           fontStyle: 'bold'
         },
         alternateRowStyles: {
-          fillColor: [240, 248, 255]
+          fillColor: [240, 255, 240]
         },
         styles: {
           fontSize: 8,
@@ -273,35 +185,90 @@ export const useSpurReportGenerator = ({
         },
         columnStyles: {
           0: { cellWidth: 15 },
-          1: { cellWidth: 40 },
+          1: { cellWidth: 35 },
           2: { cellWidth: 25 },
           3: { cellWidth: 25 },
-          4: { cellWidth: 25 },
-          5: { cellWidth: 30 }
+          4: { cellWidth: 30 },
+          5: { cellWidth: 25 },
+          6: { cellWidth: 25 }
         }
       });
 
-      yPos = (doc as any).lastAutoTable.finalY + 10;
-    }
+      // Get the final Y position
+      const finalY = (doc as any).lastAutoTable?.finalY || yPos + 100;
+      yPos = finalY + 10;
 
-    // Footer
-    doc.setFontSize(8);
-    doc.setTextColor(150, 150, 150);
-    doc.setFont("helvetica", "italic");
-    doc.text("Bihar Water Security & Irrigation Modernization Project - Spur Progress Report", 
-      pageWidth / 2, pageHeight - 10, { align: "center" });
-    
-    // Page number
-    const pageCount = doc.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
+      // Spurs with Progress Table
+      if (spursWithProgress.length > 0) {
+        doc.setFontSize(13);
+        doc.setTextColor(22, 101, 52);
+        doc.setFont("helvetica", "bold");
+        doc.text("SPURS WITH PROGRESS DETAILS", leftMargin, yPos);
+        yPos += 8;
+
+        // Prepare table data
+        const progressTableData = spursWithProgress.map((spur, index) => [
+          (index + 1).toString(),
+          spur.spur_name,
+          spur.location_km.toFixed(2),
+          (spur.spur_length || 0).toLocaleString(),
+          (spur.completed_km || 0).toLocaleString(),
+          spur.progress_date ? new Date(spur.progress_date).toLocaleDateString() : '-'
+        ]);
+
+        // Add table using autoTable as a function
+        autoTable.default(doc, {
+          startY: yPos,
+          head: [['S.No.', 'Spur Name', 'Location (Km)', 'Spur Length (m)', 'Completed (m)', 'Progress Date']],
+          body: progressTableData,
+          margin: { left: leftMargin, right: leftMargin },
+          headStyles: {
+            fillColor: [0, 102, 204],
+            textColor: 255,
+            fontStyle: 'bold'
+          },
+          alternateRowStyles: {
+            fillColor: [240, 248, 255]
+          },
+          styles: {
+            fontSize: 8,
+            cellPadding: 2
+          },
+          columnStyles: {
+            0: { cellWidth: 15 },
+            1: { cellWidth: 40 },
+            2: { cellWidth: 25 },
+            3: { cellWidth: 25 },
+            4: { cellWidth: 25 },
+            5: { cellWidth: 30 }
+          }
+        });
+
+        yPos = (doc as any).lastAutoTable?.finalY || yPos + 100;
+      }
+
+      // Footer
       doc.setFontSize(8);
-      doc.setTextColor(100, 100, 100);
-      doc.text(`Page ${i} of ${pageCount}`, pageWidth - leftMargin, pageHeight - 10, { align: "right" });
-    }
+      doc.setTextColor(150, 150, 150);
+      doc.setFont("helvetica", "italic");
+      doc.text("Bihar Water Security & Irrigation Modernization Project - Spur Progress Report", 
+        pageWidth / 2, pageHeight - 10, { align: "center" });
+      
+      // Page number
+      const pageCount = doc.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(100, 100, 100);
+        doc.text(`Page ${i} of ${pageCount}`, pageWidth - leftMargin, pageHeight - 10, { align: "right" });
+      }
 
-    // Save PDF
-    doc.save(`${selectedPackage}_Spur_Work_Progress_Report_${new Date().getTime()}.pdf`);
+      // Save PDF
+      doc.save(`${selectedPackage}_Spur_Work_Progress_Report_${new Date().getTime()}.pdf`);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      alert("Failed to generate PDF report. Please try again.");
+    }
   };
 
   const downloadSpurExcelReport = async () => {
