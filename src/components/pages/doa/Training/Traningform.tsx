@@ -34,7 +34,6 @@ export const TrainingForm: FC<TrainingFormProps> = ({ setShowForm }) => {
   } = useForm<TrainingFormValues>();
 
   const handleTrainingSubmit = (data: TrainingFormValues) => {
-    console.log("Training form data:", data);
     alert("Training record saved!");
     reset();
     setShowForm(false);

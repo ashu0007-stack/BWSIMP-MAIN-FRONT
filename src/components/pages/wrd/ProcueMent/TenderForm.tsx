@@ -85,7 +85,6 @@ const CustomSelect: React.FC<SelectProps> = ({ options, value, onChange, placeho
   const selectedOption = options.find(o => o.value === value);
   const user = JSON.parse(sessionStorage.getItem('userdetail') || '{}');
   const userDivisionId = user?.division_id;
-  console.log("User Details from sessionStorage:", userDivisionId);
    const filteredOptions = userDivisionId 
     ? options.filter(option => option.value === userDivisionId)
     : options; 
@@ -1356,7 +1355,6 @@ const TenderForm: React.FC<TenderFormProps> = ({
               
               // Auto-select user's division if available
               if (userData.division_id && !formData.division_id && !selectedDivision) {
-                console.log("Auto-selecting user's division:", userData.division_id);
                 setSelectedDivision(userData.division_id);
                 setFormData((prev: any) => ({ 
                   ...prev, 
@@ -1430,7 +1428,6 @@ const TenderForm: React.FC<TenderFormProps> = ({
 
   const getInitialFormData = () => {
     let divisionId = initialData?.division_id || "";
-    console.log("Initial Division ID:", divisionId);
     let workId = initialData?.work_id || "";
     let workCost = initialData?.work_cost || "";
 
@@ -1490,7 +1487,6 @@ const TenderForm: React.FC<TenderFormProps> = ({
       loa_date: extractDateTime(initialData?.loa_date).date,
       loa_time: extractDateTime(initialData?.loa_time).time,
     };
-console.log("📋 Form data initialized with ID:", formData.id);
     return formData;
   };
 
@@ -1725,11 +1721,6 @@ const handleSubmit = async (e: React.FormEvent, status: 'draft' | 'finalized' | 
     actionType = 'DRAFT_SAVE';
   }
 
-  console.log(`🔍 Setting action_type to: ${actionType} for status: ${status}`);
-  
- 
-
-
   if (isFinalSubmit && !validateForm(true)) {
     alert('Please fix the errors in the form before Final Submission.');
     return;
@@ -1754,7 +1745,6 @@ const handleSubmit = async (e: React.FormEvent, status: 'draft' | 'finalized' | 
     };
 
     await onSubmit(submitData, status);
-    console.log(submitData ,'my submot data-----------');
     
     // Handle post-submit logic
     const currentFilledFields = computePrefilledFromInitial(formData);
@@ -2397,7 +2387,6 @@ const TenderModule: React.FC = () => {
               };
 
               setUser(userData);
-              console.log("✅ User loaded with division_id:", userData.division_id);
             } catch (parseError) {
               console.error("❌ Error parsing user data:", parseError);
             }
@@ -2490,7 +2479,6 @@ const handleSaveTender = async (formData: any, status: 'draft' | 'finalized' | '
           // Date only, default to 00:00:00
           processedData[combinedField] = `${dateValue}T00:00:00`;
         }
-        console.log(`✅ Combined ${combinedField}:`, processedData[combinedField]);
       } else {
         // If no date, set to null or empty
         processedData[combinedField] = null;
@@ -2507,7 +2495,6 @@ const handleSaveTender = async (formData: any, status: 'draft' | 'finalized' | '
     basicFields.forEach(field => {
       if (processedData[field] !== undefined && processedData[field] !== null && processedData[field] !== '') {
         submitData.append(field, String(processedData[field]));
-        console.log(`➕ Appended ${field}:`, processedData[field]);
       }
     });
 
@@ -2515,14 +2502,12 @@ const handleSaveTender = async (formData: any, status: 'draft' | 'finalized' | '
     const emdfeeValue = processedData.work_cost || processedData.emdfee;
     if (emdfeeValue && emdfeeValue !== '') {
       submitData.append('emdfee', String(emdfeeValue));
-      console.log(`💰 Appended emdfee:`, emdfeeValue);
     }
 
     // Append date fields (the combined ones)
     dateTimeCombinations.forEach(({ combinedField }) => {
       if (processedData[combinedField] !== undefined && processedData[combinedField] !== null && processedData[combinedField] !== '') {
         submitData.append(combinedField, processedData[combinedField]);
-        console.log(`📅 Appended date ${combinedField}:`, processedData[combinedField]);
       }
     });
 
@@ -2545,7 +2530,6 @@ const handleSaveTender = async (formData: any, status: 'draft' | 'finalized' | '
       
       if (isFile) {
         submitData.append(field, file);
-        console.log(`📎 Appended file ${field}:`, file.name);
       }
     });
 
@@ -2559,7 +2543,6 @@ const handleSaveTender = async (formData: any, status: 'draft' | 'finalized' | '
     existingFileFields.forEach(field => {
       if (processedData[field] && !processedData[field.replace('existing_', '')]) {
         submitData.append(field, processedData[field]);
-        console.log(`📎 Appended existing file ${field}:`, processedData[field]);
       }
     });
 
@@ -2569,11 +2552,6 @@ const handleSaveTender = async (formData: any, status: 'draft' | 'finalized' | '
     
     submitData.append('action_type', actionType);
     submitData.append('status', status === 'finalized' ? 'finalized' : 'draft');
-    
-    console.log(`🎯 Action type: ${actionType}, Status: ${status === 'finalized' ? 'finalized' : 'draft'}`);
-
-    // Debug: Log all FormData entries
-    console.log('📤 Final FormData being sent:');
     for (const [key, value] of submitData.entries()) {
       // Check if it's a File object
       const isFile = value && 
@@ -2581,20 +2559,12 @@ const handleSaveTender = async (formData: any, status: 'draft' | 'finalized' | '
                     'name' in value && 
                     'size' in value && 
                     'type' in value;
-      
-      if (isFile) {
-        console.log(`  ${key}: File - ${value.name} (${value.size} bytes)`);
-      } else {
-        console.log(`  ${key}: ${value}`);
-      }
     }
 
     // Send to backend
     await new Promise<void>((resolve, reject) => {
       saveTenderMutation.mutate(submitData, {
-        onSuccess: async (response: any) => {
-          console.log("✅ Save successful:", response);
-          
+        onSuccess: async (response: any) => {        
           if (status === 'finalized') {
             alert('Tender finalized successfully!');
             setPageMode('list');

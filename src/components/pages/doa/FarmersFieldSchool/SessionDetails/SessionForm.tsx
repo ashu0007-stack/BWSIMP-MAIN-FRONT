@@ -47,15 +47,12 @@ export const SessionForm: FC<SessionFormProps> = ({ setShowForm }) => {
   } = useForm<SessionFormValues>();
 
   const handleTrainingDetailsSubmit = (data: SessionFormValues) => {
-    console.log('submit data', data);
     addSession(data, {
       onSuccess: (response) => {
-        console.log('submit data', response);
         toast.success("Session successfully added");
         setShowForm(false);
       },
       onError: (errors) => {
-        console.log(errors);
         toast.error("Failed to save record");
       }
     });

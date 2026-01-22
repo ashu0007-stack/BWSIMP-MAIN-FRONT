@@ -120,9 +120,7 @@ export const useDms = () => {
     fetchDocuments: async (): Promise<Document[]> => {
       try {
         const url = getSafeUrl('dms');
-        console.log("Fetching documents from:", url);
         const response = await axios.get(url);
-        console.log("Documents fetched:", response.data.length);
         return response.data;
       } catch (err: any) {
         console.error("Fetch documents failed:", err.message);
@@ -134,9 +132,7 @@ export const useDms = () => {
     fetchMasterData: async (): Promise<MasterData> => {
       try {
         const url = getSafeUrl('dms/masters');
-        console.log("Fetching master data from:", url);
         const response = await axios.get(url);
-        console.log("Master data fetched:", response.data);
         return response.data;
       } catch (err: any) {
         console.error("Fetch master data failed:", err.message);
@@ -164,9 +160,6 @@ export const useDms = () => {
       formData.append("userId", uploadData.userId.toString());
       formData.append("userName", uploadData.userName);
       formData.append("userEmail", uploadData.userEmail);
-
-      console.log("👤 Uploading as user:", uploadData.userName);
-
       try {
         const url = getSafeUrl('dms/upload');
         const response = await axios.post(url, formData, {
@@ -178,8 +171,6 @@ export const useDms = () => {
             onProgress?.(percent);
           },
         });
-
-        console.log("Upload response:", response.data);
         return response.data;
       } catch (err: any) {
         console.error("Upload failed:", err);
@@ -211,17 +202,11 @@ export const useDms = () => {
     // Share document
     shareDocument: async (documentId: number, shareData: ShareData, userId: number): Promise<any> => {
       try {
-        console.log("🔗 Sharing document:", documentId);
-        console.log("👤 Current user:", userId);
-        console.log("📧 Share data:", shareData);
-
         const url = getSafeUrl(`dms/documents/${documentId}/share`);
         const response = await axios.post(url, {
           ...shareData,
           userId: userId
         });
-
-        console.log("✅ Share response:", response.data);
         return response.data;
       } catch (err: any) {
         console.error("❌ Share failed:", err);
@@ -232,13 +217,11 @@ export const useDms = () => {
     // Get document permissions
     getDocumentPermissions: async (documentId: number): Promise<SharePermission[]> => {
       try {
-        console.log("🔍 Fetching permissions for document:", documentId);
         
         const url = getSafeUrl(`dms/documents/${documentId}/permissions`);
         const response = await axios.get(url);
         
         if (response.data.success) {
-          console.log("✅ Permissions fetched successfully:", response.data.permissions.length);
           return response.data.permissions;
         } else {
           throw new Error(response.data.error || "Failed to fetch permissions");

@@ -27,7 +27,7 @@ export default function Navbar() {
           {/* CENTER TITLE */}
           <div className="text-center leading-tight">
             <h1 className="text-2xl sm:text-3xl font-extrabold text-black">
-              Bihar Water Security Irrigation & Modernization Project
+              Bihar Water Security & Irrigation Modernization Project
             </h1>
             <h2 className="text-xl sm:text-2xl font-bold text-black">
              (BWSIMP)

@@ -26,13 +26,8 @@ export const useContractHistory = (contractId: string | number | null) => {
     queryFn: async () => {
       if (!contractId) return [];
 
-      try {
-        console.log('📡 Fetching contract history for ID:', contractId);
-        
-        const response = await axiosInstance.get(`${API_URL}/contractHistory/${contractId}/history`);
-        
-        console.log('📊 API Response:', response.data);
-        
+      try {       
+        const response = await axiosInstance.get(`${API_URL}/contractHistory/${contractId}/history`);        
         let historyData: any[] = [];
         
         // Handle different response structures
@@ -50,17 +45,10 @@ export const useContractHistory = (contractId: string | number | null) => {
         }
         
         if (!historyData || historyData.length === 0) {
-          console.log('📭 No history data found');
           return [];
         }
-
-        console.log('📋 Raw History Data (count):', historyData.length);
-        console.log('📋 Raw History Data:', historyData);
-
         // Format data
         const formattedData = historyData.map((record: any, index: number) => {
-          console.log(`📝 Processing record ${index + 1}:`, record);
-          
           // Parse date - your data has format: "2025-12-18 09:53:40"
           const timestamp = record.change_timestamp || record.created_at || '';
           let date = new Date();
@@ -144,13 +132,8 @@ export const useContractHistory = (contractId: string | number | null) => {
             display_date: displayDate || record.display_date || '',
             description: getActionDescription(record, userName, changedFieldsArray)
           };
-          
-          console.log(`✨ Formatted record ${index + 1}:`, formattedRecord);
           return formattedRecord;
         });
-
-        console.log('🎉 Final formatted data (count):', formattedData.length);
-        console.log('🎉 Final formatted data:', formattedData);
         return formattedData;
       } catch (error: any) {
         console.error('❌ Error fetching contract history:', error);

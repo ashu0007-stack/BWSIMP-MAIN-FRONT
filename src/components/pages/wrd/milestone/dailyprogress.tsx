@@ -227,8 +227,7 @@ export default function MilestonePage({
       return;
     }
 
-    console.log("📤 Saving progress data:", formData);
-
+    // Convert fortnight back to display format if needed
     const progressData = {
       packageNumber: selectedPackage,
       progressDate: formData.progressDate,
@@ -674,8 +673,364 @@ export default function MilestonePage({
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Milestone Progress Report');
 
-      // Excel generation code remains the same...
-      // ... (previous Excel generation code) ...
+      // ==================== HEADER SECTION ====================
+      // Row 0: Main Title
+      const titleRow = worksheet.addRow(['BIHAR WATER SECURITY & IRRIGATION MODERNISATION PROJECT']);
+      titleRow.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 16 };
+      titleRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF003366' } // Dark Blue
+      };
+      titleRow.alignment = { horizontal: 'center', vertical: 'middle' };
+      worksheet.mergeCells('A1:J1');
+
+      // Row 1: Subtitle
+      const subtitleRow = worksheet.addRow(['MILESTONE PROGRESS REPORT']);
+      subtitleRow.font = { bold: true, color: { argb: 'FF003366' }, size: 14 };
+      subtitleRow.alignment = { horizontal: 'center' };
+      worksheet.mergeCells('A2:J2');
+
+      // Row 2: Empty
+      worksheet.addRow([]);
+
+      // ==================== PROJECT INFORMATION ====================
+      // Row 3: Project Information Header
+      const projectInfoHeader = worksheet.addRow(['PROJECT INFORMATION']);
+      projectInfoHeader.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 12 };
+      projectInfoHeader.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4F81BD' } // Blue
+      };
+      projectInfoHeader.alignment = { horizontal: 'left' };
+      worksheet.mergeCells('A4:J4');
+
+      // Row 4: Empty
+      worksheet.addRow([]);
+
+      // Row 5-12: Project Details
+      if (selectedWork) {
+        const projectDetails = [
+          ['Work Name:', selectedWork.work_name || ''],
+          ['Contractor:', selectedWork.contractor_name || ''],
+          ['Package No:', selectedPackage],
+          ['Contract Value (Cr.):', selectedWork.contract_awarded_amount || ''],
+          ['Start Date of Work:', selectedWork.work_commencement_date || ''],
+          ['Stipulated Date of Work:', selectedWork.work_stipulated_date || ''],
+          ['Actual Date of Completion:', selectedWork.actual_date_of_completion || ''],
+          ['Report Generated:', new Date().toLocaleDateString('en-IN', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+          }) + ' ' + new Date().toLocaleTimeString('en-IN', {
+            hour: '2-digit',
+            minute: '2-digit'
+          })]
+        ];
+
+        projectDetails.forEach(([label, value], index) => {
+          const rowNumber = 5 + index; // Starting from row 5
+          const row = worksheet.addRow([label, value]);
+
+          // Set column widths
+          worksheet.getColumn(1).width = 25;
+          worksheet.getColumn(2).width = 25;
+
+          // Style label cell (column A)
+          const labelCell = row.getCell(1);
+          labelCell.font = { bold: true, color: { argb: 'FF003366' } };
+          labelCell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFE6F2FF' } // Light Blue
+          };
+
+          // Style value cell (column B)
+          const valueCell = row.getCell(2);
+          valueCell.alignment = { horizontal: 'left' };
+
+          // WORK NAME ROW SPECIFIC - B se J tak merge karen
+          if (index === 0) { // First row is Work Name
+            // Merge columns B through J (columns 2 through 10)
+            worksheet.mergeCells(`B${rowNumber}:J${rowNumber}`);
+
+            // Adjust column B width for merged area
+            worksheet.getColumn(2).width = 60;
+
+            // Wrap text for work name
+            valueCell.alignment = {
+              horizontal: 'left',
+              vertical: 'top',
+              wrapText: true
+            };
+          } else {
+            // Other rows - B to J merge
+            worksheet.mergeCells(`B${rowNumber}:J${rowNumber}`);
+          }
+        });
+      }
+      // Add empty rows
+      worksheet.addRow([]);
+      worksheet.addRow([]);
+
+      // ==================== PHYSICAL PROGRESS SECTION ====================
+      let currentRow = worksheet.rowCount + 1;
+
+      // Physical Progress Header
+      const physicalProgressHeader = worksheet.addRow(['PHYSICAL PROGRESS']);
+      physicalProgressHeader.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 12 };
+      physicalProgressHeader.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4F81BD' } // Blue
+      };
+      physicalProgressHeader.alignment = { horizontal: 'center' };
+      worksheet.mergeCells(`A${currentRow}:J${currentRow}`);
+
+      currentRow++;
+      worksheet.addRow([]); // Empty row
+      currentRow++;
+
+      // Add each milestone
+      for (let milestoneNum = 1; milestoneNum <= actualMilestoneCount; milestoneNum++) {
+        // Milestone Header
+        const milestoneHeader = worksheet.addRow([`MILESTONE ${milestoneNum}`]);
+        milestoneHeader.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 };
+        milestoneHeader.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFC65911' } // Brown/Orange
+        };
+        milestoneHeader.alignment = { horizontal: 'center' };
+        worksheet.mergeCells(`A${currentRow}:J${currentRow}`);
+
+        currentRow++;
+
+        // Table Headers
+        const headers = [
+          'Sno', 'Item of Work', 'Unit', 'Total Qty',
+          '% of Milestone as per Agreement', 'Qty as per Milestone',
+          'Previous Month', 'Current Month', 'Cumulative', 'Achieved %'
+        ];
+        const headerRow = worksheet.addRow(headers);
+        headerRow.eachCell((cell) => {
+          cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FF366092' } // Dark Blue
+          };
+          cell.alignment = { horizontal: 'center' };
+        });
+
+        currentRow++;
+
+        // Add milestone data
+        packageMilestones.forEach((component: PackageMilestoneComponent, index: number) => {
+          const milestoneData = component.milestones?.find(
+            (m: MilestoneData) => m.milestone_number === milestoneNum
+          );
+
+          if (milestoneData) {
+            const getMilestonePercentage = () => {
+              const milestoneQty = Number(milestoneData.milestone_qty) || 0;
+              const totalQty = Number(component.total_qty) || 0;
+              return totalQty > 0 ? (milestoneQty / totalQty) * 100 : 0;
+            };
+            const milestonePercentage = getMilestonePercentage();
+            const milestoneQty = Number(milestoneData.milestone_qty) || 0;
+            const achievementPercentage = Number(milestoneData.achievement_percentage) || 0;
+            const totalQty = Number(component.total_qty) || 0;
+            const rowData = [
+              index + 1,
+              component.name || '',
+              component.unit || '',
+              totalQty,
+              (milestonePercentage).toFixed(1) + "%",
+              milestoneQty,
+              Number(milestoneData.previous_month_qty) || 0,
+              Number(milestoneData.current_month_qty) || 0,
+              Number(milestoneData.cumulative_qty) || 0,
+              (achievementPercentage).toFixed(1) + "%",
+            ];
+
+            const row = worksheet.addRow(rowData);
+
+            // Format numeric cells (right aligned)
+            [3, 5, 6, 7, 8].forEach(colIndex => {
+              const cell = row.getCell(colIndex + 1);
+              cell.numFmt = '#,##0';
+              cell.alignment = { horizontal: 'right' };
+            });
+
+            // Format percentage cells (center aligned)
+            [4, 9].forEach(colIndex => {
+              const cell = row.getCell(colIndex + 1);
+              cell.numFmt = '0.0%';
+              cell.alignment = { horizontal: 'center' };
+            });
+
+            // Apply conditional formatting to Achieved %
+            const achievedCell = row.getCell(10);
+            if (achievementPercentage >= 100) {
+              achievedCell.font = { bold: true, color: { argb: 'FF107C10' } };
+              achievedCell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFC6EFCE' }
+              };
+            } else if (achievementPercentage >= 50) {
+              achievedCell.font = { bold: true, color: { argb: 'FFFFC000' } };
+              achievedCell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFFFEB9C' }
+              };
+            } else {
+              achievedCell.font = { bold: true, color: { argb: 'FFFF0000' } };
+              achievedCell.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFFFC7CE' }
+              };
+            }
+
+            currentRow++;
+          }
+        });
+
+        // Add empty rows between milestones
+        worksheet.addRow([]);
+        worksheet.addRow([]);
+        currentRow += 2;
+      }
+
+      // ==================== CUMULATIVE PROGRESS SECTION ====================
+      if (actualMilestoneCount > 1) {
+        // Cumulative Progress Header
+        const cumulativeHeader = worksheet.addRow(['CUMULATIVE PROGRESS']);
+        cumulativeHeader.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 12 };
+        cumulativeHeader.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF4F81BD' } // Blue
+        };
+        cumulativeHeader.alignment = { horizontal: 'center' };
+        worksheet.mergeCells(`A${currentRow}:J${currentRow}`);
+
+        currentRow++;
+        worksheet.addRow([]);
+        currentRow++;
+
+        // Cumulative Table Headers
+        const cumulativeHeaders = [
+          'Sno', 'Item of Work', 'Unit', 'Total Qty',
+          'Previous Month', 'Current Month', 'Cumulative', 'Achieved %'
+        ];
+        const cumulativeHeaderRow = worksheet.addRow(cumulativeHeaders);
+        cumulativeHeaderRow.eachCell((cell) => {
+          cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FF366092' } // Dark Blue
+          };
+          cell.alignment = { horizontal: 'center' };
+        });
+
+        currentRow++;
+
+        // Add cumulative data
+        packageMilestones.forEach((component: PackageMilestoneComponent, index: number) => {
+          const allMilestones = component.milestones || [];
+          const previousMonthTotal = allMilestones.reduce((sum: number, m: MilestoneData) =>
+            sum + (Number(m.previous_month_qty) || 0), 0);
+          const currentMonthTotal = allMilestones.reduce((sum: number, m: MilestoneData) =>
+            sum + (Number(m.current_month_qty) || 0), 0);
+          const cumulativeTotal = allMilestones.reduce((sum: number, m: MilestoneData) =>
+            sum + (Number(m.cumulative_qty) || 0), 0);
+          const totalQty = Number(component.total_qty) || 0;
+          const achievementPercentage = totalQty > 0 ?
+            (cumulativeTotal / totalQty) * 100 : 0;
+
+          const rowData = [
+            index + 1,
+            component.name || '',
+            component.unit || '',
+            totalQty,
+            previousMonthTotal,
+            currentMonthTotal,
+            cumulativeTotal,
+            achievementPercentage / 100 // Convert to decimal for percentage format
+          ];
+
+          const row = worksheet.addRow(rowData);
+
+          // Format numeric cells (right aligned)
+          [3, 4, 5, 6].forEach(colIndex => {
+            const cell = row.getCell(colIndex + 1);
+            cell.numFmt = '#,##0';
+            cell.alignment = { horizontal: 'right' };
+          });
+
+          // Format percentage cell (center aligned)
+          const percentageCell = row.getCell(8);
+          percentageCell.numFmt = '0.0%';
+          percentageCell.alignment = { horizontal: 'center' };
+
+          // Apply conditional formatting to Achieved %
+          if (achievementPercentage >= 100) {
+            percentageCell.font = { bold: true, color: { argb: 'FF107C10' } };
+            percentageCell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFC6EFCE' }
+            };
+          } else if (achievementPercentage >= 50) {
+            percentageCell.font = { bold: true, color: { argb: 'FFFFC000' } };
+            percentageCell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFFFEB9C' }
+            };
+          } else {
+            percentageCell.font = { bold: true, color: { argb: 'FFFF0000' } };
+            percentageCell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFFFC7CE' }
+            };
+          }
+
+          currentRow++;
+        });
+
+        // Add empty rows
+        worksheet.addRow([]);
+        worksheet.addRow([]);
+        currentRow += 2;
+      }
+
+      // ==================== FOOTER ====================
+      const footerRow = worksheet.addRow(['Generated By: BWSIMP System']);
+      footerRow.font = { italic: true, color: { argb: 'FF666666' } };
+      footerRow.alignment = { horizontal: 'center' };
+      worksheet.mergeCells(`A${currentRow}:J${currentRow}`);
+
+      // Set column widths
+      worksheet.columns = [
+        { width: 25 },   // A: Sno
+        { width: 20 },  // B: Item of Work
+        { width: 8 },   // C: Unit
+        { width: 15 },  // D: Total Qty
+        { width: 25 },  // E: % as per Agreement
+        { width: 20 },  // F: Qty as per Milestone
+        { width: 15 },  // G: Previous Month
+        { width: 15 },  // H: Current Month
+        { width: 15 },  // I: Cumulative
+        { width: 12 }   // J: Achieved %
+      ];
 
       // Save the workbook
       const buffer = await workbook.xlsx.writeBuffer();

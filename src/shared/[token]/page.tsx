@@ -56,18 +56,13 @@ export default function SharedDocumentPage() {
       setLoading(true);
       setError('');
 
-      console.log("🔗 Fetching shared document for token:", token);
-
       const response = await fetch(`http://localhost:5000/api/dms/shared/${token}`);
 
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
-
       const data = await response.json();
-      console.log("📄 API Response:", data);
-
       if (data.success) {
         setSharedDocument(data.document);
         setPermission(data.permission);
@@ -99,7 +94,6 @@ export default function SharedDocumentPage() {
 
     try {
       setDownloading(true);
-      console.log("📥 Downloading document...");
       const response = await fetch(`http://localhost:5000/api/dms/shared/${token}/download`);
       
       if (response.ok) {
@@ -114,8 +108,6 @@ export default function SharedDocumentPage() {
         anchor.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(anchor);
-        console.log("✅ Download successful");
-        
         setTimeout(() => setDownloading(false), 2000);
       } else {
         const errorData = await response.json();
@@ -139,8 +131,6 @@ export default function SharedDocumentPage() {
     
     try {
       setViewing(true);
-      console.log("👁️ Opening document for viewing...");
-      
       const viewUrl = `http://localhost:5000/api/dms/shared/${token}/view`;
       window.open(viewUrl, '_blank');
       

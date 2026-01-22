@@ -17,53 +17,19 @@ export default function LocationSection({
   const filteredBlocks = formData.district && formData.district !== 0 && blocks && blocks.length > 0
     ? blocks.filter(block => {
         // Check both possible property names
-        const blockDistrictId = (block as any).districtId || (block as any).district_id;
-        
-        console.log("🔍 Block filtering check:", {
-          blockId: block.block_id,
-          blockName: block.block_name,
-          blockDistrictId,
-          selectedDistrict: formData.district,
-          matches: blockDistrictId === formData.district
-        });
-        
+        const blockDistrictId = (block as any).districtId || (block as any).district_id;   
         return blockDistrictId === formData.district;
       })
     : [];
 
-  console.log("📊 Filtered blocks result:", {
-    selectedDistrict: formData.district,
-    allBlocksCount: blocks?.length || 0,
-    filteredBlocksCount: filteredBlocks.length,
-    filteredBlocks: filteredBlocks
-  });
-
     const filteredPanchayats = formData.block && formData.block !== "" && panchayats && panchayats.length > 0
   ? panchayats.filter(panchayat => {
-      console.log("🔍 Panchayat Filter Check:", {
-        panchayatName: panchayat.panchayat_name, // Use panchayat_name
-        blockId: panchayat.block_id,
-        selectedBlock: formData.block,
-        match: panchayat.block_id === Number(formData.block)
-      });
       return panchayat.block_id === Number(formData.block);
     })
   : [];
 
-console.log("✅ Filtered Panchayats:", {
-  count: filteredPanchayats.length,
-  items: filteredPanchayats.map(p => ({
-    id: p.gp_id,
-    name: p.panchayat_name,
-    block: p.block_id
-  }))
-});
-
-
   const handleDropdownChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
-    
-    console.log(`📍 ${name} changed to:`, value);
     
     setFormData(prev => {
       const newState = { ...prev };
@@ -72,11 +38,9 @@ console.log("✅ Filtered Panchayats:", {
         newState.district = value ? parseInt(value) : 0;
         newState.block = "";
         newState.panchayat = "";
-        console.log("🗺️ District changed to ID:", newState.district);
       } else if (name === "block") {
         newState.block = value;
         newState.panchayat = "";
-        console.log("📍 Block changed to:", value);
       } else if (name === "panchayat") {
         newState.panchayat = value;
       }

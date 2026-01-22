@@ -75,9 +75,6 @@ export default function ESIndicatorsTable({ type, id }: ESIndicatorsTableProps) 
       indicatorsData = indicatorsResponse.results;
     }
   }
-  
-  console.log(`${type} Indicators Response:`, indicatorsResponse);
-  console.log(`Processed ${type} Indicators Data:`, indicatorsData);
 
   // ✅ Type के अनुसार monitoring data hooks - id pass करें
   const { data: socialMonitoringResponse } = useSocialData(id);
@@ -117,8 +114,6 @@ export default function ESIndicatorsTable({ type, id }: ESIndicatorsTableProps) 
     status: item.status || item.current_status || 'Active',
     monitoring_data: item.monitoring_data || []
   }));
-
-  console.log("Mapped indicators:", indicators);
   
   const categories = Array.from(new Set(indicators.map(i => i.category))).filter(Boolean);
   

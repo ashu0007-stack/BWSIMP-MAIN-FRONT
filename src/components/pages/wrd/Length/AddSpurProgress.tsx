@@ -183,8 +183,6 @@ export default function AddSpurProgressForm({
       created_by: profile.user_name || "System",
       created_email: profile.email || "system@example.com"
     };
-
-    console.log("📝 Form payload to send:", JSON.stringify(payload, null, 2));
     
     // Call parent function
     onAddProgress(payload);

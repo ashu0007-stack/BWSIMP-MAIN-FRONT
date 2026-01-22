@@ -106,8 +106,6 @@ export const CropCostForm: FC<any> = ({ setShowForm }) => {
       alert("Please enter some values before submitting!");
       return;
     }
-
-    console.log("Crop Cost Data:", data);
     alert("Crop cost saved successfully!");
     setShowForm(false);
   };

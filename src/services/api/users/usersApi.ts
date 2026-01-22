@@ -21,3 +21,36 @@ export const getUsersList = async () => {
 
   return response.data?.data || [];
 };
+
+
+// Edit user API
+export const editUser = async ( payload: any) => {
+  try {
+    const response = await axiosInstance({
+      method: "PATCH", // better to use PATCH for updates
+      url: `${process.env.NEXT_PUBLIC_API_URL}/user/users/${payload?.userId}`,
+      data: payload, // { full_name, mobno }
+    });
+
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: "Something went wrong" };
+  }
+};
+
+//Toggle User Status (Enable/Disable)
+export const toggleUserStatus = async (payload: { userId: number; isActive: boolean }) => {
+  try {
+    const response = await axiosInstance({
+      method: "PATCH", // or "PUT" based on your backend
+      url: `${process.env.NEXT_PUBLIC_API_URL}/user/users/${payload.userId}/toggle-status`,
+      data: {
+        is_active: payload.isActive ? "1" : "0"
+      },
+    });
+
+    return response.data;
+  } catch (error: any) {
+    throw error.response?.data || { message: "Failed to toggle user status" };
+  }
+};

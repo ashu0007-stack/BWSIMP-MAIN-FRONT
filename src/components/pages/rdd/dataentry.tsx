@@ -88,13 +88,6 @@ export default function DataEntryForm() {
     if (userDetail) {
       try {
         const user = JSON.parse(userDetail);
-        console.log("👤 Parsed user details:", {
-          id: user.id,
-          district_id: user.district_id,
-          district_name: user.district_name,
-          username: user.full_name,
-          fullUserObject: user
-        });
 
         setFormData(prev => ({
           ...prev,
@@ -105,7 +98,6 @@ export default function DataEntryForm() {
         // If we have district_id, mark as resolved immediately
         if (user.district_id) {
           setDistrictResolved(true);
-          console.log("✅ District pre-resolved from session district_id:", user.district_id);
         }
       } catch (error) {
         console.error("❌ Error parsing user details:", error);
@@ -118,11 +110,6 @@ export default function DataEntryForm() {
   // 2. Enhanced District Resolution with multiple matching strategies
   useEffect(() => {
     if (formData.districts && districts.length > 0 && !districtResolved) {
-      console.log("🎯 ENHANCED DISTRICT RESOLUTION STARTED:", {
-        userDistrict: formData.districts,
-        availableDistrictsCount: districts.length,
-        districts: districts.map((d: District) => ({ id: d.district_id, name: d.district_name }))
-      });
 
       // STRATEGY 1: Direct ID match (since we have district_id in user data)
       const userDetail = sessionStorage.getItem('userdetail');
@@ -132,7 +119,6 @@ export default function DataEntryForm() {
         try {
           const user = JSON.parse(userDetail);
           userDistrictId = Number(user.district_id); // Convert to number
-          console.log("🆔 Found user district_id from session:", userDistrictId);
         } catch (error) {
           console.error("Error parsing user detail:", error);
         }
@@ -143,13 +129,6 @@ export default function DataEntryForm() {
 
       if (userDistrictId) {
         foundDistrict = districts.find((d: District) => d.district_id === userDistrictId);
-        if (foundDistrict) {
-          console.log("✅ FOUND DISTRICT BY ID MATCH:", {
-            method: "district_id match",
-            userDistrictId,
-            foundDistrict
-          });
-        }
       }
 
       // STRATEGY 2: If ID match failed, try name matching
@@ -161,12 +140,6 @@ export default function DataEntryForm() {
           return apiName === userName;
         });
 
-        if (foundDistrict) {
-          console.log("✅ FOUND DISTRICT BY NAME MATCH (exact):", {
-            method: "exact name match",
-            foundDistrict
-          });
-        }
       }
 
       // STRATEGY 3: Try uppercase match
@@ -177,22 +150,9 @@ export default function DataEntryForm() {
           return apiName === userName;
         });
 
-        if (foundDistrict) {
-          console.log("✅ FOUND DISTRICT BY NAME MATCH (uppercase):", {
-            method: "uppercase name match",
-            foundDistrict
-          });
-        }
       }
 
       if (foundDistrict) {
-        console.log("🎯 DISTRICT RESOLVED FINALLY:", {
-          userDistrictName: formData.districts,
-          foundDistrictName: foundDistrict.district_name,
-          foundDistrictId: foundDistrict.district_id,
-          matchType: userDistrictId === foundDistrict.district_id ? "ID Match" : "Name Match"
-        });
-
         setFormData(prev => ({
           ...prev,
           district: foundDistrict!.district_id // Store as number
@@ -227,7 +187,6 @@ export default function DataEntryForm() {
   // Reset block and panchayat when district changes
   useEffect(() => {
     if (formData.district) {
-      console.log("🔄 District changed, resetting block and panchayat");
       setFormData(prev => ({ ...prev, block: "", panchayat: "" }));
     }
   }, [formData.district]);
@@ -235,7 +194,6 @@ export default function DataEntryForm() {
   // Reset panchayat when block changes
   useEffect(() => {
     if (formData.block) {
-      console.log("🔄 Block changed, resetting panchayat");
       setFormData(prev => ({ ...prev, panchayat: "" }));
     }
   }, [formData.block]);
@@ -296,7 +254,6 @@ export default function DataEntryForm() {
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    console.log(`📝 Field changed: ${name} = ${value} (type: ${typeof value})`);
 
     // Handle district specially since it's a number
     if (name === 'district') {
@@ -375,12 +332,6 @@ export default function DataEntryForm() {
         e.target.value = '';
         return;
       }
-
-      console.log("✅ Valid PDF file selected:", {
-        name: file.name,
-        type: file.type,
-        size: (file.size / 1024 / 1024).toFixed(2) + " MB"
-      });
     }
 
     setFormData(prev => ({ ...prev, asUpload: file }));
@@ -602,7 +553,6 @@ export default function DataEntryForm() {
     setErrors({});
     setBackendErrors({});
     setDistrictResolved(false);
-    console.log("🔄 Form has been reset");
   };
 
   // Helper function to get combined error for a field

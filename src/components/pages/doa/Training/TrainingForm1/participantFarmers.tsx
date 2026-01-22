@@ -29,7 +29,6 @@ export const FarmerParticipantForm: FC<FarmerParticipantFormProps> = ({
   } = useForm<FarmerParticipantFormValues>();
 
   const onSubmit = (data: FarmerParticipantFormValues) => {
-    console.log("Participant Farmer Data:", data);
     alert("Participant details saved successfully!");
     reset();
     setShowForm(false);

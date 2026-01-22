@@ -306,8 +306,6 @@ const DetailedView: React.FC<DetailedViewProps> = ({ record, isOpen, onClose }) 
               <div className="flex gap-2">
                 <button
                   onClick={() => {
-                    console.log('Export record:', record);
-                    // You can add export functionality here
                   }}
                   className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg transition text-sm"
                 >

@@ -80,9 +80,6 @@ export const CropCostTable: FC<any> = ({ onAddNew}) => {
   const { data: clusterData = [], isPending: loadingClusters } = useClusters(selectedBlock);
   const { data: villageData = [], isPending: loadingVillages } = useVillages(selectedCluster);
 
-  
-    console.log("typeof window:", typeof window);
-
   /* ---------------- Location Data ---------------- */
   const locationData = useMemo(() => ({
     district: (districtData?.data ?? []).map((d: any) => ({
@@ -167,7 +164,6 @@ export const CropCostTable: FC<any> = ({ onAddNew}) => {
   }, [filters]);
 
     const handleAddNew = () => {
-      console.log("click on button")
     onAddNew?.(filters);
   };
 

@@ -82,7 +82,6 @@ const PIMSuperAdminPage: React.FC = () => {
 
   // API डेटा को कन्सोल में देखें
   useEffect(() => {
-    console.log('API Data received:', wuaData);
   }, [wuaData]);
 
   // Convert WUA data to PIM projects format
@@ -181,7 +180,6 @@ const PIMSuperAdminPage: React.FC = () => {
 
   // Export function
   const exportToExcel = () => {
-    console.log('Exporting PIM data...', pimProjects);
     // Implement export logic
     alert('Export functionality would be implemented here');
   };

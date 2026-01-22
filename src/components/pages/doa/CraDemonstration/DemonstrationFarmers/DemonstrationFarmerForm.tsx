@@ -137,9 +137,7 @@
 //   });
 
 //   // This will log each key-value pair
-//   console.log("Submitted Form Data:");
 //   for (const [key, value] of formData.entries()) {
-//     console.log(key, value);
 //   }
 
 //   // Optional toast

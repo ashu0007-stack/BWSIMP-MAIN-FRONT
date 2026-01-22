@@ -8,7 +8,6 @@ export const Demonstration: FC<any> = ({setActiveTab}) => {
     const user = sessionStorage.getItem("userdetail")
         ? JSON.parse(sessionStorage.getItem("userdetail")!)
         : null;
-    console.log('user details', user?.user_level_id)
 
     const isUserLevel = user?.user_level_id === 1;
 

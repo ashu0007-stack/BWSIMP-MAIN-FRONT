@@ -121,7 +121,6 @@ export const CreateTrainig: FC<any> = ({ setShowForm }) => {
 
 
     const createTrainingSubmit = (data: formValue) => {
-        console.log("data", data)
         const payload = {
             financialYear: data.financialYear,
             levelId: Number(data.level),
@@ -157,9 +156,6 @@ export const CreateTrainig: FC<any> = ({ setShowForm }) => {
 
             remarks: data.remarks
         };
-
-        console.log("payload", payload);
-        console.log("Selected Level 👉", data.level);
 
         addProgram(payload, {
             onSuccess: () => {

@@ -24,7 +24,6 @@ export default function ResetPasswordPage() {
   useEffect(() => {
   const validateToken = async () => {
     const tokenFromURL = searchParams?.get('token');
-    console.log("🔍 Token from URL:", tokenFromURL);
     
     if (!tokenFromURL) {
       setIsTokenValid(false);
@@ -46,17 +45,13 @@ export default function ResetPasswordPage() {
           }
         }
       );
-
-      console.log("✅ Token validation response:", response.data);
       
       // ✅ FIX: Use isExpired instead of valid property
       if (response.data.status === "FOUND" && !response.data.isExpired) {
         setIsTokenValid(true);
         setTokenInfo(response.data);
-        console.log("🎯 Token is VALID and NOT expired");
       } else {
         setIsTokenValid(false);
-        console.log("❌ Token is invalid or expired:", response.data);
         if (response.data.message) {
           toast.error(response.data.message);
         } else {
@@ -68,7 +63,6 @@ export default function ResetPasswordPage() {
       
       // Agar test endpoint available nahi hai, toh direct proceed karo
       if (error.response?.status === 404) {
-        console.log("ℹ️ Test endpoint not available, proceeding with token...");
         setIsTokenValid(true);
       } else {
         setIsTokenValid(false);
@@ -122,9 +116,6 @@ export default function ResetPasswordPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
-    console.log("🔄 Submitting reset password with token:", token);
-
     // Enhanced Validation
     if (!token) {
       toast.error("Invalid reset token");
@@ -159,8 +150,6 @@ export default function ResetPasswordPage() {
 
     try {
       const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
-      console.log("📤 Sending request to:", `${API_URL}/auth/reset-password`);
-      
       const response = await axios.post(
         `${API_URL}/auth/reset-password`,
         { 
@@ -174,8 +163,6 @@ export default function ResetPasswordPage() {
           }
         }
       );
-
-      console.log("✅ Reset password success:", response.data);
       toast.success("Password reset successfully! Redirecting to login...");
       
       // Redirect to login after success

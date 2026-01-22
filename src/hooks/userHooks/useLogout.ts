@@ -12,7 +12,6 @@ export const useLogout = () => {
         {}, // empty body
         { withCredentials: true } // send cookies
       );
-      console.log("Logged out successfully");
     } catch (error) {
       console.error("Logout API error:", error);
       // optionally show toast or notification

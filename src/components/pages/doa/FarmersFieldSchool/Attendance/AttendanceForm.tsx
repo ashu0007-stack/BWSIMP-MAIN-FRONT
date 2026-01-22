@@ -105,14 +105,11 @@ export const AttendanceForm: FC<any> = ({attendanceSession,setAttendanceSession,
       photo2: sessionPhotos.photo2,
     };
 
-    // console.log("Submitting Payload:", payload);
-
   //   const formData = new FormData();
   // formData.append("sessionData", JSON.stringify(payload));
   // if (sessionPhotos.photo1) formData.append("photo1", sessionPhotos.photo1);
   // if (sessionPhotos.photo2) formData.append("photo2", sessionPhotos.photo2);
 
-  // console.log("Submitting Payload:", formData);
     addAttendance(payload, {
     onSuccess: () => {
       toast.success("Session conduct & attendance submitted successfully!");

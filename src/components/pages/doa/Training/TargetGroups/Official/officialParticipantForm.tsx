@@ -43,7 +43,6 @@ export const OfficialParticipantForm: FC<OfficialParticipantFormProps> = ({
   });
 
   const onSubmit = (data: OfficialParticipantFormValues) => {
-    console.log("ALL OFFICIAL PARTICIPANTS:", data.participants);
     alert(`${data.participants.length} participant(s) saved successfully`);
     reset();
     setShowForm(true);

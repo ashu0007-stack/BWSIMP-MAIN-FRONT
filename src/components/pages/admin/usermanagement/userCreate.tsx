@@ -219,11 +219,9 @@ export const UserCreate: FC = () => {
   /* ================= SUBMIT ================= */
 
   const onSubmit = (data: FormValues) => {
-    console.log("paylod data", data)
     createUser(data, {
       onSuccess: (res) => {
         toast.success("User created successfully!");
-        console.log("Success response:", res);
         resetField
       },
       onError: (err: any) => {

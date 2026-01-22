@@ -18,9 +18,6 @@ export const Attendance: FC = () => {
 
     if (!sessionId || !sessionsData || !farmersData) {
       setFarmerList([]);
-      console.log('session data in ffs id', sessionsData[0].ffsId)
-      console.log('farmer data in ffs id', farmersData)
-      console.log('farmer list', farmerList)
       return;
     }
 
@@ -61,7 +58,6 @@ export const Attendance: FC = () => {
     }));
 
     try {
-      console.log("Submitting Attendance:", payload);
       // await addAttendance(payload);
       setMessage("✅ Attendance submitted successfully!");
     } catch (error) {

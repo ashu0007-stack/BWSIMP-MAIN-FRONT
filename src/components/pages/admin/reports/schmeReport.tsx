@@ -573,8 +573,6 @@ const SuperAdminReportPage: React.FC = () => {
       const fileName = `SuperAdmin_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
       saveAs(data, fileName);
       
-      console.log('Excel file exported successfully!');
-      
     } catch (error) {
       console.error('Error exporting to Excel:', error);
       alert('Error exporting data to Excel');
@@ -1583,7 +1581,6 @@ const SuperAdminReportPage: React.FC = () => {
             startIcon={<DownloadIcon />}
             onClick={() => {
               // Export selected work details
-              console.log('Exporting selected work:', selectedWorkDetails);
               exportToExcel();
             }}
           >

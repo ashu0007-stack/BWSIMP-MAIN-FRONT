@@ -135,14 +135,6 @@ useEffect(() => {
         district: String(foundDistrict.district_id)
       }));
       setDistrictResolved(true);
-      
-      // Log for debugging
-      console.log("User district resolved:", {
-        userDistrictName: userDistrict,
-        foundDistrictId: foundDistrict.district_id,
-        filterValueSet: String(foundDistrict.district_id),
-        allDistricts: districts.map(d => ({ id: d.district_id, name: d.district_name }))
-      });
     } else {
       setDistrictResolved(false);
       setFilters(prev => ({ ...prev, district: "all" }));

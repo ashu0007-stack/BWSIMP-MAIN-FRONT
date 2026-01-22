@@ -53,16 +53,12 @@ export const useLogout = () => {
   return useMutation({
     mutationFn: userLogout,
     onSuccess: () => {
-      console.log("🧹 Logging out...");
       sessionStorage.removeItem("authToken");
       sessionStorage.removeItem("userdetail");
       sessionStorage.removeItem("OAuthCredentials");
       localStorage.removeItem("authToken");
       localStorage.removeItem("currentUser");
       localStorage.removeItem("OAuthCredentials");
-
-      console.log("✅ Token after logout:", sessionStorage.getItem("authToken"));
-
       queryClient.clear();
       toast.success("Logged out successfully");
 

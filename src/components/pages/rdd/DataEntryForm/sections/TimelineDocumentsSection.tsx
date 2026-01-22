@@ -68,13 +68,6 @@ export default function TimelineDocumentsSection({
     }
 
     if (file) {
-      console.log("File selected:", {
-        name: file.name,
-        type: file.type,
-        size: file.size,
-        sizeMB: (file.size / 1024 / 1024).toFixed(2)
-      });
-
       // Validate file extension first (case-insensitive)
       const fileExtension = file.name.toLowerCase().split('.').pop();
       if (fileExtension !== 'pdf') {
@@ -104,12 +97,6 @@ export default function TimelineDocumentsSection({
         e.target.value = '';
         return;
       }
-
-      console.log("✅ Valid PDF file selected:", {
-        name: file.name,
-        type: file.type,
-        size: (file.size / 1024 / 1024).toFixed(2) + " MB"
-      });
     }
 
     setFormData(prev => ({ ...prev, asUpload: file }));

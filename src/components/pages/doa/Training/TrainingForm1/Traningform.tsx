@@ -97,7 +97,6 @@ export const TrainingForm: FC<TrainingFormProps> = ({ setShowForm }) => {
   }, [startDate, endDate, setValue]);
 
   const onSubmit = (data: TrainingFormValues) => {
-    console.log("Training Data:", data);
     alert("Training record saved successfully!");
     reset();
     setShowForm(false);

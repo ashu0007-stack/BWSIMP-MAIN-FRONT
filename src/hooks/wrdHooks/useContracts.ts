@@ -101,7 +101,6 @@ export const useUpdateContract = () => {
     },
     
     onSuccess: (data, variables) => {
-      console.log("✅ Contract updated successfully:", data);
     }
   });
 };

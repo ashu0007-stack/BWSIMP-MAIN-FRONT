@@ -1,10 +1,13 @@
 import React, { FC, useState, useMemo } from 'react';
-import { Pencil, UserX, UserCheck, Search, Download, Filter, Users, Shield, Calendar, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
-import { useUsersList } from '@/hooks/userHooks/useUserDetails';
+import { Pencil, UserX, UserCheck, Search, Download, Filter, Users, Shield, Calendar, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CheckCircle, Ban } from "lucide-react";
+import { useUsersList,useToggleUserStatus } from '@/hooks/userHooks/useUserDetails';
 import { useCountUp } from '@/hooks/useCountUp';
+import { Modal } from '@/components/shared/modal';
+import { EditUser } from './EditUser';
 
 export const UserDetails: FC = () => {
-  const { data: usersList } = useUsersList();
+  const { data: usersList, isLoading: userDataLoading } = useUsersList();
+  const { toggleUserStatus, isToggling } = useToggleUserStatus();
   const [filters, setFilters] = useState({
     search: "",
     role: "ALL",
@@ -12,7 +15,11 @@ export const UserDetails: FC = () => {
     designation: "ALL",
     status: "ALL",
   });
-  
+  const [editUserModal, setEditUserModal] = useState(false);
+  const [confirmModal, setConfirmModal] = useState(false); 
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [actionType, setActionType] = useState<'enable' | 'disable'>('disable');
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [usersPerPage, setUsersPerPage] = useState(10);
@@ -93,7 +100,7 @@ export const UserDetails: FC = () => {
   const getPageNumbers = () => {
     const pageNumbers = [];
     const maxVisiblePages = 5;
-    
+
     if (totalPages <= maxVisiblePages) {
       for (let i = 1; i <= totalPages; i++) {
         pageNumbers.push(i);
@@ -101,25 +108,64 @@ export const UserDetails: FC = () => {
     } else {
       const start = Math.max(2, currentPage - 1);
       const end = Math.min(totalPages - 1, currentPage + 1);
-      
+
       pageNumbers.push(1);
       if (start > 2) pageNumbers.push('...');
-      
+
       for (let i = start; i <= end; i++) {
         pageNumbers.push(i);
       }
-      
+
       if (end < totalPages - 1) pageNumbers.push('...');
       if (totalPages > 1) pageNumbers.push(totalPages);
     }
-    
+
     return pageNumbers;
   };
+
+
 
   // Handle users per page change
   const handleUsersPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setUsersPerPage(Number(e.target.value));
     setCurrentPage(1); // Reset to first page
+  };
+
+  const handleEditUser = (user: any) => {
+    setEditUserModal(true)
+    setSelectedUser(user);
+  }
+
+   // Handle Enable/Disable User
+  const handleToggleUserStatus = (user: any) => {
+    const newStatus = user.is_active === "1" ? false : true;
+    const action = newStatus ? 'enable' : 'disable';
+    
+    setSelectedUser(user);
+    setActionType(action);
+    setConfirmModal(true); // Show confirmation modal
+  };
+  // Confirm Toggle Status
+  const confirmToggleStatus = () => {
+    if (!selectedUser) return;
+    
+    const newStatus = selectedUser.is_active === "1" ? false : true;
+    
+    toggleUserStatus({
+      userId: selectedUser.id,
+      isActive: newStatus
+    }, {
+      onSuccess: () => {
+        // Show success message
+        alert(`User ${newStatus ? 'enabled' : 'disabled'} successfully!`);
+        setConfirmModal(false);
+        setSelectedUser(null);
+      },
+      onError: (error) => {
+        alert(`Failed to toggle user status: ${error.message}`);
+        setConfirmModal(false);
+      }
+    });
   };
 
   return (
@@ -192,7 +238,7 @@ export const UserDetails: FC = () => {
         <div className="flex gap-3 w-full md:w-auto">
           <div className="relative flex-1 md:flex-none">
             <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <select 
+            <select
               className="w-full pl-11 py-3 pr-4 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white cursor-pointer"
               value={filters.role}
               onChange={(e) => handleFilterChange("role", e.target.value)}
@@ -322,14 +368,25 @@ export const UserDetails: FC = () => {
                         <button
                           title="Edit User"
                           className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition"
+                          onClick={() => handleEditUser(user)}
                         >
                           <Pencil size={16} />
                         </button>
-                        <button
-                          title="Disable User"
-                          className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition"
+                       <button
+                          title={user.is_active === "1" ? "Disable User" : "Enable User"}
+                          className={`p-2 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed ${
+                            user.is_active === "1" 
+                              ? "bg-amber-50 text-amber-600 hover:bg-amber-100" 
+                              : "bg-green-50 text-green-600 hover:bg-green-100"
+                          }`}
+                          onClick={() => handleToggleUserStatus(user)}
+                          disabled={isToggling}
                         >
-                          <UserX size={16} />
+                          {user.is_active === "1" ? (
+                            <Ban size={16} />
+                          ) : (
+                            <CheckCircle size={16} />
+                          )}
                         </button>
                       </div>
                     </td>
@@ -356,7 +413,7 @@ export const UserDetails: FC = () => {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-700">Rows per page:</span>
-              <select 
+              <select
                 value={usersPerPage}
                 onChange={handleUsersPerPageChange}
                 className="border border-gray-300 rounded px-2 py-1 text-sm"
@@ -368,23 +425,23 @@ export const UserDetails: FC = () => {
               </select>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-2">
-            <button 
+            <button
               onClick={goToFirstPage}
               disabled={currentPage === 1}
               className={`p-2 rounded-lg border ${currentPage === 1 ? 'border-gray-200 text-gray-400' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}`}
             >
               <ChevronsLeft className="w-4 h-4" />
             </button>
-            <button 
+            <button
               onClick={goToPrevPage}
               disabled={currentPage === 1}
               className={`p-2 rounded-lg border ${currentPage === 1 ? 'border-gray-200 text-gray-400' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}`}
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            
+
             <div className="flex gap-1 mx-2">
               {getPageNumbers().map((pageNum, index) => (
                 pageNum === '...' ? (
@@ -405,15 +462,15 @@ export const UserDetails: FC = () => {
                 )
               ))}
             </div>
-            
-            <button 
+
+            <button
               onClick={goToNextPage}
               disabled={currentPage === totalPages}
               className={`p-2 rounded-lg border ${currentPage === totalPages ? 'border-gray-200 text-gray-400' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}`}
             >
               <ChevronRight className="w-4 h-4" />
             </button>
-            <button 
+            <button
               onClick={goToLastPage}
               disabled={currentPage === totalPages}
               className={`p-2 rounded-lg border ${currentPage === totalPages ? 'border-gray-200 text-gray-400' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}`}
@@ -423,6 +480,82 @@ export const UserDetails: FC = () => {
           </div>
         </div>
       </div>
+      <Modal isOpen={editUserModal} isClose={setEditUserModal} size="xl">
+        {selectedUser && (
+          <EditUser
+            user={selectedUser}
+            onClose={() => setEditUserModal(false)}
+            onSubmit={(data) => {
+              setEditUserModal(false);
+            }}
+          />
+        )}
+      </Modal>
+       {/* Confirmation Modal for Enable/Disable */}
+      <Modal 
+        isOpen={confirmModal} 
+        isClose={() => setConfirmModal(false)} 
+        size="md"
+      >
+        <div className="p-6">
+          <div className="flex items-center gap-4 mb-4">
+            <div className={`p-3 rounded-full ${actionType === 'disable' ? 'bg-amber-100 text-amber-600' : 'bg-green-100 text-green-600'}`}>
+              {actionType === 'disable' ? (
+                <Ban className="w-8 h-8" />
+              ) : (
+                <CheckCircle className="w-8 h-8" />
+              )}
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                {actionType === 'disable' ? 'Disable User' : 'Enable User'}
+              </h3>
+              <p className="text-sm text-gray-600">
+                {selectedUser?.full_name} ({selectedUser?.emp_code})
+              </p>
+            </div>
+          </div>
+          
+          <p className="text-gray-700 mb-6">
+            Are you sure you want to {actionType} this user? 
+            {actionType === 'disable' 
+              ? ' They will not be able to access the system.' 
+              : ' They will regain access to the system.'
+            }
+          </p>
+          
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={() => setConfirmModal(false)}
+              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+              disabled={isToggling}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmToggleStatus}
+              className={`px-4 py-2 rounded-lg text-white transition flex items-center gap-2 ${
+                actionType === 'disable' 
+                  ? 'bg-amber-600 hover:bg-amber-700' 
+                  : 'bg-green-600 hover:bg-green-700'
+              } ${isToggling ? 'opacity-70 cursor-not-allowed' : ''}`}
+              disabled={isToggling}
+            >
+              {isToggling ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Processing...
+                </>
+              ) : (
+                <>
+                  {actionType === 'disable' ? <Ban size={16} /> : <CheckCircle size={16} />}
+                  {actionType === 'disable' ? 'Disable User' : 'Enable User'}
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

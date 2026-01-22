@@ -99,15 +99,10 @@ export const DemonstrationForm: FC<any> = ({ setShowForm }) => {
   const selectedDistrict = watch("districtId");
   const selectedBlock = watch("blockId");
   const selectedCluster = watch("clusterId");
-
-  console.log("cluster Id", selectedCluster)
-
   const { data: districtData = [], isPending: loadingDistricts } = useDistricts();
   const { data: blockData, isLoading: loadingBlocks } = useBlocks(selectedDistrict);
   const { data: clusterData, isPending: loadingClusters } = useClusters(selectedBlock);
   const { data: villageData = [], isPending: loadingVillages } = useVillages(selectedCluster);
-
-  console.log("bolck data", villageData)
 
   const locationData = {
     district: (districtData?.data ?? []).map((d: any) => ({
@@ -132,7 +127,6 @@ export const DemonstrationForm: FC<any> = ({ setShowForm }) => {
   };
 
   const onSubmit = (data: DemonstrationFormValues) => {
-    console.log("Demonstration Data:", data);
     setShowForm(true)
     alert("Demonstration saved successfully");
   };
