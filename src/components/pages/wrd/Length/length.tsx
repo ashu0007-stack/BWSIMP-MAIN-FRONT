@@ -67,6 +67,7 @@ interface LengthDetailPageProps {
   packageNumber?: string;
   workName?: string;
   contractorName?: string;
+  has_spur? : number;
 
   onClose?: () => void;
 }

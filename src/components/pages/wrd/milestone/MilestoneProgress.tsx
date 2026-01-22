@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Calendar, AlertCircle } from "lucide-react";
+import { X, Calendar, AlertCircle, CheckCircle, Lock } from "lucide-react";
 
 interface MilestoneData {
   id: number;
@@ -32,6 +32,8 @@ interface AddProgressFormProps {
   selectedPackage: string | null;
   selectedMilestone: number;
   packageMilestones?: any[];
+  completedMilestones?: number[]; // ✅ नए प्रॉप: पूरे हुए माइलस्टोन्स
+  allowAllMilestones?: boolean; // ✅ डेवलपमेंट के लिए ओवरराइड ऑप्शन
 }
 
 export default function AddProgressForm({
@@ -42,6 +44,8 @@ export default function AddProgressForm({
   selectedPackage,
   selectedMilestone,
   packageMilestones = [],
+  completedMilestones = [], // ✅ डिफ़ॉल्ट खाली ऐरे
+  allowAllMilestones = false, // ✅ डिफ़ॉल्ट false
 }: AddProgressFormProps) {
   const [formData, setFormData] = useState({
     progressDate: "",
@@ -53,6 +57,17 @@ export default function AddProgressForm({
   const [milestoneTargets, setMilestoneTargets] = useState<Record<number, number>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [milestoneStatus, setMilestoneStatus] = useState<{
+    isLocked: boolean;
+    previousMilestone: number | null;
+    previousMilestonePercentage: number;
+    message: string;
+  }>({
+    isLocked: false,
+    previousMilestone: null,
+    previousMilestonePercentage: 0,
+    message: "",
+  });
 
   // 🔹 Get current date and set default
   const getCurrentDate = () => {
@@ -122,10 +137,85 @@ export default function AddProgressForm({
     return errors;
   };
 
+  // 🔹 Check if milestone is accessible
+  const checkMilestoneAccessibility = () => {
+    // ✅ यदि allowAllMilestones true है तो सभी माइलस्टोन्स की अनुमति दें
+    if (allowAllMilestones) {
+      return {
+        isLocked: false,
+        previousMilestone: null,
+        previousMilestonePercentage: 100,
+        message: "Development mode: All milestones accessible"
+      };
+    }
+
+    // ✅ यदि पहला माइलस्टोन है तो हमेशा अनुमति दें
+    if (selectedMilestone === 1) {
+      return {
+        isLocked: false,
+        previousMilestone: null,
+        previousMilestonePercentage: 100,
+        message: "Milestone 1 is always accessible"
+      };
+    }
+
+    // ✅ पिछला माइलस्टोन नंबर निकालें
+    const previousMilestone = selectedMilestone - 1;
+    
+    // ✅ पिछला माइलस्टोन पूरा हुआ है या नहीं
+    const isPreviousCompleted = completedMilestones.includes(previousMilestone);
+    
+    // ✅ पिछले माइलस्टोन का औसत प्रतिशत निकालें
+    let previousMilestonePercentage = 0;
+    
+    if (components.length > 0) {
+      let totalPercentage = 0;
+      let count = 0;
+      
+      components.forEach(comp => {
+        const percentage = getMilestonePercentage(comp, previousMilestone);
+        if (percentage !== undefined) {
+          totalPercentage += percentage;
+          count++;
+        }
+      });
+      
+      if (count > 0) {
+        previousMilestonePercentage = Math.round(totalPercentage / count);
+      }
+    }
+
+    // ✅ यदि पिछला माइलस्टोन पूरा नहीं हुआ है
+    if (!isPreviousCompleted && previousMilestonePercentage < 100) {
+      return {
+        isLocked: true,
+        previousMilestone,
+        previousMilestonePercentage,
+        message: `Milestone ${previousMilestone} is ${previousMilestonePercentage}% complete. Complete it fully (100%) to unlock Milestone ${selectedMilestone}.`
+      };
+    }
+
+    return {
+      isLocked: false,
+      previousMilestone,
+      previousMilestonePercentage: 100,
+      message: `Milestone ${previousMilestone} is completed. You can add progress for Milestone ${selectedMilestone}.`
+    };
+  };
+
   // 🔹 Initialize quantities with empty string for all components
   useEffect(() => {
     if (showModal && components && components.length > 0) {
       console.log("🔄 Initializing quantities for components:", components.length);
+      
+      // ✅ माइलस्टोन एक्सेसिबिलिटी चेक करें
+      const status = checkMilestoneAccessibility();
+      setMilestoneStatus(status);
+      
+      if (status.isLocked) {
+        console.log("🔒 Milestone is locked:", status.message);
+        return;
+      }
       
       // Set default date to today
       const today = getCurrentDate();
@@ -145,10 +235,12 @@ export default function AddProgressForm({
       
       console.log("📋 Form initialized with:", { today, defaultFortnight });
     }
-  }, [components, showModal]);
+  }, [components, showModal, selectedMilestone, completedMilestones]);
 
   // 🔹 Set milestone targets from API
   useEffect(() => {
+    if (milestoneStatus.isLocked) return;
+    
     if (packageMilestones.length > 0 && selectedMilestone) {
       console.log("🎯 Setting milestone targets from packageMilestones");
       const targets: Record<number, number> = {};
@@ -166,10 +258,12 @@ export default function AddProgressForm({
       console.log("🎯 Milestone targets:", targets);
       setMilestoneTargets(targets);
     }
-  }, [packageMilestones, selectedMilestone]);
+  }, [packageMilestones, selectedMilestone, milestoneStatus.isLocked]);
 
   // 🔹 Handle date change
   const handleDateChange = (date: string) => {
+    if (milestoneStatus.isLocked) return;
+    
     const fortnight = getFortnightFromDate(date);
     const errors = validateDateAndFortnight(date, fortnight);
     
@@ -185,6 +279,8 @@ export default function AddProgressForm({
 
   // 🔹 Handle fortnight change
   const handleFortnightChange = (fortnight: string) => {
+    if (milestoneStatus.isLocked) return;
+    
     if (!formData.progressDate) {
       setValidationErrors(["Please select date first"]);
       return;
@@ -203,108 +299,9 @@ export default function AddProgressForm({
 
   if (!showModal) return null;
 
-  // 🔹 Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validate date and fortnight
-    const dateErrors = validateDateAndFortnight(formData.progressDate, formData.fortnight);
-    if (dateErrors.length > 0) {
-      setValidationErrors(dateErrors);
-      alert("Date Validation Errors:\n" + dateErrors.join("\n"));
-      return;
-    }
-    
-    setIsSubmitting(true);
-    
-    try {
-      console.log("🚀 Form submission started");
-      
-      // 🔹 VALIDATION: Check if at least one quantity > 0
-      let hasValidQuantity = false;
-      const quantityErrors: string[] = [];
-      const formattedComponents: any[] = [];
-      
-      components.forEach(comp => {
-        const rawQty = quantities[comp.id];
-        const qty = typeof rawQty === 'string' 
-          ? (rawQty === '' ? 0 : parseFloat(rawQty) || 0)
-          : (rawQty || 0);
-        
-        const targetQty = getMilestoneTargetQty(comp.id);
-        
-        // हर component को भेजें
-        formattedComponents.push({
-          componentId: comp.id,
-          quantity: qty,
-          fieldName: comp.field_name,
-          unit: comp.unitname,
-        });
-        
-        if (qty > 0) {
-          hasValidQuantity = true;
-          
-          // Check if quantity exceeds target
-          if (qty > targetQty) {
-            quantityErrors.push(
-              `${comp.name}: ${qty} exceeds target ${targetQty}`
-            );
-          }
-        }
-      });
-      
-      if (!hasValidQuantity) {
-        alert("❌ Please enter progress quantity greater than 0 for at least one component!");
-        setIsSubmitting(false);
-        return;
-      }
-      
-      if (quantityErrors.length > 0) {
-        const confirmProceed = confirm(
-          "Some quantities exceed target:\n" + 
-          quantityErrors.join("\n") + 
-          "\n\nDo you want to proceed anyway?"
-        );
-        if (!confirmProceed) {
-          setIsSubmitting(false);
-          return;
-        }
-      }
-      
-      // 🔹 Prepare data
-      const data = {
-        ...formData,
-        packageNumber: selectedPackage,
-        milestoneNumber: selectedMilestone,
-        components: formattedComponents,
-        // Format fortnight as "1-15" or "16-31" for backend
-        fortnight: formData.fortnight === "First" ? "1-15" : "16-31"
-      };
-      
-      console.log("📦 Final payload to be sent:", JSON.stringify(data, null, 2));
-      
-      await onAddProgress(data);
-      
-      // Reset form
-      const resetQuantities: Record<number, number | string> = {};
-      components.forEach(comp => {
-        resetQuantities[comp.id] = "";
-      });
-      setQuantities(resetQuantities);
-      setValidationErrors([]);
-      
-      console.log("✅ Form submitted successfully");
-      
-    } catch (error) {
-      console.error("❌ Error in form submission:", error);
-      alert("Failed to submit form. Please check console for details.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const getMilestonePercentage = (component: Component) => {
-    switch (selectedMilestone) {
+  // 🔹 Get milestone percentage for specific milestone
+  const getMilestonePercentage = (component: Component, milestoneNum: number) => {
+    switch (milestoneNum) {
       case 1: return component.milestone_1_percentage || 0;
       case 2: return component.milestone_2_percentage || 0;
       case 3: return component.milestone_3_percentage || 0;
@@ -313,11 +310,18 @@ export default function AddProgressForm({
     }
   };
 
+  // 🔹 Get current milestone percentage
+  const getCurrentMilestonePercentage = (component: Component) => {
+    return getMilestonePercentage(component, selectedMilestone);
+  };
+
   const getMilestoneTargetQty = (componentId: number) => {
     return milestoneTargets[componentId] || 0;
   };
 
   const handleQuantityChange = (componentId: number, value: string) => {
+    if (milestoneStatus.isLocked) return;
+    
     if (value === "" || /^\d*\.?\d*$/.test(value)) {
       setQuantities(prev => ({
         ...prev,
@@ -327,6 +331,8 @@ export default function AddProgressForm({
   };
 
   const handleQuantityBlur = (componentId: number, value: string) => {
+    if (milestoneStatus.isLocked) return;
+    
     if (value === "") {
       setQuantities(prev => ({
         ...prev,
@@ -356,6 +362,234 @@ export default function AddProgressForm({
   // 🔹 Check if date is valid for submission
   const isDateValid = validationErrors.length === 0 && formData.progressDate;
 
+  // 🔹 Handle form submission
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // ✅ यदि माइलस्टोन लॉक है तो सबमिट न होने दें
+    if (milestoneStatus.isLocked) {
+      alert("This milestone is locked. Please complete the previous milestone first.");
+      return;
+    }
+    
+    // Validate date and fortnight
+    const dateErrors = validateDateAndFortnight(formData.progressDate, formData.fortnight);
+    if (dateErrors.length > 0) {
+      setValidationErrors(dateErrors);
+      alert("Date Validation Errors:\n" + dateErrors.join("\n"));
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      console.log("🚀 Form submission started");
+      
+      // 🔹 VALIDATION: Check if at least one quantity > 0
+      let hasValidQuantity = false;
+      const quantityErrors: string[] = [];
+      const formattedComponents: any[] = [];
+      
+      components.forEach(comp => {
+        const rawQty = quantities[comp.id];
+        const qty = typeof rawQty === 'string' 
+          ? (rawQty === '' ? 0 : parseFloat(rawQty) || 0)
+          : (rawQty || 0);
+        
+        const targetQty = getMilestoneTargetQty(comp.id);
+        const currentPercentage = getCurrentMilestonePercentage(comp);
+        const remainingQty = targetQty * (100 - currentPercentage) / 100;
+        
+        // हर component को भेजें
+        formattedComponents.push({
+          componentId: comp.id,
+          quantity: qty,
+          fieldName: comp.field_name,
+          unit: comp.unitname,
+          currentPercentage: currentPercentage,
+          remainingTarget: remainingQty
+        });
+        
+        if (qty > 0) {
+          hasValidQuantity = true;
+          
+          // Check if quantity exceeds remaining target
+          if (qty > remainingQty) {
+            quantityErrors.push(
+              `${comp.name}: ${qty} exceeds remaining target ${remainingQty.toFixed(2)} (${currentPercentage}% already completed)`
+            );
+          }
+        }
+      });
+      
+      if (!hasValidQuantity) {
+        alert("❌ Please enter progress quantity greater than 0 for at least one component!");
+        setIsSubmitting(false);
+        return;
+      }
+      
+      if (quantityErrors.length > 0) {
+        const confirmProceed = confirm(
+          "Some quantities exceed remaining target:\n" + 
+          quantityErrors.join("\n") + 
+          "\n\nDo you want to proceed anyway?"
+        );
+        if (!confirmProceed) {
+          setIsSubmitting(false);
+          return;
+        }
+      }
+      
+      // 🔹 Prepare data
+      const data = {
+        ...formData,
+        packageNumber: selectedPackage,
+        milestoneNumber: selectedMilestone,
+        components: formattedComponents,
+        // Format fortnight as "1-15" or "16-31" for backend
+        fortnight: formData.fortnight === "First" ? "1-15" : "16-31",
+        milestoneStatus: {
+          previousMilestone: milestoneStatus.previousMilestone,
+          previousMilestonePercentage: milestoneStatus.previousMilestonePercentage
+        }
+      };
+      
+      console.log("📦 Final payload to be sent:", JSON.stringify(data, null, 2));
+      
+      await onAddProgress(data);
+      
+      // Reset form
+      const resetQuantities: Record<number, number | string> = {};
+      components.forEach(comp => {
+        resetQuantities[comp.id] = "";
+      });
+      setQuantities(resetQuantities);
+      setValidationErrors([]);
+      
+      console.log("✅ Form submitted successfully");
+      
+    } catch (error) {
+      console.error("❌ Error in form submission:", error);
+      alert("Failed to submit form. Please check console for details.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // 🔹 Render locked state
+  if (milestoneStatus.isLocked) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+          {/* Header */}
+          <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-red-600 to-red-700">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-xl font-bold text-white">
+                  ⚠️ Milestone {selectedMilestone} Locked
+                </h3>
+                <p className="text-red-100 text-sm">
+                  Package: {selectedPackage}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-white hover:text-red-200 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+          </div>
+
+          {/* Locked Content */}
+          <div className="p-8 text-center">
+            <div className="flex justify-center mb-6">
+              <div className="p-4 bg-red-100 rounded-full">
+                <Lock className="w-16 h-16 text-red-600" />
+              </div>
+            </div>
+            
+            <h3 className="text-2xl font-bold text-gray-800 mb-4">
+              Milestone {selectedMilestone} is Locked
+            </h3>
+            
+            <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-6">
+              <p className="text-lg text-red-700 mb-3">
+                {milestoneStatus.message}
+              </p>
+              
+              {milestoneStatus.previousMilestone && (
+                <div className="mt-4 p-4 bg-white rounded-lg border">
+                  <div className="flex items-center justify-between">
+                    <div className="text-left">
+                      <h4 className="font-medium text-gray-700">
+                        Milestone {milestoneStatus.previousMilestone} Status
+                      </h4>
+                      <p className="text-sm text-gray-600">
+                        Current completion percentage
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <div className={`text-2xl font-bold ${
+                        milestoneStatus.previousMilestonePercentage >= 100 
+                          ? 'text-green-600' 
+                          : 'text-red-600'
+                      }`}>
+                        {milestoneStatus.previousMilestonePercentage}%
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Required: 100%
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Progress Bar */}
+                  <div className="mt-4">
+                    <div className="flex justify-between text-sm text-gray-600 mb-1">
+                      <span>Progress</span>
+                      <span>{milestoneStatus.previousMilestonePercentage}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div 
+                        className={`h-2.5 rounded-full ${
+                          milestoneStatus.previousMilestonePercentage >= 100 
+                            ? 'bg-green-600' 
+                            : 'bg-red-500'
+                        }`}
+                        style={{ width: `${Math.min(milestoneStatus.previousMilestonePercentage, 100)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-6 text-left">
+              <h4 className="font-medium text-blue-800 mb-2 flex items-center gap-2">
+                <CheckCircle className="w-5 h-5" />
+                How to Unlock
+              </h4>
+              <ul className="text-blue-700 space-y-2">
+                <li>1. Go to Milestone {milestoneStatus.previousMilestone || 1} progress</li>
+                <li>2. Add progress until it reaches 100% completion</li>
+                <li>3. Once previous milestone is fully completed, this milestone will unlock automatically</li>
+                <li>4. You can then add progress for Milestone {selectedMilestone}</li>
+              </ul>
+            </div>
+
+            <button
+              onClick={() => setShowModal(false)}
+              className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-md hover:shadow-lg"
+            >
+              Go to Milestone {milestoneStatus.previousMilestone || 1}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 🔹 Normal form render
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
@@ -369,6 +603,11 @@ export default function AddProgressForm({
               <p className="text-blue-100 text-sm">
                 Package: {selectedPackage}
               </p>
+              {allowAllMilestones && (
+                <div className="text-xs bg-yellow-500 text-white px-2 py-1 rounded mt-1 inline-block">
+                  Development Mode: All Milestones Unlocked
+                </div>
+              )}
             </div>
             <button
               onClick={() => setShowModal(false)}
@@ -383,6 +622,21 @@ export default function AddProgressForm({
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
           
+          {/* Milestone Access Status */}
+          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-green-800">✅ Milestone {selectedMilestone} is Unlocked</h4>
+                <p className="text-sm text-green-700 mt-1">
+                  {milestoneStatus.previousMilestone ? 
+                    `Milestone ${milestoneStatus.previousMilestone} is fully completed.` : 
+                    "Milestone 1 is always accessible."}
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Fortnight Information Banner */}
           <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-start gap-3">
@@ -545,6 +799,9 @@ export default function AddProgressForm({
                       Target Qty
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      Completed %
+                    </th>
+                    <th className="px4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                       Progress Qty *
                     </th>
                   </tr>
@@ -552,6 +809,8 @@ export default function AddProgressForm({
                 <tbody className="divide-y divide-gray-200">
                   {components.map((component) => {
                     const targetQty = getMilestoneTargetQty(component.id);
+                    const currentPercentage = getCurrentMilestonePercentage(component);
+                    const remainingQty = targetQty * (100 - currentPercentage) / 100;
                     const currentValue = quantities[component.id] || "";
                     const displayValue = getDisplayValue(currentValue);
                     const parsedQty = typeof currentValue === 'string' 
@@ -572,6 +831,21 @@ export default function AddProgressForm({
                           {targetQty.toLocaleString()}
                         </td>
                         <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-16 bg-gray-200 rounded-full h-2">
+                              <div 
+                                className="bg-blue-600 h-2 rounded-full"
+                                style={{ width: `${currentPercentage}%` }}
+                              ></div>
+                            </div>
+                            <span className={`text-sm font-medium ${
+                              currentPercentage >= 100 ? 'text-green-600' : 'text-blue-600'
+                            }`}>
+                              {currentPercentage}%
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
                           <div className="relative">
                             <input
                               type="text"
@@ -587,17 +861,24 @@ export default function AddProgressForm({
                                 parsedQty > 0 ? 'border-green-400 bg-green-50' : 'border-gray-300'
                               }`}
                               placeholder="0.00"
-                              disabled={isSubmitting}
+                              disabled={isSubmitting || currentPercentage >= 100}
                             />
                             <div className="text-xs text-gray-500 mt-1 flex justify-between">
                               <span className={parsedQty > 0 ? "text-green-600 font-semibold" : "text-gray-500"}>
                                 {parsedQty > 0 ? `✓ Entered: ${parsedQty}` : 'Enter progress'}
                               </span>
-                              <span>Max: {targetQty.toLocaleString()}</span>
+                              <span className={parsedQty > remainingQty ? "text-red-600" : "text-gray-500"}>
+                                Remaining: {remainingQty.toFixed(2)}
+                              </span>
                             </div>
-                            {parsedQty > targetQty && (
+                            {currentPercentage >= 100 && (
+                              <div className="text-xs text-green-600 mt-1">
+                                ✅ This component is already 100% complete
+                              </div>
+                            )}
+                            {parsedQty > 0 && parsedQty > remainingQty && (
                               <div className="text-xs text-red-600 mt-1">
-                                ⚠️ Exceeds target
+                                ⚠️ Exceeds remaining target by {(parsedQty - remainingQty).toFixed(2)}
                               </div>
                             )}
                           </div>
@@ -675,18 +956,19 @@ export default function AddProgressForm({
             </button>
           </div>
           
-          {/* Fortnight Rules Info */}
+          {/* Milestone Rules Info */}
           <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
               <div>
-                <h4 className="font-medium text-yellow-800 mb-1">Fortnight Rules</h4>
+                <h4 className="font-medium text-yellow-800 mb-1">Milestone Rules</h4>
                 <ul className="text-sm text-yellow-700 space-y-1">
-                  <li>• <strong>1-15 Fortnight:</strong> Progress for dates 1st to 15th of month</li>
-                  <li>• <strong>16-31 Fortnight:</strong> Progress for dates 16th to 31st of month</li>
-                  <li>• Only current month's progress can be added</li>
-                  <li>• Date automatically determines fortnight</li>
-                  <li>• Progress for each fortnight is recorded separately</li>
+                  <li>• <strong>Sequential Completion:</strong> You must complete each milestone before moving to the next</li>
+                  <li>• <strong>Milestone 1:</strong> Always accessible</li>
+                  <li>• <strong>Milestone 2:</strong> Accessible only when Milestone 1 is 100% complete</li>
+                  <li>• <strong>Milestone 3:</strong> Accessible only when Milestone 2 is 100% complete</li>
+                  <li>• <strong>Milestone 4:</strong> Accessible only when Milestone 3 is 100% complete</li>
+                  <li>• Progress can be added until each component reaches 100% for that milestone</li>
                 </ul>
               </div>
             </div>
