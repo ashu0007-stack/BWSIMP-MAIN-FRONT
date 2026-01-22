@@ -142,7 +142,7 @@ export const useSpurReportGenerator = ({
         doc.text(`Contractor: ${selectedWork.contractor_name}`, leftMargin + 10, yPos + 14);
         doc.text(`Division: ${selectedWork.division_name || 'N/A'}`, leftMargin + 10, yPos + 20);
         doc.text(`Work Range: ${workStartRange} Km to ${workEndRange} Km`, leftMargin + 10, yPos + 26);
-        doc.text(`Target Distance: ${targetKm.toFixed(2)} Km`, leftMargin + 10, yPos + 32);
+        doc.text(`Target Length: ${targetKm.toFixed(2)} Km`, leftMargin + 10, yPos + 32);
       }
 
       yPos += 50;
@@ -368,7 +368,7 @@ export const useSpurReportGenerator = ({
       { label: 'Contractor:', value: selectedWork?.contractor_name || 'N/A' },
       { label: 'Division:', value: selectedWork?.division_name || 'N/A' },
       { label: 'Work Range:', value: `${workStartRange} Km to ${workEndRange} Km` },
-      { label: 'Target Distance:', value: `${targetKm.toFixed(2)} Km` },
+      { label: 'Target Length:', value: `${targetKm.toFixed(2)} Km` },
       { label: 'Report Period:', value: `${currentMonth} ${currentYear}` },
     ];
 
@@ -497,7 +497,7 @@ export const useSpurReportGenerator = ({
 
     // Table headers
     const headersRow = summarySheet.getRow(cumulStartRow + 1);
-    headersRow.values = ['Spur ID', 'Spur Name', 'Location (Km)', 'Total Length (m)', 
+    headersRow.values = ['Spur ID', 'Spur Name', 'Location (Km)', 'Length (m)', 
                          'Cumulative Completed (m)', 'Last Date', 'Cumulative %'];
     headersRow.height = 25;
     headersRow.eachCell((cell) => {

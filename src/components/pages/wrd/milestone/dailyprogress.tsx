@@ -142,37 +142,50 @@ export default function MilestonePage({
 
   // ✅ Calculate completed milestones
   useEffect(() => {
-    if (packageMilestones && Array.isArray(packageMilestones) && packageMilestones.length > 0) {
-      const completed: number[] = [];
-      
-      // Check each milestone (1 to actualMilestoneCount)
-      for (let milestoneNum = 1; milestoneNum <= actualMilestoneCount; milestoneNum++) {
-        let allComponentsCompleted = true;
-        
-        packageMilestones.forEach((comp: PackageMilestoneComponent) => {
-          const milestoneData = comp.milestones?.find(
-            (m: MilestoneData) => m.milestone_number === milestoneNum
-          );
-          
-          if (milestoneData) {
-            const achievementPercentage = Number(milestoneData.achievement_percentage) || 0;
-            if (achievementPercentage < 100) {
-              allComponentsCompleted = false;
-            }
-          } else {
-            allComponentsCompleted = false;
-          }
-        });
-        
-        if (allComponentsCompleted) {
-          completed.push(milestoneNum);
+  if (packageMilestones && Array.isArray(packageMilestones) && packageMilestones.length > 0) {
+    const completed: number[] = [];
+
+    // Check each milestone (1 to actualMilestoneCount)
+    for (let milestoneNum = 1; milestoneNum <= actualMilestoneCount; milestoneNum++) {
+      let allComponentsCompleted = true;
+
+      packageMilestones.forEach((comp: PackageMilestoneComponent) => {
+        const milestoneData = comp.milestones?.find(
+          (m: MilestoneData) => m.milestone_number === milestoneNum
+        );
+
+        // ❌ Milestone data hi nahi hai
+        if (!milestoneData) {
+          allComponentsCompleted = false;
+          return;
         }
+
+        const milestoneQty = Number(milestoneData.milestone_qty) || 0;
+
+        // ✅ Quantity zero hai → is component ko ignore karo
+        if (milestoneQty === 0) {
+          return;
+        }
+
+        const achievementPercentage =
+          Number(milestoneData.achievement_percentage) || 0;
+
+        // ❌ Qty > 0 but achievement < 100
+        if (achievementPercentage < 100) {
+          allComponentsCompleted = false;
+        }
+      });
+
+      if (allComponentsCompleted) {
+        completed.push(milestoneNum);
       }
-      
-      setCompletedMilestones(completed);
-      console.log("✅ Completed milestones:", completed);
     }
-  }, [packageMilestones, actualMilestoneCount]);
+
+    setCompletedMilestones(completed);
+    console.log("✅ Completed milestones:", completed);
+  }
+}, [packageMilestones, actualMilestoneCount]);
+
 
   useEffect(() => {
     if (components && Array.isArray(components) && components.length > 0) {
@@ -1685,7 +1698,7 @@ export default function MilestonePage({
           selectedMilestone={selectedMilestone}
           packageMilestones={packageMilestones}
           completedMilestones={completedMilestones} // ✅ Pass completed milestones
-          allowAllMilestones={false} // Set to true for development/testing
+      
         />
       </main>
     </div>

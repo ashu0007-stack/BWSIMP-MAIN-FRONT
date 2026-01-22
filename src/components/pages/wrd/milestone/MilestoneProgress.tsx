@@ -32,8 +32,7 @@ interface AddProgressFormProps {
   selectedPackage: string | null;
   selectedMilestone: number;
   packageMilestones?: any[];
-  completedMilestones?: number[]; // ✅ नए प्रॉप: पूरे हुए माइलस्टोन्स
-  allowAllMilestones?: boolean; // ✅ डेवलपमेंट के लिए ओवरराइड ऑप्शन
+  completedMilestones?: number[];
 }
 
 export default function AddProgressForm({
@@ -44,8 +43,7 @@ export default function AddProgressForm({
   selectedPackage,
   selectedMilestone,
   packageMilestones = [],
-  completedMilestones = [], // ✅ डिफ़ॉल्ट खाली ऐरे
-  allowAllMilestones = false, // ✅ डिफ़ॉल्ट false
+  completedMilestones = [],
 }: AddProgressFormProps) {
   const [formData, setFormData] = useState({
     progressDate: "",
@@ -69,13 +67,64 @@ export default function AddProgressForm({
     message: "",
   });
 
+  // 🔹 Get milestone percentage for specific milestone
+  const getMilestonePercentage = (component: Component, milestoneNum: number) => {
+    switch (milestoneNum) {
+      case 1: return component.milestone_1_percentage || 0;
+      case 2: return component.milestone_2_percentage || 0;
+      case 3: return component.milestone_3_percentage || 0;
+      case 4: return component.milestone_4_percentage || 0;
+      default: return 0;
+    }
+  };
+
+  // 🔹 Get current milestone percentage
+  const getCurrentMilestonePercentage = (component: Component) => {
+    return getMilestonePercentage(component, selectedMilestone);
+  };
+
+  // 🔹 Check if current milestone is 100% completed for ALL components
+  const isMilestoneFullyCompleted = () => {
+    if (components.length === 0) return false;
+    
+    const allComponentsCompleted = components.every(component => {
+      const percentage = getCurrentMilestonePercentage(component);
+      return percentage >= 100;
+    });
+    
+    return allComponentsCompleted;
+  };
+
+  // 🔹 Check if previous milestone is completed (100% for all components)
+  const isPreviousMilestoneCompleted = () => {
+    if (selectedMilestone === 1) return true; // Milestone 1 के लिए कोई previous नहीं है
+    
+    const previousMilestone = selectedMilestone - 1;
+    
+    // Check if previous milestone is in completedMilestones array
+    if (completedMilestones.includes(previousMilestone)) {
+      return true;
+    }
+    
+    // Additional check: verify if all components are 100% for previous milestone
+    let allComponentsCompleted = true;
+    
+    components.forEach(component => {
+      const percentage = getMilestonePercentage(component, previousMilestone);
+      if (percentage < 100) {
+        allComponentsCompleted = false;
+      }
+    });
+    
+    return allComponentsCompleted;
+  };
+
   // 🔹 Get current date and set default
   const getCurrentDate = () => {
     const today = new Date();
     return today.toISOString().split('T')[0];
   };
 
-  // 🔹 Determine fortnight from date (1-15 or 16-31)
   const getFortnightFromDate = (dateString: string) => {
     if (!dateString) return "First";
     
@@ -90,20 +139,17 @@ export default function AddProgressForm({
     return "First";
   };
 
-  // 🔹 Get max date (can't select future dates)
   const getMaxDate = () => {
     const today = new Date();
     return today.toISOString().split('T')[0];
   };
 
-  // 🔹 Get min date for the month (1st of current month)
   const getMinDate = () => {
     const today = new Date();
     const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
     return firstDay.toISOString().split('T')[0];
   };
 
-  // 🔹 Validate date and fortnight
   const validateDateAndFortnight = (dateString: string, fortnight: string) => {
     const errors: string[] = [];
     
@@ -116,19 +162,16 @@ export default function AddProgressForm({
     const today = new Date();
     const day = selectedDate.getDate();
     
-    // Check if date is in future
     if (selectedDate > today) {
       errors.push("Cannot select future dates");
     }
     
-    // Check if date is within current month
     const currentMonth = today.getMonth();
     const currentYear = today.getFullYear();
     if (selectedDate.getMonth() !== currentMonth || selectedDate.getFullYear() !== currentYear) {
       errors.push("Progress can only be added for current month");
     }
     
-    // Check if fortnight matches date
     const expectedFortnight = getFortnightFromDate(dateString);
     if (fortnight !== expectedFortnight) {
       errors.push(`Date ${dateString} belongs to ${expectedFortnight === "First" ? "1-15" : "16-31"} fortnight, not ${fortnight === "First" ? "1-15" : "16-31"}`);
@@ -137,71 +180,99 @@ export default function AddProgressForm({
     return errors;
   };
 
-  // 🔹 Check if milestone is accessible
-  const checkMilestoneAccessibility = () => {
-    // ✅ यदि allowAllMilestones true है तो सभी माइलस्टोन्स की अनुमति दें
-    if (allowAllMilestones) {
-      return {
-        isLocked: false,
-        previousMilestone: null,
-        previousMilestonePercentage: 100,
-        message: "Development mode: All milestones accessible"
-      };
-    }
+  // AddProgressForm.tsx में checkMilestoneAccessibility function को यूँ update करें:
 
-    // ✅ यदि पहला माइलस्टोन है तो हमेशा अनुमति दें
-    if (selectedMilestone === 1) {
-      return {
-        isLocked: false,
-        previousMilestone: null,
-        previousMilestonePercentage: 100,
-        message: "Milestone 1 is always accessible"
-      };
-    }
+const checkMilestoneAccessibility = () => {
+  console.log("🔍 DEBUG: Checking accessibility for milestone:", selectedMilestone);
+  console.log("🔍 DEBUG: Completed milestones array:", completedMilestones);
+  console.log("🔍 DEBUG: Is milestone", selectedMilestone, "in completedMilestones?", completedMilestones.includes(selectedMilestone));
 
-    // ✅ पिछला माइलस्टोन नंबर निकालें
-    const previousMilestone = selectedMilestone - 1;
-    
-    // ✅ पिछला माइलस्टोन पूरा हुआ है या नहीं
-    const isPreviousCompleted = completedMilestones.includes(previousMilestone);
-    
-    // ✅ पिछले माइलस्टोन का औसत प्रतिशत निकालें
-    let previousMilestonePercentage = 0;
-    
-    if (components.length > 0) {
-      let totalPercentage = 0;
-      let count = 0;
-      
-      components.forEach(comp => {
-        const percentage = getMilestonePercentage(comp, previousMilestone);
-        if (percentage !== undefined) {
-          totalPercentage += percentage;
-          count++;
-        }
-      });
-      
-      if (count > 0) {
-        previousMilestonePercentage = Math.round(totalPercentage / count);
-      }
-    }
+  // ✅ FIRST AND MOST IMPORTANT CHECK: If milestone is in completedMilestones array
+  if (completedMilestones && completedMilestones.includes(selectedMilestone)) {
+    console.log("🔒 DEBUG: Milestone found in completedMilestones array, locking it");
+    return {
+      isLocked: true,
+      previousMilestone: selectedMilestone,
+      previousMilestonePercentage: 100,
+      message: `Milestone ${selectedMilestone} is already completed. You cannot add more progress to a completed milestone.`
+    };
+  }
 
-    // ✅ यदि पिछला माइलस्टोन पूरा नहीं हुआ है
-    if (!isPreviousCompleted && previousMilestonePercentage < 100) {
-      return {
-        isLocked: true,
-        previousMilestone,
-        previousMilestonePercentage,
-        message: `Milestone ${previousMilestone} is ${previousMilestonePercentage}% complete. Complete it fully (100%) to unlock Milestone ${selectedMilestone}.`
-      };
-    }
+  console.log("🔍 DEBUG: Milestone not in completedMilestones, checking if fully completed...");
 
+  // ✅ Check if current milestone is 100% completed for ALL components
+  if (isMilestoneFullyCompleted()) {
+    console.log("🔒 DEBUG: Milestone is 100% completed for all components");
+    return {
+      isLocked: true,
+      previousMilestone: selectedMilestone,
+      previousMilestonePercentage: 100,
+      message: `Milestone ${selectedMilestone} is already 100% completed for all components. You cannot add more progress to a completed milestone.`
+    };
+  }
+
+  console.log("🔍 DEBUG: Milestone is not fully completed, checking previous milestones...");
+
+  // ✅ If it's milestone 1 and not completed, allow access
+  if (selectedMilestone === 1) {
+    console.log("🔓 DEBUG: Milestone 1 is accessible (not completed)");
     return {
       isLocked: false,
-      previousMilestone,
+      previousMilestone: null,
       previousMilestonePercentage: 100,
-      message: `Milestone ${previousMilestone} is completed. You can add progress for Milestone ${selectedMilestone}.`
+      message: "Milestone 1 is accessible"
     };
+  }
+
+  // ✅ For other milestones, check if previous milestone is completed
+  const previousMilestone = selectedMilestone - 1;
+  
+  console.log("🔍 DEBUG: Checking previous milestone:", previousMilestone);
+  console.log("🔍 DEBUG: Is previous milestone in completedMilestones?", completedMilestones.includes(previousMilestone));
+
+  // Check if previous milestone is in completedMilestones array
+  const isPreviousCompleted = completedMilestones.includes(previousMilestone);
+  
+  // Calculate average percentage of previous milestone
+  let previousMilestonePercentage = 0;
+  
+  if (components.length > 0) {
+    let totalPercentage = 0;
+    let count = 0;
+    
+    components.forEach(comp => {
+      const percentage = getMilestonePercentage(comp, previousMilestone);
+      if (percentage !== undefined) {
+        totalPercentage += percentage;
+        count++;
+      }
+    });
+    
+    if (count > 0) {
+      previousMilestonePercentage = Math.round(totalPercentage / count);
+    }
+  }
+  
+  console.log("🔍 DEBUG: Previous milestone percentage:", previousMilestonePercentage);
+
+  if (!isPreviousCompleted && previousMilestonePercentage < 100) {
+    console.log("🔒 DEBUG: Previous milestone not completed, locking current milestone");
+    return {
+      isLocked: true,
+      previousMilestone,
+      previousMilestonePercentage,
+      message: `Milestone ${previousMilestone} is ${previousMilestonePercentage}% complete. Complete it fully (100%) to unlock Milestone ${selectedMilestone}.`
+    };
+  }
+
+  console.log("🔓 DEBUG: Milestone is accessible");
+  return {
+    isLocked: false,
+    previousMilestone,
+    previousMilestonePercentage: 100,
+    message: `Milestone ${previousMilestone} is completed. You can add progress for Milestone ${selectedMilestone}.`
   };
+};
 
   // 🔹 Initialize quantities with empty string for all components
   useEffect(() => {
@@ -229,7 +300,13 @@ export default function AddProgressForm({
       
       const initialQuantities: Record<number, number | string> = {};
       components.forEach(comp => {
-        initialQuantities[comp.id] = "";
+        const currentPercentage = getCurrentMilestonePercentage(comp);
+        // ✅ यदि component पहले से 100% complete है तो disable करें
+        if (currentPercentage >= 100) {
+          initialQuantities[comp.id] = 0; // 0 सेट करें और disabled रखें
+        } else {
+          initialQuantities[comp.id] = "";
+        }
       });
       setQuantities(initialQuantities);
       
@@ -299,28 +376,18 @@ export default function AddProgressForm({
 
   if (!showModal) return null;
 
-  // 🔹 Get milestone percentage for specific milestone
-  const getMilestonePercentage = (component: Component, milestoneNum: number) => {
-    switch (milestoneNum) {
-      case 1: return component.milestone_1_percentage || 0;
-      case 2: return component.milestone_2_percentage || 0;
-      case 3: return component.milestone_3_percentage || 0;
-      case 4: return component.milestone_4_percentage || 0;
-      default: return 0;
-    }
-  };
-
-  // 🔹 Get current milestone percentage
-  const getCurrentMilestonePercentage = (component: Component) => {
-    return getMilestonePercentage(component, selectedMilestone);
-  };
-
   const getMilestoneTargetQty = (componentId: number) => {
     return milestoneTargets[componentId] || 0;
   };
 
   const handleQuantityChange = (componentId: number, value: string) => {
     if (milestoneStatus.isLocked) return;
+    
+    // ✅ Check if component is already 100% completed
+    const component = components.find(c => c.id === componentId);
+    if (component && getCurrentMilestonePercentage(component) >= 100) {
+      return; // Don't allow changes for completed components
+    }
     
     if (value === "" || /^\d*\.?\d*$/.test(value)) {
       setQuantities(prev => ({
@@ -332,6 +399,12 @@ export default function AddProgressForm({
 
   const handleQuantityBlur = (componentId: number, value: string) => {
     if (milestoneStatus.isLocked) return;
+    
+    // ✅ Check if component is already 100% completed
+    const component = components.find(c => c.id === componentId);
+    if (component && getCurrentMilestonePercentage(component) >= 100) {
+      return; // Don't allow changes for completed components
+    }
     
     if (value === "") {
       setQuantities(prev => ({
@@ -385,29 +458,44 @@ export default function AddProgressForm({
     try {
       console.log("🚀 Form submission started");
       
-      // 🔹 VALIDATION: Check if at least one quantity > 0
+      // 🔹 VALIDATION: Check if at least one quantity > 0 for components that are not 100% completed
       let hasValidQuantity = false;
       const quantityErrors: string[] = [];
       const formattedComponents: any[] = [];
       
       components.forEach(comp => {
+        const currentPercentage = getCurrentMilestonePercentage(comp);
+        
+        // ✅ Skip components that are already 100% completed
+        if (currentPercentage >= 100) {
+          formattedComponents.push({
+            componentId: comp.id,
+            quantity: 0,
+            fieldName: comp.field_name,
+            unit: comp.unitname,
+            currentPercentage: currentPercentage,
+            remainingTarget: 0,
+            isCompleted: true
+          });
+          return;
+        }
+        
         const rawQty = quantities[comp.id];
         const qty = typeof rawQty === 'string' 
           ? (rawQty === '' ? 0 : parseFloat(rawQty) || 0)
           : (rawQty || 0);
         
         const targetQty = getMilestoneTargetQty(comp.id);
-        const currentPercentage = getCurrentMilestonePercentage(comp);
         const remainingQty = targetQty * (100 - currentPercentage) / 100;
         
-        // हर component को भेजें
         formattedComponents.push({
           componentId: comp.id,
           quantity: qty,
           fieldName: comp.field_name,
           unit: comp.unitname,
           currentPercentage: currentPercentage,
-          remainingTarget: remainingQty
+          remainingTarget: remainingQty,
+          isCompleted: false
         });
         
         if (qty > 0) {
@@ -423,7 +511,7 @@ export default function AddProgressForm({
       });
       
       if (!hasValidQuantity) {
-        alert("❌ Please enter progress quantity greater than 0 for at least one component!");
+        alert("❌ Please enter progress quantity greater than 0 for at least one component that is not already 100% complete!");
         setIsSubmitting(false);
         return;
       }
@@ -461,7 +549,12 @@ export default function AddProgressForm({
       // Reset form
       const resetQuantities: Record<number, number | string> = {};
       components.forEach(comp => {
-        resetQuantities[comp.id] = "";
+        const currentPercentage = getCurrentMilestonePercentage(comp);
+        if (currentPercentage >= 100) {
+          resetQuantities[comp.id] = 0;
+        } else {
+          resetQuantities[comp.id] = "";
+        }
       });
       setQuantities(resetQuantities);
       setValidationErrors([]);
@@ -518,7 +611,7 @@ export default function AddProgressForm({
                 {milestoneStatus.message}
               </p>
               
-              {milestoneStatus.previousMilestone && (
+              {milestoneStatus.previousMilestone ? (
                 <div className="mt-4 p-4 bg-white rounded-lg border">
                   <div className="flex items-center justify-between">
                     <div className="text-left">
@@ -561,19 +654,65 @@ export default function AddProgressForm({
                     </div>
                   </div>
                 </div>
+              ) : (
+                <div className="mt-4 p-4 bg-white rounded-lg border">
+                  <div className="flex items-center justify-between">
+                    <div className="text-left">
+                      <h4 className="font-medium text-gray-700">
+                        Milestone {selectedMilestone} Status
+                      </h4>
+                      <p className="text-sm text-gray-600">
+                        Current completion status
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-green-600">
+                        100%
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Fully Completed
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Progress Bar */}
+                  <div className="mt-4">
+                    <div className="flex justify-between text-sm text-gray-600 mb-1">
+                      <span>Progress</span>
+                      <span>100%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div 
+                        className="h-2.5 rounded-full bg-green-600"
+                        style={{ width: `100%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
             
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-6 text-left">
               <h4 className="font-medium text-blue-800 mb-2 flex items-center gap-2">
                 <CheckCircle className="w-5 h-5" />
-                How to Unlock
+                {milestoneStatus.previousMilestone ? "How to Unlock" : "What does this mean?"}
               </h4>
               <ul className="text-blue-700 space-y-2">
-                <li>1. Go to Milestone {milestoneStatus.previousMilestone || 1} progress</li>
-                <li>2. Add progress until it reaches 100% completion</li>
-                <li>3. Once previous milestone is fully completed, this milestone will unlock automatically</li>
-                <li>4. You can then add progress for Milestone {selectedMilestone}</li>
+                {milestoneStatus.previousMilestone ? (
+                  <>
+                    <li>1. Go to Milestone {milestoneStatus.previousMilestone} progress</li>
+                    <li>2. Add progress until it reaches 100% completion</li>
+                    <li>3. Once previous milestone is fully completed, this milestone will unlock automatically</li>
+                    <li>4. You can then add progress for Milestone {selectedMilestone}</li>
+                  </>
+                ) : (
+                  <>
+                    <li>• <strong>Milestone {selectedMilestone}</strong> is already 100% completed for all components</li>
+                    <li>• You cannot add more progress to a fully completed milestone</li>
+                    <li>• If you need to make changes, please contact the administrator</li>
+                    <li>• To proceed, move to the next available milestone</li>
+                  </>
+                )}
               </ul>
             </div>
 
@@ -581,7 +720,7 @@ export default function AddProgressForm({
               onClick={() => setShowModal(false)}
               className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-md hover:shadow-lg"
             >
-              Go to Milestone {milestoneStatus.previousMilestone || 1}
+              {milestoneStatus.previousMilestone ? `Go to Milestone ${milestoneStatus.previousMilestone}` : "Close"}
             </button>
           </div>
         </div>
@@ -603,11 +742,6 @@ export default function AddProgressForm({
               <p className="text-blue-100 text-sm">
                 Package: {selectedPackage}
               </p>
-              {allowAllMilestones && (
-                <div className="text-xs bg-yellow-500 text-white px-2 py-1 rounded mt-1 inline-block">
-                  Development Mode: All Milestones Unlocked
-                </div>
-              )}
             </div>
             <button
               onClick={() => setShowModal(false)}
@@ -627,11 +761,11 @@ export default function AddProgressForm({
             <div className="flex items-start gap-3">
               <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
               <div>
-                <h4 className="font-medium text-green-800">✅ Milestone {selectedMilestone} is Unlocked</h4>
+                <h4 className="font-medium text-green-800">✅ Milestone {selectedMilestone} is Accessible</h4>
                 <p className="text-sm text-green-700 mt-1">
                   {milestoneStatus.previousMilestone ? 
                     `Milestone ${milestoneStatus.previousMilestone} is fully completed.` : 
-                    "Milestone 1 is always accessible."}
+                    "You can add progress to Milestone 1."}
                 </p>
               </div>
             </div>
@@ -774,7 +908,12 @@ export default function AddProgressForm({
                 onClick={() => {
                   const resetQuantities: Record<number, number | string> = {};
                   components.forEach(comp => {
-                    resetQuantities[comp.id] = "";
+                    const currentPercentage = getCurrentMilestonePercentage(comp);
+                    if (currentPercentage >= 100) {
+                      resetQuantities[comp.id] = 0;
+                    } else {
+                      resetQuantities[comp.id] = "";
+                    }
                   });
                   setQuantities(resetQuantities);
                 }}
@@ -816,12 +955,21 @@ export default function AddProgressForm({
                     const parsedQty = typeof currentValue === 'string' 
                       ? (currentValue === '' ? 0 : parseFloat(currentValue) || 0)
                       : currentValue;
+                    const isComponentCompleted = currentPercentage >= 100;
 
                     return (
-                      <tr key={component.id} className="hover:bg-gray-50">
+                      <tr 
+                        key={component.id} 
+                        className={`hover:bg-gray-50 ${isComponentCompleted ? 'bg-green-50' : ''}`}
+                      >
                         <td className="px-4 py-3">
                           <div className="font-medium text-gray-900">
                             {component.name}
+                            {isComponentCompleted && (
+                              <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                                ✓ 100% Complete
+                              </span>
+                            )}
                           </div>
                         </td>
                         <td className="px-4 py-3 text-gray-700">
@@ -834,12 +982,14 @@ export default function AddProgressForm({
                           <div className="flex items-center gap-2">
                             <div className="w-16 bg-gray-200 rounded-full h-2">
                               <div 
-                                className="bg-blue-600 h-2 rounded-full"
+                                className={`h-2 rounded-full ${
+                                  isComponentCompleted ? 'bg-green-600' : 'bg-blue-600'
+                                }`}
                                 style={{ width: `${currentPercentage}%` }}
                               ></div>
                             </div>
                             <span className={`text-sm font-medium ${
-                              currentPercentage >= 100 ? 'text-green-600' : 'text-blue-600'
+                              isComponentCompleted ? 'text-green-600' : 'text-blue-600'
                             }`}>
                               {currentPercentage}%
                             </span>
@@ -858,25 +1008,33 @@ export default function AddProgressForm({
                                 handleQuantityBlur(component.id, e.target.value);
                               }}
                               className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                                parsedQty > 0 ? 'border-green-400 bg-green-50' : 'border-gray-300'
+                                isComponentCompleted
+                                  ? 'bg-gray-100 border-gray-300 text-gray-500 cursor-not-allowed'
+                                  : parsedQty > 0 
+                                    ? 'border-green-400 bg-green-50' 
+                                    : 'border-gray-300'
                               }`}
-                              placeholder="0.00"
-                              disabled={isSubmitting || currentPercentage >= 100}
+                              placeholder={isComponentCompleted ? "Completed" : "0.00"}
+                              disabled={isSubmitting || isComponentCompleted}
+                              readOnly={isComponentCompleted}
                             />
                             <div className="text-xs text-gray-500 mt-1 flex justify-between">
-                              <span className={parsedQty > 0 ? "text-green-600 font-semibold" : "text-gray-500"}>
-                                {parsedQty > 0 ? `✓ Entered: ${parsedQty}` : 'Enter progress'}
-                              </span>
-                              <span className={parsedQty > remainingQty ? "text-red-600" : "text-gray-500"}>
-                                Remaining: {remainingQty.toFixed(2)}
-                              </span>
+                              {isComponentCompleted ? (
+                                <span className="text-green-600 font-semibold">
+                                  ✅ This component is already 100% complete
+                                </span>
+                              ) : (
+                                <>
+                                  <span className={parsedQty > 0 ? "text-green-600 font-semibold" : "text-gray-500"}>
+                                    {parsedQty > 0 ? `✓ Entered: ${parsedQty}` : 'Enter progress'}
+                                  </span>
+                                  <span className={parsedQty > remainingQty ? "text-red-600" : "text-gray-500"}>
+                                    Remaining: {remainingQty.toFixed(2)}
+                                  </span>
+                                </>
+                              )}
                             </div>
-                            {currentPercentage >= 100 && (
-                              <div className="text-xs text-green-600 mt-1">
-                                ✅ This component is already 100% complete
-                              </div>
-                            )}
-                            {parsedQty > 0 && parsedQty > remainingQty && (
+                            {!isComponentCompleted && parsedQty > 0 && parsedQty > remainingQty && (
                               <div className="text-xs text-red-600 mt-1">
                                 ⚠️ Exceeds remaining target by {(parsedQty - remainingQty).toFixed(2)}
                               </div>
@@ -892,22 +1050,33 @@ export default function AddProgressForm({
             
             {/* Summary Section */}
             <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-              <div className="flex justify-between items-center">
-                <div>
-                  <span className="text-sm font-medium text-gray-700">
-                    Components with progress: 
-                  </span>
-                  <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-gray-800">{components.length}</div>
+                  <div className="text-xs text-gray-600">Total Components</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">
+                    {components.filter(c => getCurrentMilestonePercentage(c) >= 100).length}
+                  </div>
+                  <div className="text-xs text-gray-600">100% Complete</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-600">
                     {Object.values(quantities).filter(val => {
                       const numVal = typeof val === 'string' 
                         ? (val === '' ? 0 : parseFloat(val) || 0)
                         : val;
                       return numVal > 0;
                     }).length}
-                  </span>
+                  </div>
+                  <div className="text-xs text-gray-600">With Progress Entered</div>
                 </div>
-                <div className="text-sm text-gray-600">
-                  Total Components: {components.length}
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-yellow-600">
+                    {components.filter(c => getCurrentMilestonePercentage(c) < 100).length}
+                  </div>
+                  <div className="text-xs text-gray-600">Pending Completion</div>
                 </div>
               </div>
             </div>
@@ -964,11 +1133,13 @@ export default function AddProgressForm({
                 <h4 className="font-medium text-yellow-800 mb-1">Milestone Rules</h4>
                 <ul className="text-sm text-yellow-700 space-y-1">
                   <li>• <strong>Sequential Completion:</strong> You must complete each milestone before moving to the next</li>
-                  <li>• <strong>Milestone 1:</strong> Always accessible</li>
+                  <li>• <strong>All Milestones:</strong> Once a milestone reaches 100%, it will be locked</li>
+                  <li>• <strong>Milestone 1:</strong> Accessible initially, but locks when 100% complete</li>
                   <li>• <strong>Milestone 2:</strong> Accessible only when Milestone 1 is 100% complete</li>
                   <li>• <strong>Milestone 3:</strong> Accessible only when Milestone 2 is 100% complete</li>
                   <li>• <strong>Milestone 4:</strong> Accessible only when Milestone 3 is 100% complete</li>
-                  <li>• Progress can be added until each component reaches 100% for that milestone</li>
+                  <li>• <strong>Once a milestone reaches 100%:</strong> No more progress can be added to it</li>
+                  <li>• Individual components at 100% will be disabled for further progress entry</li>
                 </ul>
               </div>
             </div>
