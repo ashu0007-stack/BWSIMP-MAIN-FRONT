@@ -245,7 +245,6 @@ const handleAddSpurProgress = async (formData: any) => {
   if (!selectedPackage || !hasSpurs) return;
 
   try {
-    console.log("📤 handleAddSpurProgress called with:", formData);
 
     // Get user info
     const storedProfile = sessionStorage.getItem("userdetail");
@@ -261,12 +260,9 @@ const handleAddSpurProgress = async (formData: any) => {
       progress_date: formData.progress_date || new Date().toISOString().split('T')[0]
     };
 
-    console.log("📤 Final payload to server:", completePayload);
 
     // Send to server
     const result = await addSpurProgressMutation.mutateAsync(completePayload);
-    
-    console.log("✅ Server response:", result);
     
     // Success
     setShowSpurForm(false);

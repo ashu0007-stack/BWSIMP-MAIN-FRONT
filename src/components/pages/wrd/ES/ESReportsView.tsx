@@ -112,12 +112,10 @@ export default function ESReportsView({ id }: ESReportsViewProps) {
   };
 
   const handleDownload = (report: Report, format: 'pdf' | 'excel') => {
-    console.log(`Downloading ${report.report_number} in ${format} format`);
     // Implement download logic
   };
 
   const handlePrint = (report: Report) => {
-    console.log(`Printing ${report.report_number}`);
     window.print();
   };
 

@@ -445,28 +445,10 @@ function ContractorFormComponent({
   const [activeTab, setActiveTab] = useState<'social' | 'environmental' | 'work_methodology'>('social');
 
   useEffect(() => {
-    console.log("🔄 ContractorFormComponent: initialForm updated", {
-      pageMode,
-      initialFormLengths: {
-        social: initialForm.social_data?.length,
-        environmental: initialForm.environmental_data?.length,
-        methodology: initialForm.work_methodology_data?.length
-      }
-    });
-
     if (pageMode === 'edit' || pageMode === 'view') {
       // Deep copy to ensure state updates
       const deepCopy = JSON.parse(JSON.stringify(initialForm));
       setFormData(deepCopy);
-
-      // Log the data being set
-      console.log("📥 Setting form data from initialForm:", {
-        agency_name: deepCopy.agency_name,
-        key_personnel_count: deepCopy.key_personnel?.length,
-        equipment_count: deepCopy.equipment?.length,
-        social_data_count: deepCopy.social_data?.length,
-        environmental_data_count: deepCopy.environmental_data?.length
-      });
     }
   }, [initialForm, pageMode]);
 
@@ -505,11 +487,9 @@ function ContractorFormComponent({
   // ✅ Hooks
   const { data: tendercontracts = [], isLoading: isWorksLoading } = useWorkTender();
   const { data: tenderData } = useTenderByWorkId(formData.work_id);
-  console.log("📊 Tendercontracts data:", { data: tenderData });
 
   useEffect(() => {
     if (tenderData) {
-      console.log("📋 Tender data received:", tenderData);
       setFormData((prev) => ({
         ...prev,
         tenderRefNo: tenderData?.tenderRefNo || tenderData?.tenderrefno || prev.tenderRefNo,
@@ -520,7 +500,6 @@ function ContractorFormComponent({
     if (formData.work_id && tendercontracts.length > 0) {
       const work = tendercontracts.find((w: any) => w.id?.toString() === formData.work_id);
       if (work) {
-        console.log("✅ Found work in tendercontracts:", work);
         setFormData((prev) => ({
           ...prev,
           tenderRefNo: work.tenderRefNo || work.tenderrefno || prev.tenderRefNo,
@@ -2859,8 +2838,6 @@ export default function ContractorForm() {
         const contractDivisionId = contract.division_id || contract.work_division_id || contract.division;
         return contractDivisionId === user.division_id;
       });
-
-      console.log(`✅ Filtered ${userDivisionContracts.length} contracts out of ${contracts.length} for user's division`);
       return userDivisionContracts;
     }
     else if (user?.circle_id) {
@@ -2868,24 +2845,17 @@ export default function ContractorForm() {
         const contractDivisionId = contract.circle_id || contract.work_division_id || contract.division;
         return contractDivisionId === user.circle_id;
       });
-
-      console.log(`✅ Filtered ${userDivisionContracts.length} contracts out of ${contracts.length} for user's division`);
       return userDivisionContracts;
 
     }
     else if (user?.zone_id) {
       const userDivisionContracts = contracts.filter((contract: any) => {
         const contractDivisionId = contract.zone_id || contract.work_division_id || contract.division;
-        //console.log(`Contract ${contract.id}: division_id = ${contractDivisionId}, user division_id = ${user.division_id}`);
         return contractDivisionId === user.zone_id;
       });
-
-      console.log(`✅ Filtered ${userDivisionContracts.length} contracts out of ${contracts.length} for user's division`);
       return userDivisionContracts;
 
     }
-
-    console.log("ℹ️ No user division_id found, showing all contracts");
     return contracts;
   }, [contracts, user?.division_id, user?.circle_id, user?.zone_id]);
 
@@ -2914,7 +2884,6 @@ export default function ContractorForm() {
 
   useEffect(() => {
     if (contractDetails && selectedContractId) {
-      console.log("📋 Loaded contract details:", contractDetails);
 
       setSelectedContract(contractDetails);
 
@@ -2998,8 +2967,6 @@ export default function ContractorForm() {
         division_id: contractDetails.division_id,
         updated_by: contractDetails.updated_by,
       };
-
-      console.log("📝 Formatted form data:", formattedData);
       setFormData(formattedData);
     }
   }, [contractDetails, selectedContractId]);
@@ -3075,26 +3042,8 @@ export default function ContractorForm() {
         updated_by: user?.email || "Unknown",
       }),
     };
-
-    console.log("📤 Submitting form:", {
-      mode,
-      documentStats: {
-        social: preparedFormData.social_data.map(s => ({
-          particular: s.particular,
-          isBase64: s.document?.startsWith('data:'),
-          isPath: s.document?.startsWith('/uploads/')
-        })),
-        environmental: preparedFormData.environmental_data.map(e => ({
-          clearance: e.clearance_authorization,
-          isBase64: e.document?.startsWith('data:'),
-          isPath: e.document?.startsWith('/uploads/')
-        }))
-      }
-    });
     // ✅ Prepare data with logged user details
-
     const currentTimestamp = new Date().toISOString();
-
     const formDataWithUser = {
       ...submittedFormData,
       // ✅ Add audit fields for CREATE
@@ -3109,12 +3058,6 @@ export default function ContractorForm() {
       }),
     };
 
-    console.log("📤 Submitting form with user details:", {
-      mode,
-      user,
-      formDataWithUser
-    });
-
     if (mode === 'edit' && selectedContractId) {
       // ✅ UPDATE EXISTING CONTRACT
       updateContractMutation.mutate(
@@ -3124,7 +3067,6 @@ export default function ContractorForm() {
         },
         {
           onSuccess: (data) => {
-            console.log("✅ Contract updated successfully:", data);
             alert(`✅ Contract updated successfully!`);
             setMode('view');
             refetch();

@@ -44,7 +44,6 @@ export const EditUser: FC<EditUserProps> = ({ user, onClose, onSubmit }) => {
     };
     editUser(payload, {
       onSuccess: () => {
-         console.log("✅ UPDATE SUCCESS");
         toast.success("User details successfully edit.")
 
         // ✅ Refetch the user list to show updated data

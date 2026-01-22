@@ -132,7 +132,6 @@ export const UserDetails: FC = () => {
   };
 
   const handleEditUser = (user: any) => {
-    console.log("Editing user:", user?.full_name);
     setEditUserModal(true)
     setSelectedUser(user);
   }
@@ -487,9 +486,6 @@ export const UserDetails: FC = () => {
             user={selectedUser}
             onClose={() => setEditUserModal(false)}
             onSubmit={(data) => {
-              console.log("Updated Data:", data);
-              // 👉 Call update user API here
-              // updateUser({ id: selectedUser.id, ...data })
               setEditUserModal(false);
             }}
           />

@@ -46,7 +46,6 @@ export const StudyForm: FC<StudyFormProps> = ({
     setStudyFormRecords((prev) => [...prev, data]);
     setShowForm(false);
     reset();
-    console.log(errors);
   };
 
   /* ================= REUSABLE COMPONENTS ================= */

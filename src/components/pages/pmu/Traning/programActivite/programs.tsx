@@ -20,7 +20,6 @@ export const Programs: FC<Props> = ({ setActiveTab, openCalendarTab }) => {
           openCalendarTab={openCalendarTab}
           onAddNew={() => setMode("create")}
           onEdit={(row) => {
-            console.log("EDIT ROW 👉", row); // 🔍 confirm data
             setEditData(row);
             setMode("edit");
           }}

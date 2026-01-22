@@ -51,7 +51,6 @@ export const FFSForm: FC<any> = ({ setShowForm }) => {
       onSuccess: (response) => {
         toast.success("Record saved successfully!");
         setShowForm(false);
-        console.log("response", response)
         reset();
       },
       onError: () => toast.error("Failed to save record"),

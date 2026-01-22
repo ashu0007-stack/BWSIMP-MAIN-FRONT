@@ -10,9 +10,7 @@ const extractApiData = <T>(response: any): T[] => {
   return [];
 };
 
-const getPanchayatsByBlock = async (blockId: number) => {
-  console.log("🌐 Fetching panchayats for block ID:", blockId);
-  
+const getPanchayatsByBlock = async (blockId: number) => {  
   try {
     const response = await axiosInstance({
       method: "GET",
@@ -29,7 +27,6 @@ export const useGramPanchayatsByBlock = (blockId?: number) => {
     queryKey: ["gramPanchayats", blockId],
     queryFn: async () => {
       if (!blockId || blockId === 0) {
-        console.log("⚠️ No valid blockId provided for panchayats");
         return [];
       }
       try {

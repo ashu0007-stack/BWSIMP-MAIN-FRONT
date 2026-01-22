@@ -32,10 +32,7 @@ export const ReportsDocumentationForm: FC<Props> = ({
   } = useForm<DocumentFormValues>();
 
   const submitForm = (data: any) => {
-    console.log("Submitted Reports & Documentation Data:", data);
-
     alert("Reports & Documentation saved successfully!");
-
     reset();
     onCloseForm();
   };

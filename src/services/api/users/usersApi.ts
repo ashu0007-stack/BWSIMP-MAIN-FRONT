@@ -25,7 +25,6 @@ export const getUsersList = async () => {
 
 // Edit user API
 export const editUser = async ( payload: any) => {
-  console.log("payload", payload?.userId)
   try {
     const response = await axiosInstance({
       method: "PATCH", // better to use PATCH for updates

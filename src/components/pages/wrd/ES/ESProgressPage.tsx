@@ -79,7 +79,6 @@ export default function ESProgressPage({ id, onClose }: ESProgressPageProps) {
       alert("Please select a project first");
       return;
     }
-    console.log(`Download ${format} for project ${selectedProject}`);
     setShowDownloadDropdown(false);
   };
 
@@ -494,7 +493,6 @@ export default function ESProgressPage({ id, onClose }: ESProgressPageProps) {
           reportType={selectedReportType}
           onClose={() => setShowReportForm(false)}
           onSubmit={(data) => {
-            console.log("Submit report:", data);
             setShowReportForm(false);
           }}
         />

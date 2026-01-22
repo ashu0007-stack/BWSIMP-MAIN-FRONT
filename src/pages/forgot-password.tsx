@@ -43,9 +43,6 @@ export default function ForgotPasswordPage() {
       // Success - show success state
       setIsSubmitted(true);
       toast.success("Password reset link sent to your email!");
-      
-      console.log("✅ Reset link sent successfully:", response.data);
-
     } catch (error: any) {
       console.error("❌ Forgot password error:", error);
       

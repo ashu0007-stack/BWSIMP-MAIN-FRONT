@@ -497,9 +497,6 @@ const DmsPage: React.FC = () => {
       
       const shareUrl = result.shareUrl;
       const shareToken = result.shareToken;
-      
-      console.log("🔗 Generated share URL:", shareUrl);
-      console.log("🔑 Share token:", shareToken);
 
       // Copy to clipboard
       await navigator.clipboard.writeText(shareUrl);

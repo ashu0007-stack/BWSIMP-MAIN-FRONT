@@ -54,7 +54,6 @@ export const Sidebar: FC<any> = ({ setActiveTab, activeTab }) => {
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
     return passwordRegex.test(password);
   };
-  console.log("Profile", profile);
   const getDepartmentFromUrl = () => {
     const path = router.pathname;
     if (path.startsWith('/wrd')) return 'WRD';

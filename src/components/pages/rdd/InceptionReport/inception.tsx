@@ -225,8 +225,6 @@ const InceptionReport: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form Data:', formData);
-    // Add form submission logic here
   };
 
   return (

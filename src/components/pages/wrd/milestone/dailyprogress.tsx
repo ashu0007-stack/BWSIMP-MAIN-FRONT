@@ -192,8 +192,6 @@ export default function MilestonePage({
       return;
     }
 
-    console.log("📤 Saving progress data:", formData);
-
     // Convert fortnight back to display format if needed
     const progressData = {
       packageNumber: selectedPackage,
@@ -833,7 +831,6 @@ export default function MilestonePage({
             const milestoneQty = Number(milestoneData.milestone_qty) || 0;
             const achievementPercentage = Number(milestoneData.achievement_percentage) || 0;
             const totalQty = Number(component.total_qty) || 0;
-            console.log("perceb", milestonePercentage);
             const rowData = [
               index + 1,
               component.name || '',

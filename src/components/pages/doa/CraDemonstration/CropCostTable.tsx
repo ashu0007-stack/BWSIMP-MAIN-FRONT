@@ -67,7 +67,6 @@ export const CropCostTable: FC = () => {
   const paginatedData = cropData.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const handleAddNew = () => {
-    console.log("Add Demonstration clicked");
   };
 
   const handleLocationChange = (level: string, value: string) => {

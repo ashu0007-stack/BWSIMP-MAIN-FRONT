@@ -25,9 +25,7 @@ export const fetchSubcomponentsByComponentId = async (componentId: number) => {
 };
 
 export const fetchgetSubworkcomponentsByworkComponentId = async (workcomponentId: number) => {
-  console.log("Fetching subworkcomponents for workcomponentId:", workcomponentId);
   const res = await axiosInstance.get(`${API_URL}/master/subworkcomponents/${workcomponentId}`);
-  console.log("API Response data:", res.data);
   return res.data;
 };
 

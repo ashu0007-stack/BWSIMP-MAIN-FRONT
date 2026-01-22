@@ -151,11 +151,6 @@ export const CondcutForm: FC<any> = ({ programData, selectProgrameId, onCloseFor
   }, [programData]);
 
 if (!programData) return null
-
-  console.log("selectPrograme", selectPrograme?.coordinator?.designation)
-
-
-
   return (
     <div className=" p-4 bg-white shadow-md rounded-xl mt-4 border border-gray-200 max-h-[90vh]  overflow-y-auto">
       <div className="flex flex-col sm:flex-row justify-between items-center bg-blue-900 rounded-lg px-5 py-4 mb-6 shadow">

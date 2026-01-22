@@ -25,7 +25,6 @@ export const OfficialParticipantForm: FC<OfficialParticipantFormProps> = ({
   } = useForm<OfficialParticipantFormValues>();
 
   const onSubmit = (data: OfficialParticipantFormValues) => {
-    console.log("Official Participant Data:", data);
     alert("Official participant saved successfully!");
     reset();
     setShowForm(false);

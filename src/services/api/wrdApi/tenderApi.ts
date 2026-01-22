@@ -45,8 +45,6 @@ export interface TenderResponse {
 // ✅ Create or Update tender (with FormData for file upload)
 export const saveTender = async (tenderData: FormData) => {
   try {
-    console.log("📤 Sending tender data to API...");
-    
     // Log form data entries (excluding files for cleaner logs)
     const entries: {[key: string]: any} = {};
     for (const [key, value] of tenderData.entries()) {
@@ -63,15 +61,11 @@ export const saveTender = async (tenderData: FormData) => {
         entries[key] = `File: ${value.name}`;
       }
     }
-    console.log("📝 FormData entries:", entries);
-
     const response = await axiosInstance.post(`${API_URL}/tenders`, tenderData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
     });
-    
-    console.log("✅ Tender saved successfully:", response.data);
     return response.data;
   } catch (error: any) {
     console.error("❌ Error saving tender:", error);
@@ -104,8 +98,6 @@ export const getTenderByWorkId = async (workId: number | string) => {
 export const getAllTenders = async (): Promise<TenderResponse[]> => {
   try {
     const response = await axiosInstance.get(`${API_URL}/tenders`);
-    console.log("✅ Tenders API Response:", response);
-    
     // Check if data exists
     if (!response.data) {
       console.warn("⚠️ No data returned from API");
@@ -114,9 +106,7 @@ export const getAllTenders = async (): Promise<TenderResponse[]> => {
     
     // API response is an object with data property
     if (response.data && typeof response.data === 'object' && response.data.success && Array.isArray(response.data.data)) {
-      const dataArray = response.data.data as TenderResponse[];
-      console.log("✅ Tenders API Response count:", dataArray?.length || 0);
-      
+      const dataArray = response.data.data as TenderResponse[];     
       // Transform the data if needed to match frontend expectations
       const transformedData = dataArray.map((tender: TenderResponse) => ({
         ...tender,

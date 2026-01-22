@@ -10,8 +10,6 @@ const downloadFile = (blob: Blob, filename: string) => {
 };
 
 export const exportAllTrainingExcel = (rowsData: any[]) => {
-
-  console.log("row data", rowsData)
   const worksheet = XLSX.utils.aoa_to_sheet([]);
 
   /* ================= HEADER ROW 1 (MAIN HEADS) ================= */

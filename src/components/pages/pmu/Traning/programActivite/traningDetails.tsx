@@ -74,15 +74,12 @@ export const ProgrammeTable: React.FC<Props> = ({ setActiveTab, openCalendarTab,
         toast("Deleted faild")
       }
     })
-    console.log("programId", programId)
   };
 
 
   const handleCalendar = (programId: number) => {
-    console.log("click on the calanter button and select the program id ", programId)
     openCalendarTab(programId)
   };
-
 
   const uniqueLevels = useMemo(() => {
     if (!programData?.data) return [];

@@ -240,8 +240,6 @@ useEffect(() => {
       remarks: data.remarks,
     };
 
-    console.log("UPDATE PAYLOAD 👉", payload);
-
     updateProgram(payload, {
       onSuccess: () => {
         toast.success("Training updated successfully");

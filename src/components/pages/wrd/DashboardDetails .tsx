@@ -157,7 +157,6 @@ export default function AssignedWorksDashboard() {
       try {
         const parsed = JSON.parse(stored);
         const user = parsed.user || parsed;
-        console.log("User:", user);
         const profile = {
           role: (user.role || "Operator").toString(),
           designation: user.designation || "Executive Engineer",

@@ -37,7 +37,6 @@ export const useFarmerDetails = (params = {}) => {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
-console.log("cluster code",params)
   return { isLoading, isError, data, error };
 };
 

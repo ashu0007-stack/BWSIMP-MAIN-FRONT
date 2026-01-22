@@ -5,10 +5,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 export const getAllFarmers = async () => {
   try {
-    console.log(`🚀 Fetching all farmers...`);
     const response = await axiosInstance.get(`${API_URL}/farmers`);
-    console.log(`✅ Farmers data received:`, response.data);
-    
     if (response.data.success) {
       return response.data.data || [];
     }

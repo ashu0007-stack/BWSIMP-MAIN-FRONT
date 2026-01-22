@@ -12,14 +12,11 @@
 
 // // GET: Fetch designations by department ID
 // export const getDesignationsByDeprtId = async (departmentId: number) => {
-//   console.log("API called with department id:", departmentId);
 
 //   const response = await axiosInstance({
 //     method: "GET",
 //     url: `${process.env.NEXT_PUBLIC_API_URL}/user/designations/${departmentId}`,
 //   });
-
-//   console.log("API Response:", response.data);
   
 //   // Adjust based on your actual API response structure
 //   // If your API returns { success: true, data: [...] }

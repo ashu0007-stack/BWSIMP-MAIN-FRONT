@@ -192,12 +192,10 @@ export const useAddGrievance = () => {
   return useMutation({
     mutationFn: async (grievanceData: any) => {
       try {
-        console.log('📤 Adding grievance:', grievanceData);
         const response = await axiosInstance.post(
           `${API_URL}/esRoutes/grievances`, 
           grievanceData
         );
-        console.log('✅ Grievance added successfully:', response.data);
         return response.data;
       } catch (error: any) {
         console.error('❌ Add grievance error:', {
@@ -300,8 +298,6 @@ export const useAddLabourCampFacility = () => {
   
   return useMutation({
     mutationFn: async (facilityData: AddLabourCampFacilityData) => {
-      console.log('📤 Adding labour camp facility:', facilityData);
-      
       const { data } = await axiosInstance.post(
         `${API_URL}/esRoutes/labour-camp/facilities`,
         facilityData
@@ -309,8 +305,6 @@ export const useAddLabourCampFacility = () => {
       return data;
     },
     onSuccess: (data, variables) => {
-      console.log('✅ Labour camp facility added successfully:', data);
-      
       // Invalidate relevant queries
       queryClient.invalidateQueries({ 
         queryKey: ["labour-camp-facilities", variables.work_id] 

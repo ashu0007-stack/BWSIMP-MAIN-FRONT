@@ -14,16 +14,7 @@ export default function DistrictDisplay({
   districtResolved, 
   formData 
 }: DistrictDisplayProps) {
-  
-  console.log("🔍 DistrictDisplay Props:", {
-    districtsType: typeof districts,
-    districtsIsArray: Array.isArray(districts),
-    districtsLength: districts?.length || 0,
-    formDataDistrict: formData.district,
-    districtType: typeof formData.district,
-    districtResolved,
-    loading
-  });
+
 
   // Safe district lookup - formData.district is now number
   const resolvedDistrict = formData.district && formData.district !== 0 && Array.isArray(districts)

@@ -195,12 +195,8 @@ export const createOrUpdateWorkLog = async (data: Omit<WorkLogRddData, 'id' | 'c
           formDataObj[key] = value;
         }
       }
-      console.log('FormData being sent:', formDataObj);
     } else {
-      console.log('JSON data being sent:', data);
     }
-    
-    console.log('API URL:', `${API_URL}/rdd/work-log-rdd`);
     
     const response = await axiosInstance.post<WorkLogRddResponse>(
       `${API_URL}/rdd/work-log-rdd`,

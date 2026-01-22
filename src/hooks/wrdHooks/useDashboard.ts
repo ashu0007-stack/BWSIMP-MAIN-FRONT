@@ -108,7 +108,6 @@ export const useRefreshDashboard = () => {
       return { success: true, message: 'Dashboard refreshed successfully' };
     },
     onSuccess: () => {
-      console.log('✅ Dashboard refreshed');
     },
     onError: (error) => {
       console.error('❌ Dashboard refresh failed:', error);
