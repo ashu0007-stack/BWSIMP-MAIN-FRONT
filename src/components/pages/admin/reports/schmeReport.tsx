@@ -61,6 +61,7 @@ interface Work {
   package_number: string;
   work_cost: number;
   target_km: number;
+  has_spurs: number;
   zone_name: string;
   contractor_name: string;
   award_status: string;
