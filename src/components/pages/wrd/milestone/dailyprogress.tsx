@@ -119,10 +119,10 @@ export default function MilestonePage({
     if (!user) return false;
 
     // Role IDs that can add progress (operator, admin, etc.)
-    const allowedRoles = ['Operator', 'Admin', 'Super Admin'];
+    const allowedRoles = ['Operator'];
 
     return allowedRoles.includes(user.role_name) ||
-      [5, 1, 2].includes(user.role_id);
+      [5].includes(user.role_id);
   };
 
   const { data: miles = [], isLoading: worksLoading } = useWorksmiles();
