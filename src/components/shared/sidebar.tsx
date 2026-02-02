@@ -117,6 +117,7 @@ export const Sidebar: FC<any> = ({ setActiveTab, activeTab }) => {
       { id: "usersDetails", label: "Manage Users", icon: Users, roles: [1] },
       { id: "addUser", label: "Add User", icon: UserPlus, roles: [1] },
       { id: "dms", label: "Document Upload", icon: FileText, roles: [1] },
+     
       {
         id: "reports",
         label: "Reports",
@@ -212,6 +213,7 @@ export const Sidebar: FC<any> = ({ setActiveTab, activeTab }) => {
           { id: "length", label: "Length", icon: CircleDot, roles: [1, 2, 3, 5, 6] },
           { id: "milestone", label: "Milestone", icon: ListChecks, roles: [1, 2, 3, 5, 6] },
           { id: "ESReport", label: "ESProgress", icon: CircleDot, roles: [1, 2, 3, 5, 6] },
+          { id: "pdo", label: "PDO", icon: FileText, roles: [1, 2, 3, 5, 6] },
         ],
       },
 
