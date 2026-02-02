@@ -22,6 +22,7 @@ import SLCManagement from "./PIMM/slc/slcParent";
 import WUACreationContainer from "./PIMM/wua/WUACreationContainer";
 import App from "../admin/work/work";
 import ESProgressPage from "./ES/ESProgressPage";
+import PDOProgressModule from "./pdo/pdoIndicator";
 export default function WrdLayout() {
   const [activeTab, setActiveTab] = useState("dashboard");
  // Load active tab from localStorage
@@ -69,6 +70,8 @@ export default function WrdLayout() {
         return <DmsPage/>;
       case "ESReport":
          return <ESProgressPage/>
+      case "pdo":
+          return <PDOProgressModule/>
         case "pimw" :
          return <Dashboard/>
       default:
