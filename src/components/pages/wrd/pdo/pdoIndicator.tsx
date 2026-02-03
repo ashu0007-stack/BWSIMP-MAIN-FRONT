@@ -696,133 +696,239 @@ const getWorkSpecificProgress = useMemo(() => {
             </div>
             
             {/* PDO2 - PEOPLE SECTION */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-800 flex items-center">
-                    <div className="w-3 h-6 bg-green-600 rounded mr-3"></div>
-                    PDO2 - People with enhanced resilience to climate risks
-                  </h2>
-                </div>
-              </div>
-              
-              {/* Total People Progress Card */}
-              <div className="border rounded-lg p-5 bg-gradient-to-br from-green-50 to-white mb-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="font-bold text-green-800 text-lg">People benefiting from climate resilient infrastructure</h3>
-                  </div>
-                  <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
-                    PDO2 Total
-                  </span>
-                </div>
-                
-                <div className="mb-4">
-                  <div className="flex justify-between text-sm text-gray-600 mb-2">
-                    <span>Overall Progress</span>
-                    <span className="font-semibold">{totalPeoplePercentage.toFixed(1)}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div 
-                      className="h-3 rounded-full bg-green-600"
-                      style={{ width: `${Math.min(totalPeoplePercentage, 100)}%` }}
-                    ></div>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-green-100 p-3 rounded-lg">
-                    <p className="text-sm text-green-800 font-medium">Target</p>
-                    <p className="text-xl font-bold text-green-700">{totalPeopleTarget.toLocaleString()} People</p>
-                  </div>
-                  <div className="bg-green-100 p-3 rounded-lg">
-                    <p className="text-sm text-green-800 font-medium">Achieved</p>
-                    <p className="text-xl font-bold text-green-700">{totalPeopleAchieved.toLocaleString()} People</p>
-                  </div>
-                </div>
-              </div>
-              
-              {/* 2 Cards in a row - Irrigation and Flood */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Irrigation Beneficiaries Card */}
-                <div className="border rounded-lg p-5 bg-gradient-to-br from-blue-50 to-white">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="font-bold text-blue-800 text-lg">People benefitting from improved irrigation infrastructure</h3>
-                    </div>
-                  </div>
-                  
-                  <div className="mb-4">
-                    <div className="flex justify-between text-sm text-gray-600 mb-2">
-                      <span>Progress</span>
-                      <span className="font-semibold">{getPercentage(irrigationPeopleIndicator).toFixed(1)}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-3">
-                      <div 
-                        className="h-3 rounded-full bg-blue-600"
-                        style={{ width: `${Math.min(getPercentage(irrigationPeopleIndicator), 100)}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-blue-100 p-3 rounded-lg">
-                      <p className="text-sm text-blue-800 font-medium">Target</p>
-                      <p className="text-xl font-bold text-blue-700">
-                        {getTarget(irrigationPeopleIndicator).toLocaleString()}
-                      </p>
-                      <p className="text-xs text-blue-600">People</p>
-                    </div>
-                    <div className="bg-green-100 p-3 rounded-lg">
-                      <p className="text-sm text-green-800 font-medium">Achieved</p>
-                      <p className="text-xl font-bold text-green-700">
-                        {getCumulative(irrigationPeopleIndicator).toLocaleString()}
-                      </p>
-                      <p className="text-xs text-green-600">People</p>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Flood Protection Beneficiaries Card */}
-                <div className="border rounded-lg p-5 bg-gradient-to-br from-cyan-50 to-white">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="font-bold text-cyan-800 text-lg">People benefitting from strengthened embankments and riverbanks</h3>
-                    </div>
-                  </div>
-                  
-                  <div className="mb-4">
-                    <div className="flex justify-between text-sm text-gray-600 mb-2">
-                      <span>Progress</span>
-                      <span className="font-semibold">{getPercentage(floodPeopleIndicator).toFixed(1)}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-3">
-                      <div 
-                        className="h-3 rounded-full bg-cyan-600"
-                        style={{ width: `${Math.min(getPercentage(floodPeopleIndicator), 100)}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-cyan-100 p-3 rounded-lg">
-                      <p className="text-sm text-cyan-800 font-medium">Target</p>
-                      <p className="text-xl font-bold text-cyan-700">
-                        {getTarget(floodPeopleIndicator).toLocaleString()}
-                      </p>
-                      <p className="text-xs text-cyan-600">People</p>
-                    </div>
-                    <div className="bg-green-100 p-3 rounded-lg">
-                      <p className="text-sm text-green-800 font-medium">Achieved</p>
-                      <p className="text-xl font-bold text-green-700">
-                        {getCumulative(floodPeopleIndicator).toLocaleString()}
-                      </p>
-                      <p className="text-xs text-green-600">People</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {/* PDO2 - PEOPLE SECTION */}
+<div className="bg-white rounded-lg shadow p-6">
+  <div className="flex items-center justify-between mb-6">
+    <div>
+      <h2 className="text-xl font-bold text-gray-800 flex items-center">
+        <div className="w-3 h-6 bg-green-600 rounded mr-3"></div>
+        PDO2 - People with enhanced resilience to climate risks
+      </h2>
+    </div>
+  </div>
+  
+  {/* Total People Progress Card */}
+  <div className="border rounded-lg p-5 bg-gradient-to-br from-green-50 to-white mb-6">
+    <div className="flex justify-between items-start mb-4">
+      <div>
+        <h3 className="font-bold text-green-800 text-lg">People benefiting from climate resilient infrastructure</h3>
+      </div>
+      <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
+        PDO2 Total
+      </span>
+    </div>
+    
+    <div className="mb-4">
+      <div className="flex justify-between text-sm text-gray-600 mb-2">
+        <span>Overall Progress</span>
+        <span className="font-semibold">{totalPeoplePercentage.toFixed(1)}%</span>
+      </div>
+      <div className="w-full bg-gray-200 rounded-full h-3">
+        <div 
+          className="h-3 rounded-full bg-green-600"
+          style={{ width: `${Math.min(totalPeoplePercentage, 100)}%` }}
+        ></div>
+      </div>
+    </div>
+    
+    <div className="grid grid-cols-2 gap-4">
+      <div className="bg-green-100 p-3 rounded-lg">
+        <p className="text-sm text-green-800 font-medium">Target</p>
+        <p className="text-xl font-bold text-green-700">{totalPeopleTarget.toLocaleString()} People</p>
+      </div>
+      <div className="bg-green-100 p-3 rounded-lg">
+        <p className="text-sm text-green-800 font-medium">Achieved</p>
+        <p className="text-xl font-bold text-green-700">{totalPeopleAchieved.toLocaleString()} People</p>
+      </div>
+    </div>
+  </div>
+  
+  {/* FEMALE & YOUTH BREAKDOWN CARDS - ADD THESE BACK */}
+  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    {/* Female Beneficiaries Card */}
+    <div className="border rounded-lg p-5 bg-gradient-to-br from-purple-50 to-white">
+      <div className="flex justify-between items-start mb-4">
+        <div>
+          <h3 className="font-bold text-purple-800 text-lg">People benefiting from climate resilient infrastructure - Female</h3>
+          {/* <p className="text-sm text-purple-600">(49% of total beneficiaries)</p> */}
+        </div>
+        {/* <span className="px-3 py-1 bg-purple-100 text-purple-800 text-sm font-medium rounded-full">
+          Women Empowerment
+        </span> */}
+      </div>
+      
+      <div className="mb-4">
+        <div className="flex justify-between text-sm text-gray-600 mb-2">
+          <span>Progress</span>
+          <span className="font-semibold">
+            {totalPeopleTarget > 0 
+              ? ((totalPeopleAchieved * 0.49) / (totalPeopleTarget * 0.49) * 100).toFixed(1) 
+              : "0.0"}%
+          </span>
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-3">
+          <div 
+            className="h-3 rounded-full bg-purple-600"
+            style={{ 
+              width: `${totalPeopleTarget > 0 
+                ? Math.min((totalPeopleAchieved * 0.49) / (totalPeopleTarget * 0.49) * 100, 100) 
+                : 0}%` 
+            }}
+          ></div>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-purple-100 p-3 rounded-lg">
+          <p className="text-sm text-purple-800 font-medium">Target</p>
+          <p className="text-xl font-bold text-purple-700">
+           {Math.round(totalPeopleTarget * 0.49).toLocaleString()}
+          </p>
+          <p className="text-xs text-purple-600">Women</p>
+        </div>
+        <div className="bg-green-100 p-3 rounded-lg">
+          <p className="text-sm text-green-800 font-medium">Achieved</p>
+          <p className="text-xl font-bold text-green-700">
+            {Math.round(totalPeopleAchieved * 0.49).toLocaleString()}
+          </p>
+          <p className="text-xs text-green-600">Women</p>
+        </div>
+      </div>
+    </div>
+    
+    {/* Youth Beneficiaries Card */}
+    <div className="border rounded-lg p-5 bg-gradient-to-br from-teal-50 to-white">
+      <div className="flex justify-between items-start mb-4">
+        <div>
+          <h3 className="font-bold text-teal-800 text-lg">People benefiting from climate resilient infrastructure - Youth</h3>
+          {/* <p className="text-sm text-teal-600">(29% of total beneficiaries)</p> */}
+        </div>
+        {/* <span className="px-3 py-1 bg-teal-100 text-teal-800 text-sm font-medium rounded-full">
+          Youth Engagement
+        </span> */}
+      </div>
+      
+      <div className="mb-4">
+        <div className="flex justify-between text-sm text-gray-600 mb-2">
+          <span>Progress</span>
+          <span className="font-semibold">
+            {totalPeopleTarget > 0 
+              ? ((totalPeopleAchieved * 0.29) / (totalPeopleTarget * 0.29) * 100).toFixed(1) 
+              : "0.0"}%
+          </span>
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-3">
+          <div 
+            className="h-3 rounded-full bg-teal-600"
+            style={{ 
+              width: `${totalPeopleTarget > 0 
+                ? Math.min((totalPeopleAchieved * 0.29) / (totalPeopleTarget * 0.29) * 100, 100) 
+                : 0}%` 
+            }}
+          ></div>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-teal-100 p-3 rounded-lg">
+          <p className="text-sm text-teal-800 font-medium">Target</p>
+          <p className="text-xl font-bold text-teal-700">
+            {Math.round(totalPeopleTarget * 0.29).toLocaleString()}
+          </p>
+          <p className="text-xs text-teal-600">Youth</p>
+        </div>
+        <div className="bg-green-100 p-3 rounded-lg">
+          <p className="text-sm text-green-800 font-medium">Achieved</p>
+          <p className="text-xl font-bold text-green-700">
+            {Math.round(totalPeopleAchieved * 0.29).toLocaleString()}
+          </p>
+          <p className="text-xs text-green-600">Youth</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  {/* 2 Cards in a row - Irrigation and Flood */}
+  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    {/* Irrigation Beneficiaries Card */}
+    <div className="border rounded-lg p-5 bg-gradient-to-br from-blue-50 to-white">
+      <div className="flex justify-between items-start mb-4">
+        <div>
+          <h3 className="font-bold text-blue-800 text-lg">People benefitting from improved irrigation infrastructure</h3>
+        </div>
+      </div>
+      
+      <div className="mb-4">
+        <div className="flex justify-between text-sm text-gray-600 mb-2">
+          <span>Progress</span>
+          <span className="font-semibold">{getPercentage(irrigationPeopleIndicator).toFixed(1)}%</span>
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-3">
+          <div 
+            className="h-3 rounded-full bg-blue-600"
+            style={{ width: `${Math.min(getPercentage(irrigationPeopleIndicator), 100)}%` }}
+          ></div>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-blue-100 p-3 rounded-lg">
+          <p className="text-sm text-blue-800 font-medium">Target</p>
+          <p className="text-xl font-bold text-blue-700">
+            {getTarget(irrigationPeopleIndicator).toLocaleString()}
+          </p>
+          <p className="text-xs text-blue-600">People</p>
+        </div>
+        <div className="bg-green-100 p-3 rounded-lg">
+          <p className="text-sm text-green-800 font-medium">Achieved</p>
+          <p className="text-xl font-bold text-green-700">
+            {getCumulative(irrigationPeopleIndicator).toLocaleString()}
+          </p>
+          <p className="text-xs text-green-600">People</p>
+        </div>
+      </div>
+    </div>
+    
+    {/* Flood Protection Beneficiaries Card */}
+    <div className="border rounded-lg p-5 bg-gradient-to-br from-cyan-50 to-white">
+      <div className="flex justify-between items-start mb-4">
+        <div>
+          <h3 className="font-bold text-cyan-800 text-lg">People benefitting from strengthened embankments and riverbanks</h3>
+        </div>
+      </div>
+      
+      <div className="mb-4">
+        <div className="flex justify-between text-sm text-gray-600 mb-2">
+          <span>Progress</span>
+          <span className="font-semibold">{getPercentage(floodPeopleIndicator).toFixed(1)}%</span>
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-3">
+          <div 
+            className="h-3 rounded-full bg-cyan-600"
+            style={{ width: `${Math.min(getPercentage(floodPeopleIndicator), 100)}%` }}
+          ></div>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-cyan-100 p-3 rounded-lg">
+          <p className="text-sm text-cyan-800 font-medium">Target</p>
+          <p className="text-xl font-bold text-cyan-700">
+            {getTarget(floodPeopleIndicator).toLocaleString()}
+          </p>
+          <p className="text-xs text-cyan-600">People</p>
+        </div>
+        <div className="bg-green-100 p-3 rounded-lg">
+          <p className="text-sm text-green-800 font-medium">Achieved</p>
+          <p className="text-xl font-bold text-green-700">
+            {getCumulative(floodPeopleIndicator).toLocaleString()}
+          </p>
+          <p className="text-xs text-green-600">People</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
           </div>
         ) : viewMode === "schemes" ? (
           /* WORKS LIST VIEW */
