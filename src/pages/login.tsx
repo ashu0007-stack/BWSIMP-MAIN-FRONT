@@ -2,45 +2,109 @@ import NavHeader from "@/components/shared/Header/NavHeader";
 import { useLogin } from "@/hooks/useAuth";
 import { NextPage } from "next";
 import { useForm, SubmitHandler } from "react-hook-form";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Link from "next/dist/client/link";
+import CryptoJS from 'crypto-js';
 
 interface LoginInputs {
   email: string;
   password: string;
 }
+
 const LoginForm: NextPage = () => {
-  const { mutate: login, isPending: loginIsPanding } = useLogin();
+  const { mutate: login, isPending: loginIsPending } = useLogin();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  
   const { register, handleSubmit, formState: { errors } } = useForm<LoginInputs>();
+
+  // Encryption function - FIXED VERSION
+  const encryptData = (data: string): string => {
+    try {
+      // Get encryption key from environment
+      const encryptionKey = process.env.NEXT_PUBLIC_ENCRYPTION_KEY;
+      
+      if (!encryptionKey) {
+        console.warn('Encryption key not found, sending plain text');
+        return data;
+      }
+      
+      // Trim key to 32 bytes (256 bits) if needed
+      const key = encryptionKey.substring(0, 64); // 64 hex chars = 32 bytes
+      
+      console.log('Encrypting with key:', key.substring(0, 10) + '...');
+      
+      // Use simple CryptoJS encryption
+      const encrypted = CryptoJS.AES.encrypt(data, key).toString();
+      
+      console.log('Encrypted result:', encrypted.substring(0, 50) + '...');
+      return encrypted;
+      
+    } catch (error) {
+      console.error('Encryption error:', error);
+      return data; // Fallback to plain text
+    }
+  };
+
   const onSubmit: SubmitHandler<LoginInputs> = (data) => {
     setLoading(true);
-    login(
-      data,
-      {
-        onSuccess: (res) => {
-          const userData = res?.userDetails;
-          const accessToken = res?.status?.accessToken;
-          const department = res?.userDetails?.department_name.toLowerCase();
-          const superAdmin = res?.userDetails?.is_super_admin;
-          sessionStorage.setItem("userdetail", JSON.stringify(userData));
-          sessionStorage.setItem("OAuthCredentials", accessToken);
-          if (superAdmin === 1) {
-            router.replace(`/admin`);
-          } else {
-            router.replace(`/${department}/dashboard`);
-          }
-        },
-        onError: (err: any) => {
-          alert("Login failed: " + (err?.response?.data?.message || err.message));
-          setLoading(false);
-        },
-      }
-    );
+    setError(null);
+    
+    try {
+      // Encrypt credentials before sending
+      const encryptedPayload = {
+        email: encryptData(data.email),
+        password: encryptData(data.password),
+        timestamp: Date.now()
+      };
+      
+      console.log('Sending encrypted payload:', {
+        email: encryptedPayload.email.substring(0, 50) + '...',
+        password: encryptedPayload.password.substring(0, 50) + '...',
+        timestamp: encryptedPayload.timestamp
+      });
+      
+      login(
+        encryptedPayload,
+        {
+          onSuccess: (res) => {
+            console.log('Login success:', res);
+            const userData = res?.userDetails;
+            const accessToken = res?.status?.accessToken;
+            const department = res?.userDetails?.department_name?.toLowerCase();
+            const superAdmin = res?.userDetails?.is_super_admin;
+            
+            // Store in sessionStorage (consider using HTTP-only cookies in production)
+            sessionStorage.setItem("userdetail", JSON.stringify(userData));
+            sessionStorage.setItem("OAuthCredentials", accessToken);
+            
+            if (superAdmin === 1) {
+              router.replace(`/admin`);
+            } else {
+              router.replace(`/${department}/dashboard`);
+            }
+          },
+          onError: (err: any) => {
+            console.error('Login error details:', err);
+            const errorMsg = err?.response?.data?.message || 
+                            err?.message || 
+                            "Login failed. Please check your credentials.";
+            setError(errorMsg);
+            alert(errorMsg);
+            setLoading(false);
+          },
+        }
+      );
+    } catch (error) {
+      console.error('Form submission error:', error);
+      alert('An error occurred. Please try again.');
+      setLoading(false);
+    }
   };
+
   return (
     <div className="min-h-screen flex flex-col">
       <NavHeader />
@@ -61,6 +125,13 @@ const LoginForm: NextPage = () => {
                 Enter your credentials to continue
               </p>
             </div>
+            
+            {error && (
+              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                {error}
+              </div>
+            )}
+            
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <div>
                 <label className="block text-gray-700 mb-1 font-medium">
@@ -68,7 +139,13 @@ const LoginForm: NextPage = () => {
                 </label>
                 <input
                   type="email"
-                  {...register("email", { required: "Email is required" })}
+                  {...register("email", { 
+                    required: "Email is required",
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: "Invalid email address"
+                    }
+                  })}
                   className="w-full px-4 py-2 border rounded-lg border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter your email"
                   disabled={loading}
@@ -82,7 +159,13 @@ const LoginForm: NextPage = () => {
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
-                    {...register("password", { required: "Password is required" })}
+                    {...register("password", { 
+                      required: "Password is required",
+                      minLength: {
+                        value: 6,
+                        message: "Password must be at least 6 characters"
+                      }
+                    })}
                     className="w-full px-4 py-2 border rounded-lg border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 pr-12"
                     placeholder="Enter your password"
                     disabled={loading}
@@ -119,4 +202,5 @@ const LoginForm: NextPage = () => {
     </div>
   );
 };
+
 export default LoginForm;
