@@ -236,6 +236,18 @@ export default function ESLabourCamp({ id }: ESLabourCampProps) {
             Add First Facility
           </button>
         </div>
+
+        {/* ✅ Facility Form Modal को यहाँ भी रेंडर करें */}
+        {showForm && (
+          <FacilityForm
+            facility={selectedFacility}
+            onClose={() => {
+              setShowForm(false);
+              setSelectedFacility(null);
+            }}
+            onSubmit={handleAddFacility}
+          />
+        )}
       </div>
     );
   }
