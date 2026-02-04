@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef,useMemo } from "react";
 import {
   BarChart,
   Bar,
@@ -31,6 +31,9 @@ interface MilestonePageProps {
 }
 
 interface Milestone {
+  division_id: any;
+  circle_id: any;
+  zone_id: any;
   work_name: string;
   contractor_name: string;
   package_number: string;
@@ -39,7 +42,7 @@ interface Milestone {
   contract_awarded_amount: string;
   work_commencement_date: string;
   work_stipulated_date: string;
-  actual_date_of_completion?: string; // ✅ Added missing property
+  actual_date_of_completion?: string;
 }
 
 interface Component {
@@ -83,6 +86,23 @@ interface PackageMilestoneComponent {
   milestone_4_percentage?: number;
   milestoneCount?: number;
 }
+interface UserData {
+  username: string;
+  email: string;
+  dept_id: number;
+  role: string;
+  role_id?: number;
+  role_name?: string;
+  department?: string;
+  designation?: string;
+  levelname?: string;
+  levelid?: number;
+  zone_id?: number;
+  circle_id?: number;
+  division_id?: number;
+  user_name?: string;
+  full_name?: string;
+}
 
 export default function MilestonePage({
   workId,
@@ -104,6 +124,47 @@ export default function MilestonePage({
   const [userRole, setUserRole] = useState<string>('');
   const [completedMilestones, setCompletedMilestones] = useState<number[]>([]); // ✅ Added state
 
+   useEffect(() => {
+    const getUserData = () => {
+      try {
+        if (typeof window !== "undefined") {
+          const userDetails = sessionStorage.getItem("userdetail");
+
+          if (userDetails) {
+            try {
+              const parsedData = JSON.parse(userDetails);
+              const userData: UserData = {
+                username: parsedData.full_name || parsedData.user_name || "Unknown User",
+                email: parsedData.email || "unknown@example.com",
+                dept_id: parsedData.department_id || 1,
+                role: parsedData.role_name || "user",
+                role_id: parsedData.role_id,
+                role_name: parsedData.role_name,
+                department: parsedData.department_name,
+                designation: parsedData.designation_name,
+                levelname: parsedData.level_name,
+                levelid: parsedData.user_level_id,
+                zone_id: parsedData.zone_id,
+                circle_id: parsedData.circle_id,
+                division_id: parsedData.division_id,
+                user_name: parsedData.user_name,
+                full_name: parsedData.full_name
+              };
+
+              setUser(userData);
+              setUserRole(parsedData.role_name || '');
+            } catch (parseError) {
+              console.error("Error parsing user data:", parseError);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error loading user data:", error);
+      }
+    };
+
+    getUserData();
+  }, []);
   useEffect(() => {
     // Get user details from sessionStorage
     const storedProfile = sessionStorage.getItem("userdetail");
@@ -117,12 +178,32 @@ export default function MilestonePage({
   // 🔹 Check if user has permission to add progress
   const canAddProgress = () => {
     if (!user) return false;
-
-    // Role IDs that can add progress (operator, admin, etc.)
+    
+    // Super admin can always add progress
+    if (user.role_id === 1) return true;
+    
+    const selectedWork = miles.find((w: Milestone) => w.package_number === selectedPackage);
+    
+    // Check if user is in the correct hierarchy for the selected work
+    if (selectedPackage && selectedWork) {
+      // Check zone
+      if (user.zone_id && selectedWork.zone_id !== user.zone_id) {
+        return false;
+      }
+      // Check circle
+      if (user.circle_id && selectedWork.circle_id !== user.circle_id) {
+        return false;
+      }
+      // Check division
+      if (user.division_id && selectedWork.division_id !== user.division_id) {
+        return false;
+      }
+    }
+    
+    // Allow specific roles (Operator or role_id 5)
     const allowedRoles = ['Operator'];
-
-    return allowedRoles.includes(user.role_name) ||
-      [5].includes(user.role_id);
+    return allowedRoles.includes(user.role_name || user.role || '') || 
+           [5].includes(user.role_id || 0);
   };
 
   const { data: miles = [], isLoading: worksLoading } = useWorksmiles();
@@ -1065,15 +1146,59 @@ export default function MilestonePage({
     cumulative: Number(row.cumulative) || 0,
   })) : [];
 
-  const filteredWorks = Array.isArray(miles) ? miles.filter(
-    (item: Milestone) =>
-      (item.package_number ?? "")
-        .toLowerCase()
-        .includes(searchPackage.toLowerCase()) &&
-      (item.contractor_name ?? "")
-        .toLowerCase()
-        .includes(searchContractor.toLowerCase())
-  ) : [];
+ const filteredWorks = useMemo(() => {
+    if (!Array.isArray(miles)) return [];
+    
+    // 1. Check if user is super admin (role_id = 1)
+    const isSuperAdmin = user?.role_id === 1;
+    
+    // 2. If super admin, show all works with search filter
+    if (isSuperAdmin) {
+      return miles.filter((w: Milestone) => {
+        const matchesSearch = 
+          searchPackage === '' ||
+          (w.package_number ?? "").toLowerCase().includes(searchPackage.toLowerCase());
+        
+        const matchesContractor = 
+          searchContractor === '' ||
+          (w.contractor_name ?? "").toLowerCase().includes(searchContractor.toLowerCase());
+        
+        return matchesSearch && matchesContractor;
+      });
+    }
+    
+    // 3. For non-super admin users, filter based on hierarchy
+    return miles.filter((w: Milestone) => {
+      // Check hierarchy matching
+      let matchesHierarchy = true;
+      
+      // Check zone if user has zone_id
+      if (user?.zone_id && w.zone_id !== user.zone_id) {
+        matchesHierarchy = false;
+      }
+      
+      // Check circle if user has circle_id
+      if (user?.circle_id && w.circle_id !== user.circle_id) {
+        matchesHierarchy = false;
+      }
+      
+      // Check division if user has division_id
+      if (user?.division_id && w.division_id !== user.division_id) {
+        matchesHierarchy = false;
+      }
+      
+      // Check search filters
+      const matchesSearch = 
+        searchPackage === '' ||
+        (w.package_number ?? "").toLowerCase().includes(searchPackage.toLowerCase());
+      
+      const matchesContractor = 
+        searchContractor === '' ||
+        (w.contractor_name ?? "").toLowerCase().includes(searchContractor.toLowerCase());
+      
+      return matchesHierarchy && matchesSearch && matchesContractor;
+    });
+  }, [miles, user, searchPackage, searchContractor]);
 
   const selectedWork = miles.find(
     (w: Milestone) => w.package_number === selectedPackage
@@ -1375,7 +1500,7 @@ export default function MilestonePage({
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse border border-gray-400">
                   <thead>
-                    <tr className="bg-gray-100 text-gray-800">
+                    <tr className="bg-gray-100 text-gray-800  whitespace-nowrap">
                       <th className="border border-gray-400 p-3 font-semibold">Package No.</th>
                       <th className="border border-gray-400 p-3 font-semibold">Work Name</th>
                       <th className="border border-gray-400 p-3 font-semibold">Agency Name</th>
