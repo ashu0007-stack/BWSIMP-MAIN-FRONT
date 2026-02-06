@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BarChart2, MapPin, Users } from 'lucide-react';
+import { MapPin, Users } from 'lucide-react';
 
 interface CardData {
     title: string;
@@ -11,155 +11,13 @@ interface CardData {
     stats: Array<{
         label: string;
         value: string | React.ReactNode;
+        tooltip?: {
+            districts?: string[];
+            blocks?: string[];
+        };
     }>;
 }
 
-// Function to render HTML with formatting
-const renderOverview = (overview: string | React.ReactNode) => {
-    if (typeof overview === 'string') {
-        return <div dangerouslySetInnerHTML={{ __html: overview }} />;
-    }
-    return overview;
-};
-
-const cardsOverview: CardData[] = [
-    {
-        title: "BWSIMP Overview",
-        subtitle: "Project Overview",
-        desc: "Flagship initiative for water security and irrigation modernization in Bihar.",
-        overview: `The Bihar Water Security and Irrigation Modernization Project (BWSIMP) for Rs.4415 Cr. is a flagship comprehensive initiative of the Government of Bihar, funded by the World Bank, aimed at strengthening irrigation services, Flood Risk reduction, and water governance across the state; the project will be executed from 2025 to 2032. Bihar faces recurring challenges of floods in the north and droughts in the south thereby severely affecting agriculture, livelihoods, existing infra structures, etc. The gap between irrigation potential created and that utilized remains significant due to aging infrastructure, weak operation and maintenance systems, limited community participation, etc. The project aims at addressing challenges through an integrated approach that combines modern irrigation infrastructure, flood risk reduction measures, institutional reforms, and climate-resilient agricultural practices. In addition, the project emphasizes Participatory Irrigation Management (PIM), use of advanced data and forecasting tools, and farmer-centric irrigation service delivery to ensure long-term sustainability and improved water productivity.`,
-        dept: "BWSIMP",
-        color: "blue",
-        stats: [
-            { label: "Project Cost", value: "₹4,415 Cr" },
-            {
-                label: "Funding Agency", value: (
-                    <div className="flex flex-wrap gap-1.5">
-                        <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                            World Bank: 70%
-                        </span>
-                        <span className="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                            State Govt: 30%
-                        </span>
-                    </div>
-                )
-            },
-            { label: "Duration", value: "2025 - 2032" },
-            { label: "Coverage", value: "10 Districts, 72 Blocks" },
-            { label: "Beneficiaries", value: "4.34 Million People" },
-            { label: "SPMU", value: "FMISC" },
-            { label: "PIU", value: "WRD,DOA,RDD" }
-        ]
-    },
-    {
-        title: "WRD Overview",
-        subtitle: "Water Resources Department",
-        desc: "Implementing agency responsible for irrigation infrastructure and water management.",
-        overview: `The Water Resources Department (WRD), Government of Bihar is the primary implementing agency for BWSIMP. The department is responsible for:
-    • Planning, development, and management of water resources
-    • Implementation of major and medium irrigation schemes
-    • Flood control measures and river management
-    • Rehabilitation and modernization of aging infrastructure
-    • Capacity building through WALMI (Water & Land Management Institute)
-    • Strengthening Water User Associations (WUAs)
-    WRD plays a crucial role in executing all project components including climate-resilient irrigation, flood risk reduction, and water governance reforms.`,
-        dept: "WRD",
-        color: "cyan",
-        stats: [
-            { label: "Project Cost", value: "₹4,145 Cr. Estimated" },
-            {
-                label: "Funding Agency", value: (
-                    <div className="flex flex-wrap gap-1.5">
-                        <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                            World Bank: 70%
-                        </span>
-                        <span className="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                            State Govt: 30%
-                        </span>
-                    </div>
-                )
-            },
-            { label: "Duration", value: "2025 - 2032" },
-            { label: "Coverage", value: "10 Districts, 72 Blocks" },
-            { label: "Beneficiaries", value: "4.34 Million People" },
-            { label: "SPMU", value: "FMISC" },
-            { label: "PIU", value: "WRD" }
-        ]
-        },
-        {
-            title: "DoA Overview",
-            subtitle: "Department of Agriculture",
-            desc: "Promotion of Climate Resilient Agriculture (CRA) practices.",
-            overview: `<strong>Climate change poses significant challenges to agricultural sustainability and livelihoods, particularly for smallholder farmers.</strong> In response, Climate Resilient Agriculture (CRA) has been integrated as a key sub-component of the Bihar Water Security and Irrigation Modernization Project (BWSIMP) to promote climate-smart practices and strengthen agricultural resilience in project command areas. The CRA component focuses on addressing climate risks while ensuring sustainable agricultural production, improving productivity and enhancing the resilience of smallholders. The key objectives of CRA are to enhance agricultural productivity, improve resource-use efficiency, strengthen farmers’ capacities and increase farm incomes. <br>
-
-        <strong>Project Milestones:</strong><br>
-        • <strong>Institutional Setup and Project Initiation:</strong> Establish and operationalize Bihar Centre for Climate Resilient Agriculture Systems as a central hub for climate-resilient agriculture planning and coordination. Additionally, the establishment of the BCCRAS is expected to foster a robust institutional framework for scaling CRA in the state of Bihar.<br>
-        • <strong>Climate Resilient Agriculture (CRA) Technologies Demonstration & Adoption:</strong> Implement on-farm demonstrations of Direct Seeded Rice (DSR), crop diversification and other CRA technologies across 50,000 hectares in project districts to showcase productivity, resource efficiency and climate benefits.<br>
-        • <strong>Capacity Building & Community Engagement:</strong> Strengthen technical and operational capacities of DoA officials, Water User Associations (WUAs) and farmers to ensure knowledge transfer and wider adoption of CRA practices.<br>
-        • <strong>Technology Innovation:</strong> Develop and pilot Command Area Agriculture Decision Support System (CAA-DSS) to integrate weather, soil, crop, and water data, delivering real-time advisories.<br><br>
-        • <strong>MIS Integration:</strong> All field-level data is systematically captured and logged in the management information system (MIS), ensuring accuracy and transparency. This enables real-time monitoring, analysis and informed decision-making.<br>
-        • <strong>Carbon Market:</strong> Establish systems for climate-smart carbon credit generation and finalize the carbon credit verification process and facilitate the transaction for participating farmers.<br>
-            • <strong>Sustainability and Partnerships:</strong> Build robust multi-stakeholder partnerships, mainstream CRA technologies, fully integrate CAA-DSS into farmer services (advisories, market linkages) and finalize carbon credit verification and transactions to provide farmers with direct economic benefits from reduced emissions.`,
-            dept: "DoA",
-            color: "green",
-            stats: [
-                { label: "Project Cost", value: "₹220 Cr" },
-                {
-                    label: "Funding Agency", value: (
-                        <div className="flex flex-wrap gap-1.5">
-                            <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                                World Bank: 70%
-                            </span>
-                            <span className="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                                State Govt: 30%
-                            </span>
-                        </div>
-                    )
-                },
-                { label: "Duration", value: "2025 - 2032" },
-                { label: "Coverage", value: "6 Districts, 11 Blocks" },
-                { label: "Beneficiaries", value: "-" },
-                { label: "SPMU", value: "FMISC" },
-                { label: "PIU", value: "DOA" }
-            ]
-        },
-        {
-            title: "RDD Overview",
-            subtitle: "Rural Development Department",
-            desc: "Improved agricultural productivity by Infrastructure development & farming system resilience",
-            overview: `The Rural Development Department (RDD) is a Project Implementing Unit under BWSIMP and leads On-Farm Development (OFD) in irrigation commands restored under <strong>Component 1: Climate Resilient Irrigation (CRI)</strong>.
-            RDD ensures that rehabilitated irrigation systems are converted into effective and efficient farm-level irrigation services, by addressing the last-mile delivery of water through field channels and sustainable O&M mechanisms.
-
-            <strong>Key responsibilities under BWSIMP include </strong>:
-            •	On-farm development in restored irrigation commands through construction of field channels using MGNREGA funds to ensure last-mile water delivery.
-                <strong>Key Information</strong>
-            •   <b>Project Component</b>: Climate Resilient Irrigation 
-            •   <b>Activity</b>: On-Farm Development
-            •   <b>Focus</b>: Better water use, fair sharing, and long-term maintenance`,
-            dept: "RDD",
-            color: "orange",
-            stats: [
-                { label: "Project Cost", value: "₹50 Cr" },
-                {
-                    label: "Funding Agency", value: (
-                        <div className="flex flex-wrap gap-1.5">
-                            <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                                World Bank: 70%
-                            </span>
-                            <span className="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                                State Govt: 30%
-                            </span>
-                        </div>
-                    )
-                },
-                { label: "Duration", value: "2025 - 2032" },
-                { label: "Coverage", value: "-" },
-                { label: "Beneficiaries", value: "-" },
-                { label: "SPMU", value: "FMISC" },
-                { label: "PIU", value: "RDD" }
-            ]
-        }
-];
 const colorClasses = {
     blue: {
         bg: 'bg-blue-50',
@@ -172,7 +30,9 @@ const colorClasses = {
         lightText: 'text-blue-600',
         dot: 'bg-blue-500',
         cardBg: 'bg-blue-100',
-        cardBorder: 'border-blue-300'
+        cardBorder: 'border-blue-300',
+        tooltipBg: 'bg-blue-50',
+        tooltipBorder: 'border-blue-200'
     },
     cyan: {
         bg: 'bg-cyan-50',
@@ -215,6 +75,293 @@ const colorClasses = {
     }
 };
 
+// Coverage Item Component (hoverable for tooltip) - DEFINED BEFORE USE
+const CoverageItem = ({
+    type,
+    count,
+    colorClass
+}: {
+    type: 'districts' | 'blocks';
+    count: number;
+    colorClass: any;
+}) => {
+    const [isHovered, setIsHovered] = useState(false);
+
+    return (
+        <div
+            className="relative group"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+        >
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-blue-100 transition-colors cursor-help">
+                {type === 'districts' ? (
+                    <MapPin className="w-3.5 h-3.5 text-blue-600" />
+                ) : (
+                    <Users className="w-3.5 h-3.5 text-blue-600" />
+                )}
+                <span className="font-semibold text-blue-800">
+                    {count} {type.charAt(0).toUpperCase() + type.slice(1)}
+                </span>
+            </div>
+
+            {/* Tooltip */}
+            <div className={`absolute z-50 w-80 max-w-[90vw] ${colorClass.tooltipBg} border ${colorClass.tooltipBorder} rounded-lg shadow-xl p-4 transition-all duration-200 transform -translate-x-1/2 left-1/2 mt-2 ${isHovered ? 'opacity-100 visible' : 'opacity-0 invisible'
+                }`}>
+                <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-8 border-r-8 border-b-8 border-l-transparent border-r-transparent border-b-blue-200"></div>
+                <div className="absolute -top-1.5 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-7 border-r-7 border-b-7 border-l-transparent border-r-transparent border-b-blue-50"></div>
+
+                <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                    {type === 'districts' ? (
+                        <>
+                            <MapPin className="w-4 h-4" />
+                            Districts ({count})
+                        </>
+                    ) : (
+                        <>
+                            <Users className="w-4 h-4" />
+                            Blocks ({count})
+                        </>
+                    )}
+                </h4>
+
+                {type === 'districts' ? (
+                    <div className="space-y-2">
+                        {[
+                            "Bhojpur", "Buxar", "Darbhanga", "Gopalganj", "Kaimur", "Katihar", "Madhubani", "Rohtas", "Samastipur", "Supaul",
+                        ].map((district, idx) => (
+                            <div key={idx} className="flex items-center gap-3 p-2 bg-white rounded border border-gray-200 hover:bg-blue-50 transition-colors">
+                                <span className="w-6 h-6 flex items-center justify-center bg-blue-500 text-white text-xs rounded-full">
+                                    {idx + 1}
+                                </span>
+                                <span className="text-sm font-medium text-gray-800">{district}</span>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="max-h-64 overflow-y-auto">
+                        <div className="grid grid-cols-3 gap-1">
+                            {[
+                                "Andhratharhi", "Babubarhi", "Ghoghardiha", "Jhanjharpur", "Khajauli",
+                                "Lakhnaur", "Laukaha", "Laukahi", "Madhepur", "Gopalganj",
+                                "Manjha", "Thawe", "Uchkagaon", "Aigaon", "Arrah",
+                                "Barhara", "Behea", "Charpokhari", "Garhani", "Jagdishpur",
+                                "Koilwar", "Piro", "Sahar", "Sandesh", "Shahpur",
+                                "Tarari", "Udwant Nagar", "Barhampur", "Buxar", "Chakki",
+                                "Chaugain", "Chausa", "Dumroan", "Itarhi", "Kesath",
+                                "Nawanagar", "Kudra", "Mohania", "Nuaon", "Ramgarh",
+                                "Akhorhi Gola", "Bikramganj", "Chenari", "Dawath", "Dehri",
+                                "Dinara", "Karakat", "Kargahar", "Kochas", "Nasriganj",
+                                "Nokha", "Rajpur", "Sanjhauli", "Sasaram", "Sheosagar",
+                                "Suryapura", "Bahadurpur", "Baheri", "Biraul", "Gaura Bauram",
+                                "Hayaghat", "Kusheshwarsthan", "Kusheshwarsthan E", "Kursela", "Bithan",
+                                "Hasanpur", "Shivajinagar", "Singhia", "Basantpur", "Kishanpur",
+                                "Saraigarh Bhaptiyahi", "Supaul"
+                            ].map((block, idx) => (
+                                <div
+                                    key={idx}
+                                    className="text-xs bg-gray-50 border border-gray-200 text-gray-700 px-1 py-2 rounded hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 transition-colors duration-150 text-left"
+                                    title={block}
+                                >
+                                    <span className="w-6 h-6 flex items-center justify-center bg-blue-500 text-white text-xs rounded-full">
+                                        {idx + 1}
+                                    </span>
+                                    {block}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+// Function to render HTML with formatting
+const renderOverview = (overview: string | React.ReactNode) => {
+    if (typeof overview === 'string') {
+        return <div dangerouslySetInnerHTML={{ __html: overview }} />;
+    }
+    return overview;
+};
+
+const cardsOverview: CardData[] = [
+    {
+        title: "BWSIMP Overview",
+        subtitle: "Project Overview",
+        desc: "Flagship initiative for water security and irrigation modernization in Bihar.",
+        overview: `The Bihar Water Security and Irrigation Modernization Project (BWSIMP) for Rs.4415 Cr. is a flagship comprehensive initiative of the Government of Bihar, funded by the World Bank, aimed at strengthening irrigation services, Flood Risk reduction, and water governance across the state; the project will be executed from 2025 to 2032. Bihar faces recurring challenges of floods in the north and droughts in the south thereby severely affecting agriculture, livelihoods, existing infra structures, etc. The gap between irrigation potential created and that utilized remains significant due to aging infrastructure, weak operation and maintenance systems, limited community participation, etc. The project aims at addressing challenges through an integrated approach that combines modern irrigation infrastructure, flood risk reduction measures, institutional reforms, and climate-resilient agricultural practices. In addition, the project emphasizes Participatory Irrigation Management (PIM), use of advanced data and forecasting tools, and farmer-centric irrigation service delivery to ensure long-term sustainability and improved water productivity.`,
+        dept: "BWSIMP",
+        color: "blue",
+        stats: [
+            { label: "Project Cost", value: "₹4,415 Cr" },
+            {
+                label: "Funding Agency", value: (
+                    <div className="flex flex-wrap gap-1.5">
+                        <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                            World Bank: 70%
+                        </span>
+                        <span className="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                            State Govt: 30%
+                        </span>
+                    </div>
+                )
+            },
+            { label: "Duration", value: "2025 - 2032" },
+            {
+                label: "Coverage",
+                value: (
+                    <div className="flex flex-col gap-1 items-end">
+                        <CoverageItem
+                            type="districts"
+                            count={10}
+                            colorClass={colorClasses.blue}
+                        />
+                        <CoverageItem
+                            type="blocks"
+                            count={72}
+                            colorClass={colorClasses.blue}
+                        />
+                    </div>
+                ),
+                tooltip: {
+                    districts: [
+                        "Madhubani", "Gopalganj", "Bhojpur", "Buxar", "Kaimur",
+                        "Rohtas", "Darbhanga", "Katihar", "Samastipur", "Supaul"
+                    ],
+                    blocks: [
+                        "Andhratharhi", "Babubarhi", "Ghoghardiha", "Jhanjharpur", "Khajauli",
+                        "Lakhnaur", "Laukaha", "Laukahi", "Madhepur", "Gopalganj",
+                        "Manjha", "Thawe", "Uchkagaon", "Aigaon", "Arrah",
+                        "Barhara", "Behea", "Charpokhari", "Garhani", "Jagdishpur",
+                        "Koilwar", "Piro", "Sahar", "Sandesh", "Shahpur",
+                        "Tarari", "Udwant Nagar", "Barhampur", "Buxar", "Chakki",
+                        "Chaugain", "Chausa", "Dumroan", "Itarhi", "Kesath",
+                        "Nawanagar", "Kudra", "Mohania", "Nuaon", "Ramgarh",
+                        "Akhorhi Gola", "Bikramganj", "Chenari", "Dawath", "Dehri",
+                        "Dinara", "Karakat", "Kargahar", "Kochas", "Nasriganj",
+                        "Nokha", "Rajpur", "Sanjhauli", "Sasaram", "Sheosagar",
+                        "Suryapura", "Bahadurpur", "Baheri", "Biraul", "Gaura Bauram",
+                        "Hayaghat", "Kusheshwarsthan", "Kusheshwarsthan E", "Kursela", "Bithan",
+                        "Hasanpur", "Shivajinagar", "Singhia", "Basantpur", "Kishanpur",
+                        "Saraigarh Bhaptiyahi", "Supaul"
+                    ]
+                }
+            },
+            { label: "Beneficiaries", value: "4.34 Million People" },
+            { label: "SPMU", value: "FMISC" },
+            { label: "PIU", value: "WRD,DOA,RDD" }
+        ]
+    },
+    {
+        title: "WRD Overview",
+        subtitle: "Water Resources Department",
+        desc: "Implementing agency responsible for irrigation infrastructure and water management.",
+        overview: `The Water Resources Department (WRD), Government of Bihar is the primary implementing agency for BWSIMP. The department is responsible for:
+    • Planning, development, and management of water resources
+    • Implementation of major and medium irrigation schemes
+    • Flood control measures and river management
+    • Rehabilitation and modernization of aging infrastructure
+    • Capacity building through WALMI (Water & Land Management Institute)
+    • Strengthening Water User Associations (WUAs)
+    WRD plays a crucial role in executing all project components including climate-resilient irrigation, flood risk reduction, and water governance reforms.`,
+        dept: "WRD",
+        color: "cyan",
+        stats: [
+            { label: "Project Cost", value: "₹4,145 Cr. Estimated" },
+            {
+                label: "Funding Agency", value: (
+                    <div className="flex flex-wrap gap-1.5">
+                        <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                            World Bank: 70%
+                        </span>
+                        <span className="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                            State Govt: 30%
+                        </span>
+                    </div>
+                )
+            },
+            { label: "Duration", value: "2025 - 2032" },
+            { label: "Coverage", value: "10 Districts, 72 Blocks" },
+            { label: "Beneficiaries", value: "4.34 Million People" },
+            { label: "SPMU", value: "FMISC" },
+            { label: "PIU", value: "WRD" }
+        ]
+    },
+    {
+        title: "DoA Overview",
+        subtitle: "Department of Agriculture",
+        desc: "Promotion of Climate Resilient Agriculture (CRA) practices.",
+        overview: `<strong>Climate change poses significant challenges to agricultural sustainability and livelihoods, particularly for smallholder farmers.</strong> In response, Climate Resilient Agriculture (CRA) has been integrated as a key sub-component of the Bihar Water Security and Irrigation Modernization Project (BWSIMP) to promote climate-smart practices and strengthen agricultural resilience in project command areas. The CRA component focuses on addressing climate risks while ensuring sustainable agricultural production, improving productivity and enhancing the resilience of smallholders. The key objectives of CRA are to enhance agricultural productivity, improve resource-use efficiency, strengthen farmers' capacities and increase farm incomes. <br>
+
+        <strong>Project Milestones:</strong><br>
+        • <strong>Institutional Setup and Project Initiation:</strong> Establish and operationalize Bihar Centre for Climate Resilient Agriculture Systems as a central hub for climate-resilient agriculture planning and coordination. Additionally, the establishment of the BCCRAS is expected to foster a robust institutional framework for scaling CRA in the state of Bihar.<br>
+        • <strong>Climate Resilient Agriculture (CRA) Technologies Demonstration & Adoption:</strong> Implement on-farm demonstrations of Direct Seeded Rice (DSR), crop diversification and other CRA technologies across 50,000 hectares in project districts to showcase productivity, resource efficiency and climate benefits.<br>
+        • <strong>Capacity Building & Community Engagement:</strong> Strengthen technical and operational capacities of DoA officials, Water User Associations (WUAs) and farmers to ensure knowledge transfer and wider adoption of CRA practices.<br>
+        • <strong>Technology Innovation:</strong> Develop and pilot Command Area Agriculture Decision Support System (CAA-DSS) to integrate weather, soil, crop, and water data, delivering real-time advisories.<br><br>
+        • <strong>MIS Integration:</strong> All field-level data is systematically captured and logged in the management information system (MIS), ensuring accuracy and transparency. This enables real-time monitoring, analysis and informed decision-making.<br>
+        • <strong>Carbon Market:</strong> Establish systems for climate-smart carbon credit generation and finalize the carbon credit verification process and facilitate the transaction for participating farmers.<br>
+            • <strong>Sustainability and Partnerships:</strong> Build robust multi-stakeholder partnerships, mainstream CRA technologies, fully integrate CAA-DSS into farmer services (advisories, market linkages) and finalize carbon credit verification and transactions to provide farmers with direct economic benefits from reduced emissions.`,
+        dept: "DoA",
+        color: "green",
+        stats: [
+            { label: "Project Cost", value: "₹220 Cr" },
+            {
+                label: "Funding Agency", value: (
+                    <div className="flex flex-wrap gap-1.5">
+                        <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                            World Bank: 70%
+                        </span>
+                        <span className="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                            State Govt: 30%
+                        </span>
+                    </div>
+                )
+            },
+            { label: "Duration", value: "2025 - 2032" },
+            { label: "Coverage", value: "6 Districts, 11 Blocks" },
+            { label: "Beneficiaries", value: "-" },
+            { label: "SPMU", value: "FMISC" },
+            { label: "PIU", value: "DOA" }
+        ]
+    },
+    {
+        title: "RDD Overview",
+        subtitle: "Rural Development Department",
+        desc: "Improved agricultural productivity by Infrastructure development & farming system resilience",
+        overview: `The Rural Development Department (RDD) is a Project Implementing Unit under BWSIMP and leads On-Farm Development (OFD) in irrigation commands restored under <strong>Component 1: Climate Resilient Irrigation (CRI)</strong>.
+        RDD ensures that rehabilitated irrigation systems are converted into effective and efficient farm-level irrigation services, by addressing the last-mile delivery of water through field channels and sustainable O&M mechanisms.
+
+        <strong>Key responsibilities under BWSIMP include </strong>:
+        • On-farm development in restored irrigation commands through construction of field channels using MGNREGA funds to ensure last-mile water delivery.
+            <strong>Key Information</strong>
+        •   <b>Project Component</b>: Climate Resilient Irrigation 
+        •   <b>Activity</b>: On-Farm Development
+        •   <b>Focus</b>: Better water use, fair sharing, and long-term maintenance`,
+        dept: "RDD",
+        color: "orange",
+        stats: [
+            { label: "Project Cost", value: "₹50 Cr" },
+            {
+                label: "Funding Agency", value: (
+                    <div className="flex flex-wrap gap-1.5">
+                        <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                            World Bank: 70%
+                        </span>
+                        <span className="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                            State Govt: 30%
+                        </span>
+                    </div>
+                )
+            },
+            { label: "Duration", value: "2025 - 2032" },
+            { label: "Coverage", value: "-" },
+            { label: "Beneficiaries", value: "-" },
+            { label: "SPMU", value: "FMISC" },
+            { label: "PIU", value: "RDD" }
+        ]
+    }
+];
+
 const projectComponents = [
     {
         title: "Climate Resilient Irrigation",
@@ -226,7 +373,7 @@ const projectComponents = [
         desc: `Flooding is a persistent and serious challenge in Bihar, especially in North Bihar. Heavy monsoon rainfall, combined with sediment-laden river flows coming from the steep catchments of Nepal into the flat plains of North Bihar, causes swelling rivers to overflow the banks almost every year. These recurring floods damage homes, crops, roads, embankments, and irrigation systems, repeatedly disrupting livelihoods and slowing development. Although embankments have been constructed over time, many are old, weakened, or affected by erosion, leaving several vulnerable river stretches inadequately protected.
 To address these challenges, the Bihar Water Security and Irrigation Modernization Project (BWSIMP), supported by the World Bank, includes a dedicated Flood Risk Reduction (FRR) component focused on strengthening flood protection at the most critical locations.
 The key structural interventions under this component include: (i) Restoration of 25 spurs along the Eastern Kosi Embankment, (ii) Strengthening of the Bagmati Left Embankment, (iii) Extension and Restoration of spurs along the Sikar Hatta–Manjhari Bund on the Kosi River, and (iv) Targeted anti-erosion works in the Patthartola–Kamlakani (Kursela) reach. Together, these projects aim to stabilize riverbanks, reduce erosion, minimize the risk of embankment breaches, and protect settlements, farmland, and rural infrastructure in some of the most flood-prone areas of the state.
-Combined with improved flood forecasting and early warning systems providing 3–5 days’ advance notice, and other non-structural flood management measures, these interventions will significantly reduce flood damage, improve preparedness, and enhance the long-term resilience of communities across North Bihar.`,
+Combined with improved flood forecasting and early warning systems providing 3–5 days' advance notice, and other non-structural flood management measures, these interventions will significantly reduce flood damage, improve preparedness, and enhance the long-term resilience of communities across North Bihar.`,
         icon: "🛡️",
     },
     {
@@ -433,14 +580,23 @@ export default function OverviewCard() {
 
                                     <div className="space-y-5 mb-6">
                                         {selectedCard.stats.map((stat, index) => (
-                                            <div key={index} className="flex justify-between items-center py-2 border-b border-gray-300 last:border-0">
-                                                <span className="text-sm text-gray-700 font-medium">{stat.label}</span>
-                                                <span className={`font-semibold text-right ${colorClasses[selectedCard.color as keyof typeof colorClasses].text}`}>
-                                                    {stat.value}
-                                                </span>
+                                            <div key={index} className="py-2 border-b border-gray-300 last:border-0">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-sm text-gray-700 font-medium">{stat.label}</span>
+                                                    <div className={`font-semibold text-right ${colorClasses[selectedCard.color as keyof typeof colorClasses].text}`}>
+                                                        {stat.value}
+                                                    </div>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
+
+                                    {/* Note about hover functionality for BWSIMP */}
+                                    {selectedCard.title === "BWSIMP Overview" && (
+                                        <div className="text-xs text-gray-500 text-center mt-4 italic">
+                                            ℹ️ Hover over "Districts" or "Blocks" to see complete lists
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

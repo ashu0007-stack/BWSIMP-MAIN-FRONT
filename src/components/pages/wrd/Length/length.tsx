@@ -15,8 +15,8 @@ import {
   Cell
 } from "recharts";
 import AddProgressForm from "./AddProgressForm";
-import AddSpurProgressForm from "./AddSpurProgress"; // नया import
-import { useWorks, usePackageProgress, useAddProgressEntry, useAddSpurProgressEntry} from "@/hooks/wrdHooks/useLength";
+import AddSpurProgressForm from "./AddSpurProgress";
+import { useWorks, usePackageProgress, useAddProgressEntry, useAddSpurProgressEntry } from "@/hooks/wrdHooks/useLength";
 import SpurProgressComponent from "./SpurProgressComponent";
 import { useReportGenerator } from "./lengthReport";
 import { useSpurReportGenerator } from "./spurReport";
@@ -30,7 +30,7 @@ interface SpurData {
   location_km: number;
   progress_date: string | null;
   status: string;
-  spur_length?: number; // नया field add किया
+  spur_length?: number;
 }
 
 interface ProgressEntry {
@@ -54,6 +54,9 @@ interface Work {
   contract_awarded_amount?: number;
   start_date?: string;
   end_date?: string;
+  zone_id?: number;
+  circle_id?: number;
+  division_id?: number;
 }
 
 interface LengthwiseItem {
@@ -68,8 +71,25 @@ interface LengthDetailPageProps {
   workName?: string;
   contractorName?: string;
   has_spur? : number;
-
   onClose?: () => void;
+}
+
+interface UserData {
+  username: string;
+  email: string;
+  dept_id: number;
+  role: string;
+  role_id?: number;
+  role_name?: string;
+  department?: string;
+  designation?: string;
+  levelname?: string;
+  levelid?: number;
+  zone_id?: number;
+  circle_id?: number;
+  division_id?: number;
+  user_name?: string;
+  full_name?: string;
 }
 
 export default function LengthProgressPage({
@@ -80,14 +100,14 @@ export default function LengthProgressPage({
 
   const [selectedPackage, setSelectedPackage] = useState<string | null>(packageNumber || null);
   const [showForm, setShowForm] = useState(false);
-  const [showSpurForm, setShowSpurForm] = useState(false); // नया state
+  const [showSpurForm, setShowSpurForm] = useState(false);
   const [selectedRange, setSelectedRange] = useState<[number, number]>([0, 0]);
-  const [selectedSpur, setSelectedSpur] = useState<SpurData | null>(null); // नया state
+  const [selectedSpur, setSelectedSpur] = useState<SpurData | null>(null);
   const [editingEntry, setEditingEntry] = useState<ProgressEntry | null>(null);
-  const [editingSpurEntry, setEditingSpurEntry] = useState<any>(null); // नया state
+  const [editingSpurEntry, setEditingSpurEntry] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [showDownloadOptions, setShowDownloadOptions] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserData | null>(null);
   const [userRole, setUserRole] = useState<string>('');
   const queryClient = useQueryClient();
   
@@ -96,15 +116,103 @@ export default function LengthProgressPage({
   const addProgressMutation = useAddProgressEntry();
   const addSpurProgressMutation = useAddSpurProgressEntry();
   
-  // Spur progress data
+  // Load user data
+  useEffect(() => {
+    const getUserData = () => {
+      try {
+        if (typeof window !== "undefined") {
+          const userDetails = sessionStorage.getItem("userdetail");
+
+          if (userDetails) {
+            try {
+              const parsedData = JSON.parse(userDetails);
+              const userData: UserData = {
+                username: parsedData.full_name || parsedData.user_name || "Unknown User",
+                email: parsedData.email || "unknown@example.com",
+                dept_id: parsedData.department_id || 1,
+                role: parsedData.role_name || "user",
+                role_id: parsedData.role_id,
+                role_name: parsedData.role_name,
+                department: parsedData.department_name,
+                designation: parsedData.designation_name,
+                levelname: parsedData.level_name,
+                levelid: parsedData.user_level_id,
+                zone_id: parsedData.zone_id,
+                circle_id: parsedData.circle_id,
+                division_id: parsedData.division_id,
+                user_name: parsedData.user_name,
+                full_name: parsedData.full_name
+              };
+
+              setUser(userData);
+              setUserRole(parsedData.role_name || '');
+            } catch (parseError) {
+              console.error("Error parsing user data:", parseError);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error loading user data:", error);
+      }
+    };
+
+    getUserData();
+  }, []);
+
+  // Filter works based on user's hierarchy
+  const filteredWorks = useMemo(() => {
+    // 1. Check if user is super admin (role_id = 1)
+    const isSuperAdmin = user?.role_id === 1;
+    
+    // 2. If super admin, show all works
+    if (isSuperAdmin) {
+      return works.filter(
+        (w: any) =>
+          w.package_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          w.work_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          w.contractor_name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    // 3. For non-super admin users, filter based on hierarchy
+    return works.filter((w: any) => {
+      // Check hierarchy matching
+      let matchesHierarchy = true;
+      
+      // Check zone if user has zone_id
+      if (user?.zone_id) {
+        matchesHierarchy = matchesHierarchy && w.zone_id === user.zone_id;
+      }
+      
+      // Check circle if user has circle_id
+      if (user?.circle_id) {
+        matchesHierarchy = matchesHierarchy && w.circle_id === user.circle_id;
+      }
+      
+      // Check division if user has division_id
+      if (user?.division_id) {
+        matchesHierarchy = matchesHierarchy && w.division_id === user.division_id;
+      }
+      
+      // Check search term
+      const matchesSearch = 
+        searchTerm === '' ||
+        w.package_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        w.work_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        w.contractor_name.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      return matchesHierarchy && matchesSearch;
+    });
+  }, [works, user, searchTerm]);
+
   const spurProgress: SpurData[] = packageData?.spurs?.map((spur: any) => ({
     spur_id: spur.spur_id,
     spur_name: spur.spur_name,
-    completed_km:spur.completed_km,
+    completed_km: spur.completed_km,
     location_km: spur.location_km,
     progress_date: spur.progress_date,
     status: spur.status || 'not_started',
-    spur_length: spur.spur_length || 0 // Default value
+    spur_length: spur.spur_length || 0
   })) || [];
 
   const selectedWork = useMemo(() => 
@@ -112,27 +220,39 @@ export default function LengthProgressPage({
     [works, selectedPackage]
   );
 
-  useEffect(() => {
-    const storedProfile = sessionStorage.getItem("userdetail");
-    if (storedProfile) {
-      const profile = JSON.parse(storedProfile);
-      setUser(profile);
-      setUserRole(profile?.role_name || '');
-    }
-  }, []);
-
   const canAddProgress = () => {
     if (!user) return false;
+    
+    // Super admin can always add progress
+    if (user.role_id === 1) return true;
+    
+    // Check if user is in the correct hierarchy for the selected work
+    if (selectedPackage && selectedWork) {
+      // Check zone
+      if (user.zone_id && selectedWork.zone_id !== user.zone_id) {
+        return false;
+      }
+      // Check circle
+      if (user.circle_id && selectedWork.circle_id !== user.circle_id) {
+        return false;
+      }
+      // Check division
+      if (user.division_id && selectedWork.division_id !== user.division_id) {
+        return false;
+      }
+    }
+    
+    // Allow specific roles (Operator or role_id 5)
     const allowedRoles = ['Operator'];
-    return allowedRoles.includes(user.role_name) || [5].includes(user.role_id);
+    return allowedRoles.includes(user.role_name || user.role || '') || 
+           [5].includes(user.role_id || 0);
   };
 
   const progressEntries: ProgressEntry[] = packageData?.progress || [];
   const targetKm: number = packageData?.target_km || 0;
   const hasSpurs: boolean = selectedWork?.has_spurs === 1;
   const work_start_range: number = packageData?.work_start_range;
-   const work_end_range: number = packageData?.work_end_range;
-
+  const work_end_range: number = packageData?.work_end_range;
 
   const lengthwiseData: LengthwiseItem[] = useMemo(() => {
     if (hasSpurs) return [];
@@ -158,13 +278,6 @@ export default function LengthProgressPage({
       }
     ];
   }, [progressEntries, targetKm, hasSpurs]);
-
-  const filteredWorks = works.filter(
-    (w: any) =>
-      w.package_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      w.work_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      w.contractor_name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   const totalEarthwork = useMemo(
     () => hasSpurs ? 0 : progressEntries.reduce((sum, e) => sum + (typeof e.earthwork_done_km === 'number' ? e.earthwork_done_km : 0), 0),
@@ -218,7 +331,6 @@ export default function LengthProgressPage({
   ];
   const COLORS = ["#3B82F6", "#E5E7EB"];
 
-  // Lengthwise progress handle
   const handleAddProgress = (formData: any) => {
     if (!selectedPackage || hasSpurs) return;
 
@@ -240,46 +352,125 @@ export default function LengthProgressPage({
     setShowForm(false);
   };
 
- 
+  const handleAddSpurProgress = async (formData: any) => {
+    if (!selectedPackage || !hasSpurs) return;
 
-const handleAddSpurProgress = async (formData: any) => {
-  if (!selectedPackage || !hasSpurs) return;
+    try {
+      const storedProfile = sessionStorage.getItem("userdetail");
+      const profile = storedProfile ? JSON.parse(storedProfile) : {};
 
-  try {
+      const completePayload = {
+        ...formData,
+        packageNumber: selectedPackage,
+        created_by: profile.user_name || "System",
+        created_email: profile.email || "system@example.com",
+        progress_date: formData.progress_date || new Date().toISOString().split('T')[0]
+      };
 
-    // Get user info
-    const storedProfile = sessionStorage.getItem("userdetail");
-    const profile = storedProfile ? JSON.parse(storedProfile) : {};
+      const result = await addSpurProgressMutation.mutateAsync(completePayload);
+      
+      setShowSpurForm(false);
+      setSelectedSpur(null);
+      setEditingSpurEntry(null);
+      
+      queryClient.invalidateQueries({ queryKey: ['progress', selectedPackage] });
+      
+      alert(`✅ ${result.message || "Spur progress saved successfully"}`);
+      
+    } catch (error: any) {
+      console.error('❌ Error saving spur progress:', error);
+      alert(error.response?.data?.error || error.message || "Failed to save spur progress");
+    }
+  };
 
-    // Complete payload with ALL required fields
-    const completePayload = {
-      ...formData,
-      packageNumber: selectedPackage, // यहाँ add करें
-      created_by: profile.user_name || "System",
-      created_email: profile.email || "system@example.com",
-      // Add any missing fields that backend expects
-      progress_date: formData.progress_date || new Date().toISOString().split('T')[0]
+  const cumulativeSpurData = useMemo(() => {
+    if (!Array.isArray(spurProgress)) return [];
+    
+    const spurMap = new Map();
+    
+    spurProgress.forEach(spur => {
+      const existing = spurMap.get(spur.spur_id);
+      const completed_km = spur.completed_km || 0;
+      const spur_length = spur.spur_length || 0;
+      
+      if (!existing) {
+        spurMap.set(spur.spur_id, {
+          spur_id: spur.spur_id,
+          spur_name: spur.spur_name,
+          location_km: spur.location_km,
+          spur_length: spur_length,
+          total_completed_km: completed_km,
+          latest_date: spur.progress_date,
+          completionPercentage: spur.completion_percentage || 0,
+          entries: 1
+        });
+      } else {
+        existing.total_completed_km += completed_km;
+        
+        if (spur.progress_date && (!existing.latest_date || 
+            new Date(spur.progress_date) > new Date(existing.latest_date))) {
+          existing.latest_date = spur.progress_date;
+        }
+        
+        if (spur.completion_percentage && 
+            spur.completion_percentage > existing.completionPercentage) {
+          existing.completionPercentage = spur.completion_percentage;
+        }
+        
+        existing.entries++;
+      }
+    });
+    
+    return Array.from(spurMap.values());
+  }, [spurProgress]);
+
+  const spursWithProgress = useMemo(() => {
+    if (!Array.isArray(spurProgress)) return [];
+    return spurProgress.filter(spur => (spur.completed_km || 0) > 0);
+  }, [spurProgress]);
+
+  const spurStats = useMemo(() => {
+    if (!cumulativeSpurData.length) return null;
+    
+    const completed = cumulativeSpurData.filter(s => {
+      const status = s.status?.toLowerCase();
+      return status === 'completed' || status === 'done' || 
+            (s.completionPercentage >= 100);
+    }).length;
+    
+    const inProgress = cumulativeSpurData.filter(s => {
+      const status = s.status?.toLowerCase();
+      return status === 'in_progress' || status === 'in progress' || 
+            (s.completionPercentage > 0 && s.completionPercentage < 100);
+    }).length;
+    
+    const notStarted = cumulativeSpurData.filter(s => {
+      const status = s.status?.toLowerCase();
+      return !status || status === 'not started' || status === 'pending' ||
+            (s.completionPercentage === 0);
+    }).length;
+    
+    const total = cumulativeSpurData.length;
+    
+    const totalSpurLength = cumulativeSpurData.reduce((sum, spur) => 
+      sum + (spur.spur_length || 0), 0
+    );
+    const completedSpurLength = cumulativeSpurData.reduce((sum, spur) => 
+      sum + spur.total_completed_km, 0
+    );
+    
+    return { 
+      completed, 
+      inProgress, 
+      notStarted, 
+      total, 
+      totalSpurLength: parseFloat(totalSpurLength.toFixed(2)),
+      completedSpurLength: parseFloat(completedSpurLength.toFixed(2)),
+      completionByLength: totalSpurLength > 0 ? 
+        (completedSpurLength / totalSpurLength) * 100 : 0
     };
+  }, [cumulativeSpurData]);
 
-
-    // Send to server
-    const result = await addSpurProgressMutation.mutateAsync(completePayload);
-    
-    // Success
-    setShowSpurForm(false);
-    setSelectedSpur(null);
-    setEditingSpurEntry(null);
-    
-    // Invalidate queries to refresh data
-    queryClient.invalidateQueries({ queryKey: ['progress', selectedPackage] });
-    
-    alert(`✅ ${result.message || "Spur progress saved successfully"}`);
-    
-  } catch (error: any) {
-    console.error('❌ Error saving spur progress:', error);
-    alert(error.response?.data?.error || error.message || "Failed to save spur progress");
-  }
-};
   const lengthReportGenerator = useReportGenerator({
     selectedPackage,
     selectedWork,
@@ -289,109 +480,18 @@ const handleAddSpurProgress = async (formData: any) => {
     totalLining,
     progressEntries
   });
-  
-  const cumulativeSpurData = useMemo(() => {
-  if (!Array.isArray(spurProgress)) return [];
-  
-  const spurMap = new Map();
-  
-  spurProgress.forEach(spur => {
-    const existing = spurMap.get(spur.spur_id);
-    const completed_km = spur.completed_km || 0;
-    const spur_length = spur.spur_length || 0;
-    
-    if (!existing) {
-      spurMap.set(spur.spur_id, {
-        spur_id: spur.spur_id,
-        spur_name: spur.spur_name,
-        location_km: spur.location_km,
-        spur_length: spur_length,
-        total_completed_km: completed_km,
-        latest_date: spur.progress_date,
-        completionPercentage: spur.completion_percentage || 0,
-        entries: 1
-      });
-    } else {
-      existing.total_completed_km += completed_km;
-      
-      if (spur.progress_date && (!existing.latest_date || 
-          new Date(spur.progress_date) > new Date(existing.latest_date))) {
-        existing.latest_date = spur.progress_date;
-      }
-      
-      if (spur.completion_percentage && 
-          spur.completion_percentage > existing.completionPercentage) {
-        existing.completionPercentage = spur.completion_percentage;
-      }
-      
-      existing.entries++;
-    }
+
+  const spurReportGenerator = useSpurReportGenerator({
+    selectedPackage: selectedPackage ?? '',
+    selectedWork: selectedWork || {},
+    spurs: Array.isArray(spurProgress) ? spurProgress : [],
+    cumulativeSpurData,
+    spursWithProgress,
+    targetKm: targetKm ?? 0,
+    workStartRange: work_start_range ?? 0,
+    workEndRange: work_end_range ?? 0,
+    spurStats
   });
-  
-  return Array.from(spurMap.values());
-}, [spurProgress]);
-
-// Filter spurs with progress
-const spursWithProgress = useMemo(() => {
-  if (!Array.isArray(spurProgress)) return [];
-  return spurProgress.filter(spur => (spur.completed_km || 0) > 0);
-}, [spurProgress]);
-
-// Calculate spurStats
-const spurStats = useMemo(() => {
-  if (!cumulativeSpurData.length) return null;
-  
-  const completed = cumulativeSpurData.filter(s => {
-    const status = s.status?.toLowerCase();
-    return status === 'completed' || status === 'done' || 
-           (s.completionPercentage >= 100);
-  }).length;
-  
-  const inProgress = cumulativeSpurData.filter(s => {
-    const status = s.status?.toLowerCase();
-    return status === 'in_progress' || status === 'in progress' || 
-           (s.completionPercentage > 0 && s.completionPercentage < 100);
-  }).length;
-  
-  const notStarted = cumulativeSpurData.filter(s => {
-    const status = s.status?.toLowerCase();
-    return !status || status === 'not started' || status === 'pending' ||
-           (s.completionPercentage === 0);
-  }).length;
-  
-  const total = cumulativeSpurData.length;
-  
-  const totalSpurLength = cumulativeSpurData.reduce((sum, spur) => 
-    sum + (spur.spur_length || 0), 0
-  );
-  const completedSpurLength = cumulativeSpurData.reduce((sum, spur) => 
-    sum + spur.total_completed_km, 0
-  );
-  
-  return { 
-    completed, 
-    inProgress, 
-    notStarted, 
-    total, 
-    totalSpurLength: parseFloat(totalSpurLength.toFixed(2)),
-    completedSpurLength: parseFloat(completedSpurLength.toFixed(2)),
-    completionByLength: totalSpurLength > 0 ? 
-      (completedSpurLength / totalSpurLength) * 100 : 0
-  };
-}, [cumulativeSpurData]);
-
-// Now initialize the spurReportGenerator
-const spurReportGenerator = useSpurReportGenerator({
-  selectedPackage: selectedPackage ?? '',
-  selectedWork: selectedWork || {},
-  spurs: Array.isArray(spurProgress) ? spurProgress : [],
-  cumulativeSpurData,
-  spursWithProgress,
-  targetKm: targetKm ?? 0,
-  workStartRange: work_start_range ?? 0,
-  workEndRange: work_end_range ?? 0,
-  spurStats
-});
 
   const handleLengthPDFDownload = () => {
     lengthReportGenerator.downloadLengthwisePDF();
@@ -401,7 +501,6 @@ const spurReportGenerator = useSpurReportGenerator({
     await lengthReportGenerator.downloadLengthwiseExcel();
   };
 
-  // Download handlers for spur reports
   const handleSpurPDFDownload = () => {
     if (spurReportGenerator) {
       spurReportGenerator.downloadSpurPDFReport();
@@ -413,19 +512,6 @@ const spurReportGenerator = useSpurReportGenerator({
       await spurReportGenerator.downloadSpurExcelReport();
     }
   };
-
-  // Edit spur progress - नया function
-  // const handleEditSpurProgress = (spur: SpurData) => {
-  //   setSelectedSpur(spur);
-  //   setEditingSpurEntry({
-  //     spur_id: spur.spur_id,
-  //     spur_name: spur.spur_name,
-  //     completed_km: spur.spur_length || 0,
-  //     status: spur.status,
-  //     progress_date: spur.progress_date
-  //   });
-  //   setShowSpurForm(true);
-  // };
 
   useEffect(() => {
     const closeMenu = (e: MouseEvent) => {
@@ -485,14 +571,14 @@ const spurReportGenerator = useSpurReportGenerator({
                     className="w-full px-4 py-3 border border-gray-400 rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087]"
                   />
                 </div>
-              </div>
+               </div>
             </div>
 
             <div className="bg-white border border-gray-300 rounded shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse border border-gray-400">
                   <thead>
-                    <tr className="bg-gray-100 text-gray-800">
+                    <tr className="bg-gray-100 text-gray-800 whitespace-nowrap">
                       <th className="border border-gray-400 p-3 font-semibold">Package No.</th>
                       <th className="border border-gray-400 p-3 font-semibold">Work Name</th>
                       <th className="border border-gray-400 p-3 font-semibold">Agency Name</th>
@@ -528,7 +614,7 @@ const spurReportGenerator = useSpurReportGenerator({
                     {filteredWorks.length === 0 && (
                       <tr>
                         <td colSpan={6} className="border border-gray-400 p-3 text-center text-gray-500">
-                          No works found.
+                          {user?.role_id === 1 ? "No works found in the system." : `No works found for your ${user?.division_id ? 'division' : user?.circle_id ? 'circle' : user?.zone_id ? 'zone' : 'location'}.`}
                         </td>
                       </tr>
                     )}
@@ -552,7 +638,6 @@ const spurReportGenerator = useSpurReportGenerator({
               )}
 
               <div className="flex items-center gap-3">
-                {/* Lengthwise Add Progress Button */}
                 {canAddProgress() && !hasSpurs && (
                   <button
                     className="flex items-center gap-2 px-6 py-2 bg-[#003087] text-white rounded hover:bg-[#00205b] transition-colors"
@@ -567,7 +652,6 @@ const spurReportGenerator = useSpurReportGenerator({
                   </button>
                 )}
                 
-                {/* Spur Add Progress Button */}
                 {canAddProgress() && hasSpurs && (
                   <button
                     className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded hover:from-green-700 hover:to-blue-700 transition-colors"
@@ -582,7 +666,6 @@ const spurReportGenerator = useSpurReportGenerator({
                   </button>
                 )}
                 
-                {/* Conditional Download Button */}
                 {selectedPackage && (
                   <div className="relative download-menu">
                     <button
@@ -597,7 +680,6 @@ const spurReportGenerator = useSpurReportGenerator({
                     {showDownloadOptions && (
                       <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-300 rounded shadow-sm z-10 overflow-hidden">
                         {hasSpurs ? (
-                          // Spur Reports
                           <>
                             <button
                               onClick={handleSpurPDFDownload}
@@ -623,7 +705,6 @@ const spurReportGenerator = useSpurReportGenerator({
                             </button>
                           </>
                         ) : (
-                          // Length Reports
                           <>
                             <button
                               onClick={handleLengthPDFDownload}
@@ -719,7 +800,6 @@ const spurReportGenerator = useSpurReportGenerator({
               </div>
             )}
 
-            {/* Spur Progress Component - Always show if has spurs */}
             {hasSpurs && (
               <>
                 <SpurProgressComponent
@@ -730,61 +810,9 @@ const spurReportGenerator = useSpurReportGenerator({
                   packageNumber={selectedPackage}
                   workName={selectedWork?.work_name || ""}
                 />
-                
-                {/* Edit buttons in spur table - Example */}
-                {/* <div className="bg-white border border-gray-300 rounded shadow-sm mt-6">
-                  <div className="bg-blue-600 text-white p-4">
-                    <h3 className="text-lg font-bold">Edit Spur Progress</h3>
-                    <p className="text-blue-100 text-sm">
-                      Click on any spur to edit its progress
-                    </p>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse">
-                      <thead className="bg-gray-100">
-                        <tr>
-                          <th className="p-3 text-left border-b">Spur Name</th>
-                          <th className="p-3 text-left border-b">Location (Km)</th>
-                          <th className="p-3 text-left border-b">Status</th>
-                          <th className="p-3 text-left border-b">Progress Date</th>
-                          <th className="p-3 text-left border-b">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {spurProgress.map((spur, index) => (
-                          <tr key={index} className="hover:bg-gray-50 border-b">
-                            <td className="p-3 font-medium">{spur.spur_name}</td>
-                            <td className="p-3">{spur.location_km.toFixed(2)} Km</td>
-                            <td className="p-3">
-                              <span className={`px-2 py-1 rounded text-sm ${
-                                spur.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                spur.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-red-100 text-red-800'
-                              }`}>
-                                {spur.status.replace('_', ' ')}
-                              </span>
-                            </td>
-                            <td className="p-3">
-                              {spur.progress_date ? new Date(spur.progress_date).toLocaleDateString() : '-'}
-                            </td>
-                            <td className="p-3">
-                              <button
-                                onClick={() => handleEditSpurProgress(spur)}
-                                className="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-sm"
-                              >
-                                Edit Progress
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div> */}
               </>
             )}
 
-            {/* Lengthwise Progress Section - Only show if no spurs */}
             {!hasSpurs && (
               <>
                 <div className="bg-white border border-gray-300 rounded shadow-sm overflow-hidden">
@@ -1004,7 +1032,6 @@ const spurReportGenerator = useSpurReportGenerator({
           </div>
         )}
 
-        {/* Length Progress Form */}
         {showForm && selectedPackage && !hasSpurs && (
           <AddProgressForm
             showModal={showForm}
@@ -1019,7 +1046,6 @@ const spurReportGenerator = useSpurReportGenerator({
           />
         )}
 
-        {/* Spur Progress Form */}
         {showSpurForm && selectedPackage && hasSpurs && (
           <AddSpurProgressForm
             showModal={showSpurForm}
@@ -1040,7 +1066,6 @@ const spurReportGenerator = useSpurReportGenerator({
               completed_km: spur.completed_km || 0,
               completion_percentage: spur.completion_percentage || 0,
               status: spur.status
-            
             }))}
             totalSpurs={spurProgress.length}
           />
