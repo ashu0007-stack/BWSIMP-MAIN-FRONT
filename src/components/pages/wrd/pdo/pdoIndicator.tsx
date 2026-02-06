@@ -39,6 +39,7 @@ interface PDOProgress {
   work_id: number;
   indicator_id: number;
   period: string;
+  quarter: string;
   achievement: number;
   cumulative: number;
   female_achievement: number;
@@ -79,6 +80,13 @@ const PERIODS = [
   "Period 7 (Oct 2031-Sep 2032)",
 ];
 
+const QUARTERS = [
+  "Q1(Oct to Dec)",
+  "Q2(Jan to Mar)",
+  "Q3(Apr to Jun)",
+  "Q4((Jul to Sep)"
+];
+
 export default function PDOProgressModule() {
   const {
     // Queries
@@ -87,26 +95,26 @@ export default function PDOProgressModule() {
     useGetPDOSummary,
     useGetPDOProgressByWork,
     useGetWorkPDOData,
-    
+
     // Mutations
     useCreatePDOProgress,
-    
+
     // Utility functions
     refreshAllPDOData,
   } = usePDOManagement();
 
   // Fetch works data from works hook
   const { data: worksData, isLoading: worksLoading } = useGetPDOWorks();
-  
+
   // Fetch PDO data using hooks
   const { data: indicatorsResponse, isLoading: indicatorsLoading } = useGetPDOIndicators();
   const { data: summaryResponse, isLoading: summaryLoading } = useGetPDOSummary();
-  
+
   // Extract data from responses
   const indicators = indicatorsResponse?.indicators || [];
   const summaryData = summaryResponse?.summary;
   const works = worksData || [];
-  
+
   const [schemes, setSchemes] = useState<Scheme[]>([]);
   const [selectedScheme, setSelectedScheme] = useState<Scheme | null>(null);
   const [selectedIndicator, setSelectedIndicator] = useState<number | null>(null);
@@ -123,6 +131,7 @@ export default function PDOProgressModule() {
     work_id: 0,
     indicator_id: 0,
     period: "",
+    quarter: "",
     achievement: 0,
     remark: "",
     female_achievement: 0,
@@ -130,7 +139,7 @@ export default function PDOProgressModule() {
   });
 
   // Fetch work-specific data when scheme is selected
-  const { 
+  const {
     progress: workProgress,
     isLoading: workDataLoading,
     refetch: refetchWorkData
@@ -166,8 +175,8 @@ export default function PDOProgressModule() {
     .filter((i: { category: string }) => i.category === 'PDO1')
     .reduce((sum: number, i: { cumulative: { toString: () => string } }) => sum + getCumulative(i), 0), [indicators]);
 
-  const totalAreaPercentage = useMemo(() => totalAreaTarget > 0 
-    ? (totalAreaAchieved / totalAreaTarget) * 100 
+  const totalAreaPercentage = useMemo(() => totalAreaTarget > 0
+    ? (totalAreaAchieved / totalAreaTarget) * 100
     : 0, [totalAreaTarget, totalAreaAchieved]);
 
   const totalPeopleTarget = useMemo(() => indicators
@@ -178,8 +187,8 @@ export default function PDOProgressModule() {
     .filter((i: { category: string }) => i.category === 'PDO2')
     .reduce((sum: number, i: { cumulative: { toString: () => string } }) => sum + getCumulative(i), 0), [indicators]);
 
-  const totalPeoplePercentage = useMemo(() => totalPeopleTarget > 0 
-    ? (totalPeopleAchieved / totalPeopleTarget) * 100 
+  const totalPeoplePercentage = useMemo(() => totalPeopleTarget > 0
+    ? (totalPeopleAchieved / totalPeopleTarget) * 100
     : 0, [totalPeopleTarget, totalPeopleAchieved]);
 
   // Transform works data to schemes
@@ -189,15 +198,15 @@ export default function PDOProgressModule() {
         const workName = work.work_name || work.workName || work.name || `Work ${index + 1}`;
         const schemeId = work.package_number || work.workId || work.code || `WORK-${index + 1}`;
         const component = work.division_name || work.component || "Irrigation";
-        
+
         const workNameLower = workName.toLowerCase();
         const divisionLower = component.toLowerCase();
-        
+
         let workType: "IRRIGATION" | "EMBANKMENT" = "IRRIGATION";
-        
+
         if (
-          workNameLower.includes("embankment") || 
-          workNameLower.includes("bundh") || 
+          workNameLower.includes("embankment") ||
+          workNameLower.includes("bundh") ||
           workNameLower.includes("bund") ||
           workNameLower.includes("flood") ||
           divisionLower.includes("embankment") ||
@@ -207,9 +216,9 @@ export default function PDOProgressModule() {
         ) {
           workType = "EMBANKMENT";
         }
-        
+
         let targetValue = 0;
-        
+
         if (work.Area_Under_improved_Irrigation) {
           targetValue = parseFloat(work.Area_Under_improved_Irrigation) || 0;
         } else if (work.target_ha) {
@@ -217,23 +226,23 @@ export default function PDOProgressModule() {
         } else if (work.work_cost) {
           targetValue = parseFloat(work.work_cost) || 0;
         }
-        
+
         // Determine which PDO indicator to associate with
         let pdoIndicatorId = 1; // default to irrigation area
         let unit: "Hectare" | "People" = "Hectare";
-        
+
         if (workType === "IRRIGATION") {
-          const irrigationIndicator = indicators.find((ind: { category: string; name: string; }) => 
+          const irrigationIndicator = indicators.find((ind: { category: string; name: string; }) =>
             ind.category === 'PDO1' && ind.name?.toLowerCase().includes('irrigation')
           );
           pdoIndicatorId = irrigationIndicator?.id || 1;
         } else {
-          const floodIndicator = indicators.find((ind: { category: string; name: string; }) => 
+          const floodIndicator = indicators.find((ind: { category: string; name: string; }) =>
             ind.category === 'PDO1' && ind.name?.toLowerCase().includes('flood')
           );
           pdoIndicatorId = floodIndicator?.id || 2;
         }
-        
+
         return {
           id: work.id || index + 1,
           name: workName,
@@ -248,7 +257,7 @@ export default function PDOProgressModule() {
           totalPopulation: work.total_population || 0
         };
       });
-      
+
       setSchemes(transformedSchemes);
     }
   }, [works, indicators]);
@@ -256,27 +265,27 @@ export default function PDOProgressModule() {
   // Get PDOs for selected work
   const getPDOsForSelectedWork = () => {
     if (!selectedScheme) return [];
-    
+
     const workType = selectedScheme.workType;
-    
+
     if (workType === "IRRIGATION") {
       return [
-        ...indicators.filter((ind: { id: number; category: string; name: string }) => 
+        ...indicators.filter((ind: { id: number; category: string; name: string }) =>
           ind.category === 'PDO1' && (ind.name?.toLowerCase().includes('irrigation') || ind.id === 1)
         ),
-        ...indicators.filter((ind: { id: number; category: string; name: string }) => 
+        ...indicators.filter((ind: { id: number; category: string; name: string }) =>
           ind.category === 'PDO2' && (ind.name?.toLowerCase().includes('irrigation') || ind.id === 3)
         )
       ];
     } else {
       return [
-        ...indicators.filter((ind: { id: number; category: string; name: string }) => 
+        ...indicators.filter((ind: { id: number; category: string; name: string }) =>
           ind.category === 'PDO1' && (ind.name?.toLowerCase().includes('flood') || ind.id === 2)
         ),
-        ...indicators.filter((ind: { id: number; category: string; name: string }) => 
+        ...indicators.filter((ind: { id: number; category: string; name: string }) =>
           ind.category === 'PDO2' && (
-            ind.name?.toLowerCase().includes('flood') || 
-            ind.name?.toLowerCase().includes('embankment') || 
+            ind.name?.toLowerCase().includes('flood') ||
+            ind.name?.toLowerCase().includes('embankment') ||
             ind.name?.toLowerCase().includes('riverbank') ||
             ind.id === 4
           )
@@ -288,99 +297,99 @@ export default function PDOProgressModule() {
   const workPDOs = getPDOsForSelectedWork();
 
   // NEW: Calculate WORK SPECIFIC progress
-const getWorkSpecificProgress = useMemo(() => {
-  if (!selectedScheme || !workProgress?.progress) {
-    return {};
-  }
+  const getWorkSpecificProgress = useMemo(() => {
+    if (!selectedScheme || !workProgress?.progress) {
+      return {};
+    }
 
-  const progressByIndicator: Record<number, {
-    totalAchievement: number;
-    entries: number;
-  }> = {};
+    const progressByIndicator: Record<number, {
+      totalAchievement: number;
+      entries: number;
+    }> = {};
 
-  // Group progress by indicator_id
-  workProgress.progress.forEach((entry: any) => {
-    const indicatorId = entry.indicator_id;
-    const achievement = parseFloat(entry.achievement) || 0;
-    
-    if (!progressByIndicator[indicatorId]) {
-      progressByIndicator[indicatorId] = {
+    // Group progress by indicator_id
+    workProgress.progress.forEach((entry: any) => {
+      const indicatorId = entry.indicator_id;
+      const achievement = parseFloat(entry.achievement) || 0;
+
+      if (!progressByIndicator[indicatorId]) {
+        progressByIndicator[indicatorId] = {
+          totalAchievement: 0,
+          entries: 0
+        };
+      }
+
+      progressByIndicator[indicatorId].totalAchievement += achievement;
+      progressByIndicator[indicatorId].entries += 1;
+    });
+
+    // Calculate work-specific progress for each indicator
+    const result: Record<number, {
+      workTarget: number;
+      workAchieved: number;
+      workPercentage: number;
+      overallTarget: number;
+      overallAchieved: number;
+      overallPercentage: number;
+    }> = {};
+
+    workPDOs.forEach((indicator: any) => {
+      // IMPORTANT: Different targets for PDO1 and PDO2
+      let workTarget = 0;
+
+      if (indicator.category === "PDO1") {
+        // PDO1: Use selectedScheme.target (in hectares)
+        workTarget = selectedScheme.target;
+      } else if (indicator.category === "PDO2") {
+        // PDO2: Use total_population from work data (in people)
+        // First check workProgress.work.total_population
+        // If not available, check selectedScheme.totalPopulation
+        workTarget = workProgress?.work?.total_population ||
+          selectedScheme.totalPopulation ||
+          0;
+      }
+
+      const workProgressData = progressByIndicator[indicator.id] || {
         totalAchievement: 0,
         entries: 0
       };
-    }
-    
-    progressByIndicator[indicatorId].totalAchievement += achievement;
-    progressByIndicator[indicatorId].entries += 1;
-  });
 
-  // Calculate work-specific progress for each indicator
-  const result: Record<number, {
-    workTarget: number;
-    workAchieved: number;
-    workPercentage: number;
-    overallTarget: number;
-    overallAchieved: number;
-    overallPercentage: number;
-  }> = {};
+      const workAchieved = workProgressData.totalAchievement;
 
-  workPDOs.forEach((indicator: any) => {
-    // IMPORTANT: Different targets for PDO1 and PDO2
-    let workTarget = 0;
-    
-    if (indicator.category === "PDO1") {
-      // PDO1: Use selectedScheme.target (in hectares)
-      workTarget = selectedScheme.target;
-    } else if (indicator.category === "PDO2") {
-      // PDO2: Use total_population from work data (in people)
-      // First check workProgress.work.total_population
-      // If not available, check selectedScheme.totalPopulation
-      workTarget = workProgress?.work?.total_population || 
-                   selectedScheme.totalPopulation || 
-                   0;
-    }
-    
-    const workProgressData = progressByIndicator[indicator.id] || { 
-      totalAchievement: 0, 
-      entries: 0 
-    };
-    
-    const workAchieved = workProgressData.totalAchievement;
-    
-    // Work-specific percentage
-    const workPercentage = workTarget > 0 
-      ? (workAchieved / workTarget) * 100 
-      : 0;
-    
-    // Overall PDO progress
-    const overallTarget = getTarget(indicator);
-    const overallAchieved = getCumulative(indicator);
-    const overallPercentage = getPercentage(indicator);
-    
-    result[indicator.id] = {
-      workTarget,
-      workAchieved,
-      workPercentage: Math.min(workPercentage, 100),
-      overallTarget,
-      overallAchieved,
-      overallPercentage
-    };
-  });
+      // Work-specific percentage
+      const workPercentage = workTarget > 0
+        ? (workAchieved / workTarget) * 100
+        : 0;
 
-  return result;
-}, [selectedScheme, workProgress, workPDOs]);
+      // Overall PDO progress
+      const overallTarget = getTarget(indicator);
+      const overallAchieved = getCumulative(indicator);
+      const overallPercentage = getPercentage(indicator);
+
+      result[indicator.id] = {
+        workTarget,
+        workAchieved,
+        workPercentage: Math.min(workPercentage, 100),
+        overallTarget,
+        overallAchieved,
+        overallPercentage
+      };
+    });
+
+    return result;
+  }, [selectedScheme, workProgress, workPDOs]);
 
   // Chart data for selected work's PDOs - USING WORK SPECIFIC DATA
   const getDashboardData = () => {
     if (!selectedScheme || workPDOs.length === 0) return [];
-    
+
     return workPDOs.map(ind => {
       const workData = getWorkSpecificProgress[ind.id] || {
         workTarget: 0,
         workAchieved: 0,
         workPercentage: 0
       };
-      
+
       return {
         name: ind.name || `Indicator ${ind.id}`,
         target: workData.workTarget,
@@ -392,46 +401,75 @@ const getWorkSpecificProgress = useMemo(() => {
 
   const dashboardData = getDashboardData();
 
-  // Handle form input changes
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
+  const { name, value } = e.target;
+  
+  // PDO2 के लिए achievement में वैल्यू डालने पर auto-calculate
+  if (name === "achievement") {
+    const numValue = parseFloat(value) || 0;
     
-    if (name === "achievement" || name === "female_achievement" || name === "youth_achievement") {
-      const numValue = parseFloat(value) || 0;
+    // 🔥 यहाँ selectedIndicator का उपयोग करें
+    const selectedIndicatorData = indicators.find((ind: { id: number }) => ind.id === selectedIndicator);
+    const isPDO2 = selectedIndicatorData?.category === "PDO2";
+    
+    // console.log("Selected Indicator ID:", selectedIndicator);
+    // console.log("Is PDO2:", isPDO2);
+    // console.log("Achievement value:", numValue);
+    
+    if (isPDO2) {
+      // PDO2 के लिए: achievement के 49% = female, 29% = youth
+      const femaleValue = Math.round(numValue * 0.49);
+      const youthValue = Math.round(numValue * 0.29);
       
-      setFormState(prev => {
-        const selectedIndicatorData = indicators.find((ind: { id: number }) => ind.id === formState.indicator_id);
-        const isPDO2 = selectedIndicatorData?.category === "PDO2";
-        
-        if (isPDO2 && name === "achievement") {
-          const femaleValue = Math.round(numValue * 0.49);
-          const youthValue = Math.round(numValue * 0.29);
-          
-          return {
-            ...prev,
-            [name]: numValue,
-            female_achievement: femaleValue,
-            youth_achievement: youthValue
-          };
-        }
-        
-        return {
-          ...prev,
-          [name]: numValue
-        };
-      });
-    } else {
       setFormState(prev => ({
         ...prev,
-        [name]: value
+        achievement: numValue,
+        female_achievement: femaleValue,
+        youth_achievement: youthValue
+      }));
+      
+      // console.log("Calculated - Female:", femaleValue, "Youth:", youthValue);
+    } else {
+      // PDO1 के लिए: सिर्फ achievement अपडेट करें
+      setFormState(prev => ({
+        ...prev,
+        achievement: numValue,
+        female_achievement: 0,
+        youth_achievement: 0
       }));
     }
-  };
+  } else {
+    // अन्य फील्ड्स के लिए
+    setFormState(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  }
+};
 
+// जब Update Progress बटन दबाएँ, तो form state को indicator के अनुसार initialize करें
+const handleUpdateProgressClick = (indicatorId: number) => {
+  const indicatorData = indicators.find((ind: { id: number }) => ind.id === indicatorId);
+  const isPDO2 = indicatorData?.category === "PDO2";
+  
+  
+  setSelectedIndicator(indicatorId);
+  setFormState(prev => ({
+    ...prev,
+    indicator_id: indicatorId,
+    achievement: 0,
+    // PDO2 के लिए female और youth भी reset करें
+    female_achievement: isPDO2 ? 0 : 0,
+    youth_achievement: isPDO2 ? 0 : 0
+  }));
+  setShowAddForm(true);
+};
+
+  // Add progress handler
   // Add progress handler
   const handleAddProgress = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!selectedIndicator) {
       alert("Please select an indicator first");
       return;
@@ -442,14 +480,17 @@ const getWorkSpecificProgress = useMemo(() => {
         work_id: selectedScheme?.id || formState.work_id,
         indicator_id: selectedIndicator,
         period: formState.period,
+        quarter: formState.quarter, // ← यहाँ quarter add करें
         achievement: formState.achievement,
         remark: formState.remark,
         female_achievement: formState.female_achievement,
         youth_achievement: formState.youth_achievement
       };
 
+      // console.log("Sending payload:", progressData); // Debugging के लिए
+
       await createProgressMutation.mutateAsync(progressData);
-      
+
       // Refresh data
       await refreshAllPDOData();
       if (selectedScheme?.id) {
@@ -461,16 +502,17 @@ const getWorkSpecificProgress = useMemo(() => {
         work_id: 0,
         indicator_id: 0,
         period: "",
+        quarter: "", // ← Reset में भी quarter add करें
         achievement: 0,
         remark: "",
         female_achievement: 0,
         youth_achievement: 0
       });
       setShowAddForm(false);
-      
+
       // Show success message
       alert("Progress updated successfully!");
-      
+
     } catch (error) {
       console.error("Error creating progress:", error);
       alert("Failed to update progress. Please try again.");
@@ -504,8 +546,8 @@ const getWorkSpecificProgress = useMemo(() => {
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
           <h2 className="text-lg font-semibold text-red-800 mb-2">Error Loading Data</h2>
           <p className="text-red-600 mb-4">Unable to fetch PDO data. Please try again later.</p>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
           >
             Retry
@@ -585,7 +627,7 @@ const getWorkSpecificProgress = useMemo(() => {
                   📊 Export Report
                 </button>
               </div>
-              
+
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Irrigation Area Card */}
                 <div className="border rounded-lg p-5 bg-gradient-to-br from-blue-50 to-white">
@@ -597,20 +639,20 @@ const getWorkSpecificProgress = useMemo(() => {
                       PDO1
                     </span>
                   </div>
-                  
+
                   <div className="mb-4">
                     <div className="flex justify-between text-sm text-gray-600 mb-2">
                       <span>Progress</span>
                       <span className="font-semibold">{getPercentage(irrigationAreaIndicator).toFixed(1)}%</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-3">
-                      <div 
+                      <div
                         className="h-3 rounded-full bg-blue-600"
                         style={{ width: `${Math.min(getPercentage(irrigationAreaIndicator), 100)}%` }}
                       ></div>
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-blue-100 p-3 rounded-lg">
                       <p className="text-sm text-blue-800 font-medium">Target</p>
@@ -628,7 +670,7 @@ const getWorkSpecificProgress = useMemo(() => {
                     </div>
                   </div>
                 </div>
-                
+
                 {/* Flood Resilience Area Card */}
                 <div className="border rounded-lg p-5 bg-gradient-to-br from-cyan-50 to-white">
                   <div className="flex justify-between items-start mb-4">
@@ -639,20 +681,20 @@ const getWorkSpecificProgress = useMemo(() => {
                       PDO1
                     </span>
                   </div>
-                  
+
                   <div className="mb-4">
                     <div className="flex justify-between text-sm text-gray-600 mb-2">
                       <span>Progress</span>
                       <span className="font-semibold">{getPercentage(floodAreaIndicator).toFixed(1)}%</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-3">
-                      <div 
+                      <div
                         className="h-3 rounded-full bg-cyan-600"
                         style={{ width: `${Math.min(getPercentage(floodAreaIndicator), 100)}%` }}
                       ></div>
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-cyan-100 p-3 rounded-lg">
                       <p className="text-sm text-cyan-800 font-medium">Target</p>
@@ -671,7 +713,7 @@ const getWorkSpecificProgress = useMemo(() => {
                   </div>
                 </div>
               </div>
-              
+
               {/* Total Area Progress */}
               <div className="mt-6 p-5 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-lg">
                 <h3 className="font-bold text-blue-800 text-lg mb-4">Overall PDO1 Progress</h3>
@@ -687,248 +729,248 @@ const getWorkSpecificProgress = useMemo(() => {
                   </div>
                 </div>
                 <div className="w-full bg-blue-200 rounded-full h-3">
-                  <div 
+                  <div
                     className="h-3 rounded-full bg-blue-600"
                     style={{ width: `${Math.min(totalAreaPercentage, 100)}%` }}
                   ></div>
                 </div>
               </div>
             </div>
-            
+
             {/* PDO2 - PEOPLE SECTION */}
             {/* PDO2 - PEOPLE SECTION */}
-<div className="bg-white rounded-lg shadow p-6">
-  <div className="flex items-center justify-between mb-6">
-    <div>
-      <h2 className="text-xl font-bold text-gray-800 flex items-center">
-        <div className="w-3 h-6 bg-green-600 rounded mr-3"></div>
-        PDO2 - People with enhanced resilience to climate risks
-      </h2>
-    </div>
-  </div>
-  
-  {/* Total People Progress Card */}
-  <div className="border rounded-lg p-5 bg-gradient-to-br from-green-50 to-white mb-6">
-    <div className="flex justify-between items-start mb-4">
-      <div>
-        <h3 className="font-bold text-green-800 text-lg">People benefiting from climate resilient infrastructure</h3>
-      </div>
-      <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
-        PDO2 Total
-      </span>
-    </div>
-    
-    <div className="mb-4">
-      <div className="flex justify-between text-sm text-gray-600 mb-2">
-        <span>Overall Progress</span>
-        <span className="font-semibold">{totalPeoplePercentage.toFixed(1)}%</span>
-      </div>
-      <div className="w-full bg-gray-200 rounded-full h-3">
-        <div 
-          className="h-3 rounded-full bg-green-600"
-          style={{ width: `${Math.min(totalPeoplePercentage, 100)}%` }}
-        ></div>
-      </div>
-    </div>
-    
-    <div className="grid grid-cols-2 gap-4">
-      <div className="bg-green-100 p-3 rounded-lg">
-        <p className="text-sm text-green-800 font-medium">Target</p>
-        <p className="text-xl font-bold text-green-700">{totalPeopleTarget.toLocaleString()} People</p>
-      </div>
-      <div className="bg-green-100 p-3 rounded-lg">
-        <p className="text-sm text-green-800 font-medium">Achieved</p>
-        <p className="text-xl font-bold text-green-700">{totalPeopleAchieved.toLocaleString()} People</p>
-      </div>
-    </div>
-  </div>
-  
-  {/* FEMALE & YOUTH BREAKDOWN CARDS - ADD THESE BACK */}
-  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-    {/* Female Beneficiaries Card */}
-    <div className="border rounded-lg p-5 bg-gradient-to-br from-purple-50 to-white">
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <h3 className="font-bold text-purple-800 text-lg">People benefiting from climate resilient infrastructure - Female</h3>
-          {/* <p className="text-sm text-purple-600">(49% of total beneficiaries)</p> */}
-        </div>
-        {/* <span className="px-3 py-1 bg-purple-100 text-purple-800 text-sm font-medium rounded-full">
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-800 flex items-center">
+                    <div className="w-3 h-6 bg-green-600 rounded mr-3"></div>
+                    PDO2 - People with enhanced resilience to climate risks
+                  </h2>
+                </div>
+              </div>
+
+              {/* Total People Progress Card */}
+              <div className="border rounded-lg p-5 bg-gradient-to-br from-green-50 to-white mb-6">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="font-bold text-green-800 text-lg">People benefiting from climate resilient infrastructure</h3>
+                  </div>
+                  <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
+                    PDO2 Total
+                  </span>
+                </div>
+
+                <div className="mb-4">
+                  <div className="flex justify-between text-sm text-gray-600 mb-2">
+                    <span>Overall Progress</span>
+                    <span className="font-semibold">{totalPeoplePercentage.toFixed(1)}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-3">
+                    <div
+                      className="h-3 rounded-full bg-green-600"
+                      style={{ width: `${Math.min(totalPeoplePercentage, 100)}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-green-100 p-3 rounded-lg">
+                    <p className="text-sm text-green-800 font-medium">Target</p>
+                    <p className="text-xl font-bold text-green-700">{totalPeopleTarget.toLocaleString()} People</p>
+                  </div>
+                  <div className="bg-green-100 p-3 rounded-lg">
+                    <p className="text-sm text-green-800 font-medium">Achieved</p>
+                    <p className="text-xl font-bold text-green-700">{totalPeopleAchieved.toLocaleString()} People</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* FEMALE & YOUTH BREAKDOWN CARDS - ADD THESE BACK */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {/* Female Beneficiaries Card */}
+                <div className="border rounded-lg p-5 bg-gradient-to-br from-purple-50 to-white">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="font-bold text-purple-800 text-lg">People benefiting from climate resilient infrastructure - Female</h3>
+                      {/* <p className="text-sm text-purple-600">(49% of total beneficiaries)</p> */}
+                    </div>
+                    {/* <span className="px-3 py-1 bg-purple-100 text-purple-800 text-sm font-medium rounded-full">
           Women Empowerment
         </span> */}
-      </div>
-      
-      <div className="mb-4">
-        <div className="flex justify-between text-sm text-gray-600 mb-2">
-          <span>Progress</span>
-          <span className="font-semibold">
-            {totalPeopleTarget > 0 
-              ? ((totalPeopleAchieved * 0.49) / (totalPeopleTarget * 0.49) * 100).toFixed(1) 
-              : "0.0"}%
-          </span>
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-3">
-          <div 
-            className="h-3 rounded-full bg-purple-600"
-            style={{ 
-              width: `${totalPeopleTarget > 0 
-                ? Math.min((totalPeopleAchieved * 0.49) / (totalPeopleTarget * 0.49) * 100, 100) 
-                : 0}%` 
-            }}
-          ></div>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-purple-100 p-3 rounded-lg">
-          <p className="text-sm text-purple-800 font-medium">Target</p>
-          <p className="text-xl font-bold text-purple-700">
-           {Math.round(totalPeopleTarget * 0.49).toLocaleString()}
-          </p>
-          <p className="text-xs text-purple-600">Women</p>
-        </div>
-        <div className="bg-green-100 p-3 rounded-lg">
-          <p className="text-sm text-green-800 font-medium">Achieved</p>
-          <p className="text-xl font-bold text-green-700">
-            {Math.round(totalPeopleAchieved * 0.49).toLocaleString()}
-          </p>
-          <p className="text-xs text-green-600">Women</p>
-        </div>
-      </div>
-    </div>
-    
-    {/* Youth Beneficiaries Card */}
-    <div className="border rounded-lg p-5 bg-gradient-to-br from-teal-50 to-white">
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <h3 className="font-bold text-teal-800 text-lg">People benefiting from climate resilient infrastructure - Youth</h3>
-          {/* <p className="text-sm text-teal-600">(29% of total beneficiaries)</p> */}
-        </div>
-        {/* <span className="px-3 py-1 bg-teal-100 text-teal-800 text-sm font-medium rounded-full">
+                  </div>
+
+                  <div className="mb-4">
+                    <div className="flex justify-between text-sm text-gray-600 mb-2">
+                      <span>Progress</span>
+                      <span className="font-semibold">
+                        {totalPeopleTarget > 0
+                          ? ((totalPeopleAchieved * 0.49) / (totalPeopleTarget * 0.49) * 100).toFixed(1)
+                          : "0.0"}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-3">
+                      <div
+                        className="h-3 rounded-full bg-purple-600"
+                        style={{
+                          width: `${totalPeopleTarget > 0
+                            ? Math.min((totalPeopleAchieved * 0.49) / (totalPeopleTarget * 0.49) * 100, 100)
+                            : 0}%`
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-purple-100 p-3 rounded-lg">
+                      <p className="text-sm text-purple-800 font-medium">Target</p>
+                      <p className="text-xl font-bold text-purple-700">
+                        {Math.round(totalPeopleTarget * 0.49).toLocaleString()}
+                      </p>
+                      <p className="text-xs text-purple-600">Women</p>
+                    </div>
+                    <div className="bg-green-100 p-3 rounded-lg">
+                      <p className="text-sm text-green-800 font-medium">Achieved</p>
+                      <p className="text-xl font-bold text-green-700">
+                        {Math.round(totalPeopleAchieved * 0.49).toLocaleString()}
+                      </p>
+                      <p className="text-xs text-green-600">Women</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Youth Beneficiaries Card */}
+                <div className="border rounded-lg p-5 bg-gradient-to-br from-teal-50 to-white">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="font-bold text-teal-800 text-lg">People benefiting from climate resilient infrastructure - Youth</h3>
+                      {/* <p className="text-sm text-teal-600">(29% of total beneficiaries)</p> */}
+                    </div>
+                    {/* <span className="px-3 py-1 bg-teal-100 text-teal-800 text-sm font-medium rounded-full">
           Youth Engagement
         </span> */}
-      </div>
-      
-      <div className="mb-4">
-        <div className="flex justify-between text-sm text-gray-600 mb-2">
-          <span>Progress</span>
-          <span className="font-semibold">
-            {totalPeopleTarget > 0 
-              ? ((totalPeopleAchieved * 0.29) / (totalPeopleTarget * 0.29) * 100).toFixed(1) 
-              : "0.0"}%
-          </span>
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-3">
-          <div 
-            className="h-3 rounded-full bg-teal-600"
-            style={{ 
-              width: `${totalPeopleTarget > 0 
-                ? Math.min((totalPeopleAchieved * 0.29) / (totalPeopleTarget * 0.29) * 100, 100) 
-                : 0}%` 
-            }}
-          ></div>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-teal-100 p-3 rounded-lg">
-          <p className="text-sm text-teal-800 font-medium">Target</p>
-          <p className="text-xl font-bold text-teal-700">
-            {Math.round(totalPeopleTarget * 0.29).toLocaleString()}
-          </p>
-          <p className="text-xs text-teal-600">Youth</p>
-        </div>
-        <div className="bg-green-100 p-3 rounded-lg">
-          <p className="text-sm text-green-800 font-medium">Achieved</p>
-          <p className="text-xl font-bold text-green-700">
-            {Math.round(totalPeopleAchieved * 0.29).toLocaleString()}
-          </p>
-          <p className="text-xs text-green-600">Youth</p>
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  {/* 2 Cards in a row - Irrigation and Flood */}
-  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    {/* Irrigation Beneficiaries Card */}
-    <div className="border rounded-lg p-5 bg-gradient-to-br from-blue-50 to-white">
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <h3 className="font-bold text-blue-800 text-lg">People benefitting from improved irrigation infrastructure</h3>
-        </div>
-      </div>
-      
-      <div className="mb-4">
-        <div className="flex justify-between text-sm text-gray-600 mb-2">
-          <span>Progress</span>
-          <span className="font-semibold">{getPercentage(irrigationPeopleIndicator).toFixed(1)}%</span>
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-3">
-          <div 
-            className="h-3 rounded-full bg-blue-600"
-            style={{ width: `${Math.min(getPercentage(irrigationPeopleIndicator), 100)}%` }}
-          ></div>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-blue-100 p-3 rounded-lg">
-          <p className="text-sm text-blue-800 font-medium">Target</p>
-          <p className="text-xl font-bold text-blue-700">
-            {getTarget(irrigationPeopleIndicator).toLocaleString()}
-          </p>
-          <p className="text-xs text-blue-600">People</p>
-        </div>
-        <div className="bg-green-100 p-3 rounded-lg">
-          <p className="text-sm text-green-800 font-medium">Achieved</p>
-          <p className="text-xl font-bold text-green-700">
-            {getCumulative(irrigationPeopleIndicator).toLocaleString()}
-          </p>
-          <p className="text-xs text-green-600">People</p>
-        </div>
-      </div>
-    </div>
-    
-    {/* Flood Protection Beneficiaries Card */}
-    <div className="border rounded-lg p-5 bg-gradient-to-br from-cyan-50 to-white">
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <h3 className="font-bold text-cyan-800 text-lg">People benefitting from strengthened embankments and riverbanks</h3>
-        </div>
-      </div>
-      
-      <div className="mb-4">
-        <div className="flex justify-between text-sm text-gray-600 mb-2">
-          <span>Progress</span>
-          <span className="font-semibold">{getPercentage(floodPeopleIndicator).toFixed(1)}%</span>
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-3">
-          <div 
-            className="h-3 rounded-full bg-cyan-600"
-            style={{ width: `${Math.min(getPercentage(floodPeopleIndicator), 100)}%` }}
-          ></div>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-cyan-100 p-3 rounded-lg">
-          <p className="text-sm text-cyan-800 font-medium">Target</p>
-          <p className="text-xl font-bold text-cyan-700">
-            {getTarget(floodPeopleIndicator).toLocaleString()}
-          </p>
-          <p className="text-xs text-cyan-600">People</p>
-        </div>
-        <div className="bg-green-100 p-3 rounded-lg">
-          <p className="text-sm text-green-800 font-medium">Achieved</p>
-          <p className="text-xl font-bold text-green-700">
-            {getCumulative(floodPeopleIndicator).toLocaleString()}
-          </p>
-          <p className="text-xs text-green-600">People</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+                  </div>
+
+                  <div className="mb-4">
+                    <div className="flex justify-between text-sm text-gray-600 mb-2">
+                      <span>Progress</span>
+                      <span className="font-semibold">
+                        {totalPeopleTarget > 0
+                          ? ((totalPeopleAchieved * 0.29) / (totalPeopleTarget * 0.29) * 100).toFixed(1)
+                          : "0.0"}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-3">
+                      <div
+                        className="h-3 rounded-full bg-teal-600"
+                        style={{
+                          width: `${totalPeopleTarget > 0
+                            ? Math.min((totalPeopleAchieved * 0.29) / (totalPeopleTarget * 0.29) * 100, 100)
+                            : 0}%`
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-teal-100 p-3 rounded-lg">
+                      <p className="text-sm text-teal-800 font-medium">Target</p>
+                      <p className="text-xl font-bold text-teal-700">
+                        {Math.round(totalPeopleTarget * 0.29).toLocaleString()}
+                      </p>
+                      <p className="text-xs text-teal-600">Youth</p>
+                    </div>
+                    <div className="bg-green-100 p-3 rounded-lg">
+                      <p className="text-sm text-green-800 font-medium">Achieved</p>
+                      <p className="text-xl font-bold text-green-700">
+                        {Math.round(totalPeopleAchieved * 0.29).toLocaleString()}
+                      </p>
+                      <p className="text-xs text-green-600">Youth</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2 Cards in a row - Irrigation and Flood */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Irrigation Beneficiaries Card */}
+                <div className="border rounded-lg p-5 bg-gradient-to-br from-blue-50 to-white">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="font-bold text-blue-800 text-lg">People benefitting from improved irrigation infrastructure</h3>
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <div className="flex justify-between text-sm text-gray-600 mb-2">
+                      <span>Progress</span>
+                      <span className="font-semibold">{getPercentage(irrigationPeopleIndicator).toFixed(1)}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-3">
+                      <div
+                        className="h-3 rounded-full bg-blue-600"
+                        style={{ width: `${Math.min(getPercentage(irrigationPeopleIndicator), 100)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-blue-100 p-3 rounded-lg">
+                      <p className="text-sm text-blue-800 font-medium">Target</p>
+                      <p className="text-xl font-bold text-blue-700">
+                        {getTarget(irrigationPeopleIndicator).toLocaleString()}
+                      </p>
+                      <p className="text-xs text-blue-600">People</p>
+                    </div>
+                    <div className="bg-green-100 p-3 rounded-lg">
+                      <p className="text-sm text-green-800 font-medium">Achieved</p>
+                      <p className="text-xl font-bold text-green-700">
+                        {getCumulative(irrigationPeopleIndicator).toLocaleString()}
+                      </p>
+                      <p className="text-xs text-green-600">People</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Flood Protection Beneficiaries Card */}
+                <div className="border rounded-lg p-5 bg-gradient-to-br from-cyan-50 to-white">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="font-bold text-cyan-800 text-lg">People benefitting from strengthened embankments and riverbanks</h3>
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <div className="flex justify-between text-sm text-gray-600 mb-2">
+                      <span>Progress</span>
+                      <span className="font-semibold">{getPercentage(floodPeopleIndicator).toFixed(1)}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-3">
+                      <div
+                        className="h-3 rounded-full bg-cyan-600"
+                        style={{ width: `${Math.min(getPercentage(floodPeopleIndicator), 100)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-cyan-100 p-3 rounded-lg">
+                      <p className="text-sm text-cyan-800 font-medium">Target</p>
+                      <p className="text-xl font-bold text-cyan-700">
+                        {getTarget(floodPeopleIndicator).toLocaleString()}
+                      </p>
+                      <p className="text-xs text-cyan-600">People</p>
+                    </div>
+                    <div className="bg-green-100 p-3 rounded-lg">
+                      <p className="text-sm text-green-800 font-medium">Achieved</p>
+                      <p className="text-xl font-bold text-green-700">
+                        {getCumulative(floodPeopleIndicator).toLocaleString()}
+                      </p>
+                      <p className="text-xs text-green-600">People</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         ) : viewMode === "schemes" ? (
           /* WORKS LIST VIEW */
@@ -940,7 +982,7 @@ const getWorkSpecificProgress = useMemo(() => {
                   <h2 className="text-lg font-semibold">All Works ({schemes.length})</h2>
                   <p className="text-sm text-gray-500">Select a work to view its PDO1 & PDO2</p>
                 </div>
-                
+
                 <div className="flex gap-4">
                   <div className="relative">
                     <input
@@ -951,7 +993,7 @@ const getWorkSpecificProgress = useMemo(() => {
                       className="w-80 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
                     />
                   </div>
-                  
+
                   <div className="relative download-menu">
                     <button
                       onClick={() => setShowDownloadOptions(!showDownloadOptions)}
@@ -961,7 +1003,7 @@ const getWorkSpecificProgress = useMemo(() => {
                       Export Data
                       <ChevronDown className="w-4 h-4" />
                     </button>
-                    
+
                     {showDownloadOptions && (
                       <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-300 rounded shadow-sm z-10 overflow-hidden">
                         <button onClick={() => handleDownload("pdf")} className="block w-full text-left px-4 py-3 hover:bg-gray-100 border-b border-gray-200">
@@ -1001,7 +1043,7 @@ const getWorkSpecificProgress = useMemo(() => {
                       </tr>
                     ) : (
                       schemes
-                        .filter(scheme => 
+                        .filter(scheme =>
                           scheme.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           scheme.schemeId.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           scheme.component.toLowerCase().includes(searchTerm.toLowerCase())
@@ -1009,7 +1051,7 @@ const getWorkSpecificProgress = useMemo(() => {
                         .map((scheme, index) => {
                           const isSelected = selectedScheme?.id === scheme.id;
                           const isIrrigation = scheme.workType === "IRRIGATION";
-                          
+
                           return (
                             <tr key={scheme.id} className={`hover:bg-gray-50 ${isSelected ? 'bg-blue-50' : ''}`}>
                               <td className="border border-gray-400 p-3 text-center">{index + 1}</td>
@@ -1095,7 +1137,7 @@ const getWorkSpecificProgress = useMemo(() => {
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">
                   PDO Indicators for {selectedScheme.workType === "IRRIGATION" ? "Irrigation Work" : "Embankment Work"}
                 </h3>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                   {workPDOs.map((indicator: any) => {
                     const workData = getWorkSpecificProgress[indicator.id] || {
@@ -1106,7 +1148,7 @@ const getWorkSpecificProgress = useMemo(() => {
                       overallAchieved: 0,
                       overallPercentage: 0
                     };
-                    
+
                     return (
                       <div key={indicator.id} className="border rounded-lg p-5 hover:shadow-md transition-shadow">
                         <div className="flex justify-between items-start mb-4">
@@ -1118,48 +1160,48 @@ const getWorkSpecificProgress = useMemo(() => {
                             {indicator.category}
                           </span>
                         </div>
-                        
+
                         <div className="mb-4">
                           <div className="flex justify-between text-sm text-gray-600 mb-2">
                             <span>Work Progress</span>
                             <span className="font-semibold">{workData.workPercentage.toFixed(1)}%</span>
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
+                            <div
                               className={`h-2 rounded-full ${indicator.category === "PDO1" ? 'bg-blue-600' : 'bg-green-600'}`}
                               style={{ width: `${Math.min(workData.workPercentage, 100)}%` }}
                             ></div>
                           </div>
                         </div>
-                        
-                       {/* Work-specific progress card में */}
-<div className="grid grid-cols-2 gap-4 mb-2">
-  <div className={`p-3 rounded-lg ${indicator.category === "PDO1" ? 'bg-blue-50' : 'bg-green-50'}`}>
-    <p className="text-sm text-gray-600">Work Target</p>
-    <p className="text-lg font-bold">
-      {workData.workTarget.toLocaleString()} 
-      <span className="text-xs ml-1">{indicator.unit}</span>
-    </p>
-  </div>
-  <div className="bg-green-50 p-3 rounded-lg">
-    <p className="text-sm text-gray-600">Work Achieved</p>
-    <p className="text-lg font-bold text-green-700">
-      {workData.workAchieved.toLocaleString()}
-      <span className="text-xs ml-1">{indicator.unit}</span>
-    </p>
-  </div>
-</div>
+
+                        {/* Work-specific progress card में */}
+                        <div className="grid grid-cols-2 gap-4 mb-2">
+                          <div className={`p-3 rounded-lg ${indicator.category === "PDO1" ? 'bg-blue-50' : 'bg-green-50'}`}>
+                            <p className="text-sm text-gray-600">Work Target</p>
+                            <p className="text-lg font-bold">
+                              {workData.workTarget.toLocaleString()}
+                              <span className="text-xs ml-1">{indicator.unit}</span>
+                            </p>
+                          </div>
+                          <div className="bg-green-50 p-3 rounded-lg">
+                            <p className="text-sm text-gray-600">Work Achieved</p>
+                            <p className="text-lg font-bold text-green-700">
+                              {workData.workAchieved.toLocaleString()}
+                              <span className="text-xs ml-1">{indicator.unit}</span>
+                            </p>
+                          </div>
+                        </div>
 
                         {/* Overall Progress Info */}
                         <div className="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-600">
                           <p>Overall Project: {workData.overallAchieved.toLocaleString()} / {workData.overallTarget.toLocaleString()} ({workData.overallPercentage.toFixed(1)}%)</p>
                         </div>
-                        
+
                         <div className="mt-4">
                           <button
                             onClick={() => {
-                              setSelectedIndicator(indicator.id);
-                              setShowAddForm(true);
+                              handleUpdateProgressClick(indicator.id)
+                              // setShowAddForm(true);
                             }}
                             className="w-full py-2 bg-gray-100 hover:bg-gray-200 rounded text-gray-700"
                           >
@@ -1222,7 +1264,7 @@ const getWorkSpecificProgress = useMemo(() => {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            
+
             <form onSubmit={handleAddProgress}>
               <div className="space-y-4">
                 <div>
@@ -1242,7 +1284,23 @@ const getWorkSpecificProgress = useMemo(() => {
                     ))}
                   </select>
                 </div>
-                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Quarter
+                  </label>
+                  <select
+                    name="quarter"
+                    value={formState.quarter}
+                    onChange={handleFormChange}
+                    className="w-full border border-gray-300 rounded px-3 py-2"
+                    required
+                  >
+                    <option value="">Select Quarter</option>
+                    {QUARTERS.map((quarter) => (
+                      <option key={quarter} value={quarter}>{quarter}</option>
+                    ))}
+                  </select>
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Achievement ({indicators.find((ind: { id: number }) => ind.id === selectedIndicator)?.unit || "Units"})
@@ -1257,16 +1315,16 @@ const getWorkSpecificProgress = useMemo(() => {
                     min="0"
                   />
                 </div>
-                
+
                 {/* PDO2 के लिए Female और Youth breakdown */}
                 {indicators.find((ind: { id: number }) => ind.id === selectedIndicator)?.category === "PDO2" && (
                   <div className="border-t pt-4 mt-4">
                     <h4 className="font-medium text-gray-700 mb-3">Beneficiary Breakdown (Auto-calculated)</h4>
-                    
+
                     <div className="grid grid-cols-2 gap-4">
                       <div className="bg-purple-50 p-3 rounded-lg">
                         <label className="block text-xs font-medium text-purple-700 mb-1">
-                          Female Beneficiaries 
+                          Female Beneficiaries
                         </label>
                         <input
                           type="number"
@@ -1281,10 +1339,10 @@ const getWorkSpecificProgress = useMemo(() => {
                           {formState.female_achievement.toLocaleString()} people
                         </p>
                       </div>
-                      
+
                       <div className="bg-teal-50 p-3 rounded-lg">
                         <label className="block text-xs font-medium text-teal-700 mb-1">
-                          Youth Beneficiaries 
+                          Youth Beneficiaries
                         </label>
                         <input
                           type="number"
@@ -1302,7 +1360,7 @@ const getWorkSpecificProgress = useMemo(() => {
                     </div>
                   </div>
                 )}
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Remarks
@@ -1317,7 +1375,7 @@ const getWorkSpecificProgress = useMemo(() => {
                   />
                 </div>
               </div>
-              
+
               <div className="flex justify-end gap-3 mt-6">
                 <button
                   type="button"
