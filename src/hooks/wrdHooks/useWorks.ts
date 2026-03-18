@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -17,8 +16,12 @@ import {
   updateComponents,
   fetchAssignedWorks,
   getSpursByWorkId,
-  addSpurs
-
+  addSpurs,
+  // Add these imports
+  addEmbankments,
+  getEmbankmentsByWorkId,
+  updateEmbankments,
+  deleteEmbankment
 } from "@/services/api/wrdApi/workApi";
 
 // =============================
@@ -34,7 +37,6 @@ export const useWorks = () => {
 // =============================
 // ✅ Hook: Create new work
 // =============================
-
 export const useCreateWork = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -45,6 +47,7 @@ export const useCreateWork = () => {
     },
   });
 };
+
 // =============================
 // ✅ Hook: Add beneficiaries
 // =============================
@@ -87,6 +90,68 @@ export const useAddComponentsAndMilestones = () => {
   });
 };
 
+// =============================
+// ✅ NEW HOOK: Add embankments
+// =============================
+export const useAddEmbankments = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ workId, data }: { workId: number; data: any }) =>
+      addEmbankments(workId, data),
+    onSuccess: (_, variables) => {
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ["work", variables.workId] });
+      queryClient.invalidateQueries({ queryKey: ["embankments", variables.workId] });
+      queryClient.invalidateQueries({ queryKey: ["works"] });
+    },
+    onError: (error) => {
+      console.error('❌ Error adding embankments:', error);
+      throw error;
+    }
+  });
+};
+
+// =============================
+// ✅ NEW HOOK: Get embankments by work ID
+// =============================
+export const useEmbankmentsByWorkId = (workId: number | null | undefined) => {
+  return useQuery({
+    queryKey: ["embankments", workId],
+    queryFn: () => getEmbankmentsByWorkId(workId!),
+    enabled: !!workId,
+  });
+};
+
+// =============================
+// ✅ NEW HOOK: Update embankments
+// =============================
+export const useUpdateEmbankments = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ workId, data }: { workId: number; data: any }) =>
+      updateEmbankments(workId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["embankments", variables.workId] });
+      queryClient.invalidateQueries({ queryKey: ["work", variables.workId] });
+    },
+  });
+};
+
+// =============================
+// ✅ NEW HOOK: Delete embankments
+// =============================
+// export const useDeleteEmbankments = () => {
+//   const queryClient = useQueryClient();
+//   return useMutation({
+//     mutationFn: ({ workId, embankmentId }: { workId: number; embankmentId: number }) =>
+//       deleteEmbankments(workId, embankmentId),
+//     onSuccess: (_, variables) => {
+//       queryClient.invalidateQueries({ queryKey: ["embankments", variables.workId] });
+//       queryClient.invalidateQueries({ queryKey: ["work", variables.workId] });
+//     },
+//   });
+// };
+
 export const useWorksByDivision = (divisionId?: number | string) =>
   useQuery({
     queryKey: ["works", divisionId],
@@ -104,6 +169,7 @@ export const useWorksList = () => {
     },
   });
 };
+
 export const useWorkById = (workId: number | null | undefined) => {
   return useQuery({
     queryKey: ["work", workId],
@@ -111,7 +177,6 @@ export const useWorkById = (workId: number | null | undefined) => {
     enabled: !!workId,
   });
 };
-
 
 export const useUpdateWork = () => {
   const queryClient = useQueryClient();
@@ -124,6 +189,7 @@ export const useUpdateWork = () => {
     },
   });
 };
+
 export const useDeleteWork = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -133,6 +199,7 @@ export const useDeleteWork = () => {
     },
   });
 };
+
 export const useUpdateBeneficiaries = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -143,6 +210,7 @@ export const useUpdateBeneficiaries = () => {
     },
   });
 };
+
 export const useUpdateVillages = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -153,6 +221,7 @@ export const useUpdateVillages = () => {
     },
   });
 };
+
 export const useUpdateComponents = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -163,19 +232,19 @@ export const useUpdateComponents = () => {
     },
   });
 };
+
 export const useWorkDetails = (workId?: number) => {
   return useQuery({
     queryKey: ["work-details", workId],
     queryFn: async () => {
       if (!workId) throw new Error("Work ID is required");
-
       const work = await getWorkById(workId);
-      // You might want to fetch related data here
       return work;
     },
     enabled: !!workId,
   });
 };
+
 export const useAssignedWorks = (userId?: string) => {
   return useQuery({
     queryKey: ["assigned-works", userId],
@@ -191,7 +260,6 @@ export const useAddSpurs = () => {
     mutationFn: ({ workId, data }: { workId: number; data: any }) =>
       addSpurs(workId, data),
     onSuccess: (_, variables) => {
-      // Invalidate both the work details and spurs specific query
       queryClient.invalidateQueries({ queryKey: ["work", variables.workId] });
       queryClient.invalidateQueries({ queryKey: ["spurs", variables.workId] });
       queryClient.invalidateQueries({ queryKey: ["works"] });

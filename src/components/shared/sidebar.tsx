@@ -117,6 +117,8 @@ export const Sidebar: FC<any> = ({ setActiveTab, activeTab }) => {
       { id: "usersDetails", label: "Manage Users", icon: Users, roles: [1] },
       { id: "addUser", label: "Add User", icon: UserPlus, roles: [1] },
       { id: "dms", label: "Document Upload", icon: FileText, roles: [1] },
+       { id: "memodule", label: "M & E", icon: FileText, roles: [1] },
+
      
       {
         id: "reports",

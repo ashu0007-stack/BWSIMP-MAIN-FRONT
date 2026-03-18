@@ -1,577 +1,367 @@
-// components/SpurProgressComponent.tsx
-import React, { useMemo } from "react";
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
-  ResponsiveContainer, Cell
-} from "recharts";
+"use client";
+
+import React, { useMemo, useState } from "react";
+import { 
+    MapPin, 
+    CheckCircle, 
+    AlertCircle, 
+    Clock,
+    Eye,
+    X 
+} from "lucide-react";
 
 interface SpurData {
-  id: number | null;
-  spur_id: number;
-  spur_name: string;
-  location_km: number;
-  progress_date: string | null;
-  status: string | null;
-  spur_length?: number;
-  completed_km?: number;
-  completion_percentage?: number;
+    id: number;
+    spur_id: number;
+    spur_name: string;
+    location_km: number;
+    spur_length: number;
+    is_new: string;
+    status: string;
+    progress_date: string | null;
+    last_updated_by: string | null;
+    last_updated_at: string | null;
+    remarks: string | null;
+}
+
+interface SpurHistory {
+    id: number;
+    spur_name: string;
+    location_km: number;
+    spur_length_km: number;
+    progress_date: string;
+    formatted_date: string;
+    status: string;
+    created_by: string;
 }
 
 interface SpurProgressProps {
-  spurs: SpurData[];
-  targetKm: number;
-  work_start_range:number;
-  work_end_range:number;
-  packageNumber: string;
-  workName: string;
-
+    spurs: SpurData[];
+    history?: SpurHistory[];
+    packageNumber: string;
+    workName: string;
+    work_start_range?: number;
+    work_end_range?: number;
+    targetKm?: number;
 }
 
 const SpurProgressComponent: React.FC<SpurProgressProps> = ({ 
-  spurs, 
-  targetKm, 
-  work_start_range,
-  work_end_range,
-  packageNumber, 
-  workName 
+    spurs, 
+    history = [],
+    packageNumber, 
+    workName,
+    work_start_range = 0,
+    work_end_range   = 0,
+    targetKm = 0
 }) => {
-  
-  // Calculate cumulative completed_km for each spur_id
-  const cumulativeSpurData = useMemo(() => {
-    const spurMap = new Map<number, {
-      id: number;
-      spur_id: number;
-      spur_name: string;
-      location_km: number;
-      spur_length: number;
-      total_completed_km: number;
-      max_completion_percentage: number;
-      latest_date: string | null;
-      status: string | null;
-      entries: SpurData[]; // Store all entries for this spur
-    }>();
     
-    spurs.forEach(spur => {
-      const existing = spurMap.get(spur.spur_id);
-      const completed_km = spur.completed_km || 0;
-      const spur_length = spur.spur_length || 0;
-      
-      if (!existing) {
-        spurMap.set(spur.spur_id, {
-          id: spur.id || 0,
-          spur_id: spur.spur_id,
-          spur_name: spur.spur_name,
-          location_km: spur.location_km,
-          spur_length: spur_length,
-          total_completed_km: completed_km,
-          max_completion_percentage: spur.completion_percentage || 0,
-          latest_date: spur.progress_date,
-          status: spur.status,
-          entries: [spur]
-        });
-      } else {
-        // Add to cumulative completed km
-        existing.total_completed_km += completed_km;
-        
-        // Keep the latest date
-        if (spur.progress_date && (!existing.latest_date || 
-            new Date(spur.progress_date) > new Date(existing.latest_date))) {
-          existing.latest_date = spur.progress_date;
-        }
-        
-        // Keep the highest completion percentage
-        if (spur.completion_percentage && 
-            spur.completion_percentage > existing.max_completion_percentage) {
-          existing.max_completion_percentage = spur.completion_percentage;
-        }
-        
-        // Add this entry to the list
-        existing.entries.push(spur);
-      }
-    });
-    
-    return Array.from(spurMap.values());
-  }, [spurs]);
+    const [selectedSpur, setSelectedSpur] = useState<SpurData | null>(null);
+    const [showHistory, setShowHistory] = useState(false);
 
-  // Filter spurs that have progress (completed_km > 0)
-  const spursWithProgress = useMemo(() => {
-    return spurs.filter(spur => (spur.completed_km || 0) > 0);
-  }, [spurs]);
-
-  // Calculate spur statistics using cumulative data
-  const spurStats = useMemo(() => {
-    if (!cumulativeSpurData.length) return null;
-    
-    const completed = cumulativeSpurData.filter(s => {
-      const status = s.status?.toLowerCase();
-      return status === 'completed' || 
-             status === 'done' || 
-             (s.max_completion_percentage >= 100);
-    }).length;
-    
-    const inProgress = cumulativeSpurData.filter(s => {
-      const status = s.status?.toLowerCase();
-      return status === 'in_progress' || 
-             status === 'in progress' || 
-             status === 'in-progress' ||
-             (s.max_completion_percentage > 0 && s.max_completion_percentage < 100);
-    }).length;
-    
-    const notStarted = cumulativeSpurData.filter(s => {
-      const status = s.status?.toLowerCase();
-      return !status || 
-             status === 'not started' ||
-             status === 'pending' ||
-             status === 'not-started' ||
-             (s.max_completion_percentage === 0);
-    }).length;
-    
-    const total = cumulativeSpurData.length;
-    
-    // Calculate total and completed lengths from cumulative data
-    const totalSpurLength = cumulativeSpurData.reduce((sum, spur) => 
-      sum + (spur.spur_length || 0), 0
-    );
-    const completedSpurLength = cumulativeSpurData.reduce((sum, spur) => 
-      sum + spur.total_completed_km, 0
-    );
-    
-    return { 
-      completed, 
-      inProgress, 
-      notStarted, 
-      total, 
-      totalSpurLength: parseFloat(totalSpurLength.toFixed(2)),
-      completedSpurLength: parseFloat(completedSpurLength.toFixed(2)),
-      completionByLength: totalSpurLength > 0 ? 
-        (completedSpurLength / totalSpurLength) * 100 : 0
+    // ========== HELPER FUNCTIONS FOR SAFE NUMBER FORMATTING ==========
+    const safeToFixed = (value: any, decimals: number = 2): string => {
+        // Agar value null ya undefined hai to dash return karo
+        if (value === null || value === undefined) return '-';
+        
+        // Number me convert karo
+        const num = Number(value);
+        
+        // Agar valid number nahi hai to dash return karo
+        if (isNaN(num)) return '-';
+        
+        // Ab safely toFixed laga sakte ho
+        return num.toFixed(decimals);
     };
-  }, [cumulativeSpurData]);
 
-  // Location chart data - using cumulative data
-  const spurLengthChartData = useMemo(() => {
-    if (!cumulativeSpurData.length) return [];
-    
-    return [...cumulativeSpurData]
-      .sort((a, b) => a.location_km - b.location_km)
-      .map(spur => {
-        const totalLength = spur.spur_length || 0;
-        const completed = spur.total_completed_km;
-        const remaining = totalLength - completed;
+    const formatLength = (length: any): string => {
+        return safeToFixed(length, 2);
+    };
+
+    const formatLocation = (location: any): string => {
+        return safeToFixed(location, 2);
+    };
+    // ================================================================
+
+    // Calculate statistics
+    const stats = useMemo(() => {
+        const completed = spurs.filter(s => s.status === 'completed').length;
+        const inProgress = spurs.filter(s => s.status === 'in-progress').length;
+        const notStarted = spurs.filter(s => s.status === 'not-started').length;
         
-        // Determine status based on cumulative data
-        let status = 'Not Started';
-        if (completed >= totalLength) {
-          status = 'Completed';
-        } else if (completed > 0) {
-          status = 'In Progress';
-        }
+        const totalLength = spurs.reduce((sum, spur) => sum + (Number(spur.spur_length) || 0), 0);
+        const completedLength = spurs
+            .filter(s => s.status === 'completed')
+            .reduce((sum, spur) => sum + (Number(spur.spur_length) || 0), 0);
+        const inProgressLength = spurs
+            .filter(s => s.status === 'in-progress')
+            .reduce((sum, spur) => sum + (Number(spur.spur_length) || 0), 0);
+        const notStartedLength = spurs
+            .filter(s => s.status === 'not-started')
+            .reduce((sum, spur) => sum + (Number(spur.spur_length) || 0), 0);
         
-        return {
-          name: spur.spur_name,
-          location: spur.location_km,
-          totalLength,
-          completedLength: completed,
-          remainingLength: remaining > 0 ? remaining : 0,
-          completionPercentage: totalLength > 0 ? (completed / totalLength) * 100 : 0,
-          status: status,
-          date: spur.latest_date,
-          entries: spur.entries.length // Number of entries for this spur
+        return { 
+            completed, 
+            inProgress, 
+            notStarted, 
+            total: spurs.length,
+            totalLength,
+            completedLength,
+            inProgressLength,
+            notStartedLength
         };
-      });
-  }, [cumulativeSpurData]);
+    }, [spurs]);
 
-  // Calculate max length for Y-axis domain
-  const maxLength = useMemo(() => {
-    if (!spurLengthChartData.length) return 100;
-    const maxTotal = Math.max(...spurLengthChartData.map(d => d.totalLength));
-    return Math.ceil(maxTotal / 50) * 50; // Round up to nearest 50
-  }, [spurLengthChartData]);
+    // Filter history for selected spur
+    const spurHistory = useMemo(() => {
+        if (!selectedSpur) return [];
+        return history.filter(h => h.spur_name === selectedSpur.spur_name);
+    }, [selectedSpur, history]);
 
-  if (!cumulativeSpurData.length || !spurStats) {
+    const getStatusBadge = (status: string = 'not-started') => {
+        switch(status) {
+            case 'completed':
+                return (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        Completed
+                    </span>
+                );
+            case 'in-progress':
+                return (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        <Clock className="w-3 h-3 mr-1" />
+                        In Progress
+                    </span>
+                );
+            default:
+                return (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        <AlertCircle className="w-3 h-3 mr-1" />
+                        Not Started
+                    </span>
+                );
+        }
+    };
+
+    const getStatusColor = (status: string = 'not-started') => {
+        switch(status) {
+            case 'completed': return 'bg-green-500';
+            case 'in-progress': return 'bg-yellow-500';
+            default: return 'bg-gray-500';
+        }
+    };
+
+    if (!spurs.length) {
+        return (
+            <div className="space-y-6">
+                <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white p-4 rounded-lg shadow">
+                    <h2 className="text-xl font-bold">Spur Work Status</h2>
+                    <p className="text-green-100 text-sm">{workName} - {packageNumber}</p>
+                </div>
+                <div className="text-center p-8 bg-white rounded-lg shadow">
+                    <MapPin className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                    <p className="text-gray-500">No spur data available</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
-      <div className="space-y-8 mt-8">
-        <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white p-4 rounded-lg shadow-lg">
-          <h2 className="text-2xl font-bold">Spur Work Progress</h2>
-          <p className="text-green-100">
-            {workName} - Package: {packageNumber}
-          </p>
-        </div>
-        <div className="text-center p-8 text-gray-500">
-          <p className="text-lg">No spur data available</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-8 mt-8">
-      {/* Section Header */}
-      <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white p-4 rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold">Spur Work Progress</h2>
-        <p className="text-green-100">
-          {workName} - Package: {packageNumber}
-        </p>
-        <p className="text-green-100 text-sm mt-1">
-          Showing cumulative progress for {cumulativeSpurData.length} unique spurs
-        </p>
-      </div>
-
-
-       {/* Improved Progress Timeline */}
-     <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-6 rounded-lg border border-blue-200">
-  <h3 className="font-bold text-xl mb-6 text-gray-800 text-center">
-    Spur Progress Timeline Along Embankment
-  </h3>
-  
-  {/* Timeline Container with Relative Positioning */}
-  <div className="relative py-10 px-4">
-    {/* Scale Bar Background */}
-    <div className="absolute top-10 left-4 right-4 h-1 bg-gradient-to-r from-blue-300 to-blue-500 rounded-full"></div>
-    
-    {/* Dots positioned based on actual location */}
-    {spurLengthChartData.map((spur, index) => {
-      let dotColor = 'bg-red-500';
-      let statusText = 'Not Started';
-      
-      if (spur.completionPercentage >= 100) {
-        dotColor = 'bg-green-500';
-        statusText = 'Completed';
-      } else if (spur.completionPercentage > 0) {
-        dotColor = 'bg-yellow-500';
-        statusText = `${spur.completionPercentage.toFixed(0)}%`;
-      }
-      
-      // Calculate position percentage based on location
-      const positionPercentage = ((spur.location - work_start_range) / (work_end_range - work_start_range)) * 100;
-      
-      // Clamp between 0 and 100
-      const clampedPosition = Math.max(0, Math.min(100, positionPercentage));
-      
-      return (
-        <div 
-          key={index}
-          className="absolute top-10 transform -translate-x-1/2 -translate-y-1/2 group"
-          style={{ left: `${clampedPosition}%` }}
-        >
-          {/* Spur Dot */}
-          <div className="relative">
-            <div 
-              className={`w-5 h-5 ${dotColor} rounded-full border-3 border-white shadow-md cursor-pointer relative`}
-            >
-              {/* {spur.entries > 1 && (
-                <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-                  {spur.entries}
-                </span>
-              )} */}
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white p-4 rounded-lg shadow">
+                <h2 className="text-xl font-bold">Spur Work Status</h2>
+                <p className="text-green-100 text-sm">{workName} - {packageNumber}</p>
             </div>
+
+            {/* Statistics Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
+                    <p className="text-xs text-gray-500">Total Spurs</p>
+                    <p className="text-2xl font-bold">{stats.total}</p>
+                </div>
+                 <div className="bg-white p-4 rounded-lg shadow border-l-4 border-gray-500">
+                    <p className="text-xs text-gray-500">Not Started</p>
+                    <p className="text-2xl font-bold text-gray-600">{stats.notStarted}</p>
+                </div>
+                
+                <div className="bg-white p-4 rounded-lg shadow border-l-4 border-yellow-500">
+                    <p className="text-xs text-gray-500">In Progress</p>
+                    <p className="text-2xl font-bold text-yellow-600">{stats.inProgress}</p>
+                </div>
+               <div className="bg-white p-4 rounded-lg shadow border-l-4 border-green-500">
+                    <p className="text-xs text-gray-500">Completed</p>
+                    <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
+                </div>
+            </div>
+
+            {/* Timeline */}
+<div className="bg-white p-4 rounded-lg shadow">
+    <h3 className="font-semibold mb-4">Spur Location Timeline</h3>
+    <div className="relative py-6 px-2">
+        <div className="absolute top-6 left-2 right-2 h-0.5 bg-gray-200"></div>
+        
+        {spurs.map((spur, index) => {
+            const position = work_end_range > work_start_range 
+                ? ((Number(spur.location_km) - work_start_range) / (work_end_range - work_start_range)) * 100
+                : (index / (spurs.length - 1 || 1)) * 100;
             
-            {/* Tooltip */}
-            <div className="absolute bottom-full left-1/2 mb-2 hidden group-hover:block bg-gray-800 text-white whitespace-nowrap text-xs rounded transform -translate-x-1/2 px-3 py-2 z-10">
-              <div className="font-bold">{spur.name}</div>
-              <div>Location: {spur.location.toFixed(2)} Km</div>
-              <div>Completed: {spur.completedLength.toLocaleString()}m / {spur.totalLength.toLocaleString()}m</div>
-              <div className="text-green-300">Status: {statusText}</div>
-            </div>
-          </div>
-          
-          {/* Location Label above dot */}
-          <div className="absolute bottom-full left-1/2 mb-6 transform -translate-x-1/2 text-xs text-gray-600 whitespace-nowrap">
-            {spur.location.toFixed(1)}km
-          </div>
-          
-          {/* Spur Name below dot */}
-          <div className="absolute top-full left-1/2 mt-2 transform -translate-x-1/2 text-center">
-            <div className="text-xs font-bold whitespace-nowrap">{spur.name}</div>
-            <div className="text-[10px] text-gray-500">{statusText}</div>
-          </div>
+            return (
+                <div 
+                    key={spur.id}
+                    className="absolute top-6 transform -translate-x-1/2 -translate-y-1/2 group cursor-pointer"
+                    style={{ left: `${Math.max(0, Math.min(100, position))}%` }}
+                    onClick={() => {
+                        setSelectedSpur(spur);
+                        setShowHistory(true);
+                    }}
+                >
+                    <div className={`w-4 h-4 ${getStatusColor(spur.status)} rounded-full border-2 border-white shadow hover:scale-150 transition-transform`}>
+                        {history.filter(h => h.spur_name === spur.spur_name).length > 1 && (
+                            <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                                {history.filter(h => h.spur_name === spur.spur_name).length}
+                            </span>
+                        )}
+                    </div>
+                    
+                    {/* Always visible label below the point */}
+                    <div className="absolute top-4 left-1/2 transform -translate-x-1/2 mt-1 whitespace-nowrap">
+                        <div className="text-xs font-medium bg-white px-2 py-1 rounded shadow-sm border border-gray-200">
+                            <div>{spur.spur_name}</div>
+                            <div className="text-gray-500 text-[10px]">{safeToFixed(spur.location_km)} Km</div>
+                        </div>
+                    </div>
+                    
+                    {/* Tooltip on hover (optional - can keep or remove) */}
+                    <div className="absolute bottom-full left-1/2 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 whitespace-nowrap z-10">
+                        <div className="font-bold">{spur.spur_name}</div>
+                        <div>Location: {safeToFixed(spur.location_km)} Km</div>
+                        <div>Length: {safeToFixed(spur.spur_length)} m</div>
+                        <div>Status: {spur.status}</div>
+                        {spur.progress_date && (
+                            <div>Last: {new Date(spur.progress_date).toLocaleDateString()}</div>
+                        )}
+                    </div>
+                </div>
+            );
+        })}
+        
+        <div className="mt-16 flex justify-between text-xs text-gray-500">
+            <span>{work_start_range} Km</span>
+            <span>{((work_start_range + work_end_range) / 2).toFixed(1)} Km</span>
+            <span>{work_end_range} Km</span>
         </div>
-      );
-    })}
-    
-    {/* Scale Labels */}
-    <div className="mt-12 flex justify-between text-xs text-gray-600">
-      <span>{work_start_range.toFixed(1)} Km</span>
-      <span>{((work_start_range + work_end_range) / 2).toFixed(1)} Km</span>
-      <span>{work_end_range.toFixed(1)} Km</span>
     </div>
-  </div>
-  
-  {/* Compact Legend */}
-  <div className="mt-6 flex flex-wrap justify-center gap-3">
-    <div className="flex items-center gap-1">
-      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-      <span className="text-xs">Completed</span>
-    </div>
-    <div className="flex items-center gap-1">
-      <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-      <span className="text-xs">In Progress</span>
-    </div>
-    <div className="flex items-center gap-1">
-      <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-      <span className="text-xs">Not Started</span>
-    </div>
-  </div>
 </div>
 
-      {/* Single Chart - Spur Length vs Cumulative Completed Length */}
-      <div className="bg-white border border-gray-300 p-6 rounded-lg shadow-sm">
-        <h3 className="font-semibold mb-4 text-center text-gray-700">
-          Spur Length vs Cumulative Completed Length (in Meters)
-        </h3>
-        {spurLengthChartData.length > 0 ? (
-          <>
-            <div className="mb-4 bg-blue-50 p-3 rounded-lg">
-              <p className="text-sm text-blue-700 text-center">
-                <span className="font-bold">Note: </span>
-                Graph shows cumulative completed length for each spur. 
-                If a spur has multiple entries, their completed meters are added together.
-              </p>
+            {/* Main Table */}
+            <div className="bg-white shadow rounded-lg overflow-hidden">
+                <div className="bg-green-600 text-white p-3">
+                    <h3 className="font-semibold">Spur Details</h3>
+                </div>
+                
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                <th className="p-3 text-left">#</th>
+                                <th className="p-3 text-left">Spur Name</th>
+                                <th className="p-3 text-left">Location (Km)</th>
+                                <th className="p-3 text-left">Length (m)</th>
+                                <th className="p-3 text-left">Status</th>
+                                <th className="p-3 text-left">Last Updated</th>
+                                <th className="p-3 text-left">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {spurs.map((spur, index) => (
+                                <tr key={spur.id} className="border-t hover:bg-gray-50">
+                                    <td className="p-3">{index + 1}</td>
+                                    <td className="p-3 font-medium">{spur.spur_name}</td>
+                                    {/* FIXED: formatLocation use kiya */}
+                                    <td className="p-3">{formatLocation(spur.location_km)}</td>
+                                    {/* FIXED: formatLength use kiya */}
+                                    <td className="p-3 font-medium text-purple-700">{formatLength(spur.spur_length)} m</td>
+                                    <td className="p-3">{getStatusBadge(spur.status)}</td>
+                                    <td className="p-3">
+                                        {spur.progress_date ? 
+                                            new Date(spur.progress_date).toLocaleDateString() : '-'
+                                        }
+                                    </td>
+                                    <td className="p-3">
+                                        <button
+                                            onClick={() => {
+                                                setSelectedSpur(spur);
+                                                setShowHistory(true);
+                                            }}
+                                            className="text-blue-600 hover:text-blue-800 text-xs flex items-center"
+                                        >
+                                            <Eye className="w-3 h-3 mr-1" />
+                                            History
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            
-            <ResponsiveContainer width="100%" height={400}>
-              <BarChart
-                data={spurLengthChartData}
-                margin={{ top: 20, right: 30, left: 20, bottom: 70 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="name" 
-                  angle={-45}
-                  textAnchor="end"
-                  height={80}
-                  tick={{ fontSize: 12 }}
-                  interval={0}
-                />
-                <YAxis 
-                  label={{ 
-                    value: 'Length (Meters)', 
-                    angle: -90, 
-                    position: 'insideLeft',
-                    offset: -10,
-                    style: { textAnchor: 'middle' }
-                  }}
-                  domain={[0, maxLength]}
-                  tickFormatter={(value) => value.toLocaleString()}
-                />
-                <Tooltip 
-                  formatter={(value: number, name: string) => {
-                    if (name === 'totalLength') return [`${value.toLocaleString()} m`, 'Total Length'];
-                    if (name === 'completedLength') return [`${value.toLocaleString()} m`, 'Cumulative Completed Length'];
-                    if (name === 'remainingLength') return [`${value.toLocaleString()} m`, 'Remaining Length'];
-                    return [value, name];
-                  }}
-                  labelFormatter={(label, data) => {
-                    const entry = data[0]?.payload;
-                    return `Spur: ${label} (${entry.entries} entries)`;
-                  }}
-                />
-                <Legend />
-                <Bar 
-                  dataKey="totalLength" 
-                  name="Total Length (m)" 
-                  fill="#8884d8"
-                  radius={[4, 4, 0, 0]}
-                >
-                  {spurLengthChartData.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill="#8884d8"
-                      opacity={0.8}
-                    />
-                  ))}
-                </Bar>
-                <Bar 
-                  dataKey="completedLength" 
-                  name="Cumulative Completed (m)" 
-                  fill="#82ca9d"
-                  radius={[4, 4, 0, 0]}
-                >
-                  {spurLengthChartData.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}-completed`} 
-                      fill="#82ca9d"
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-            
-            {/* <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="text-center p-3 bg-purple-50 rounded-lg">
-                <p className="text-sm text-purple-700">
-                  <span className="font-bold">Total Spur Length: </span>
-                  {spurStats.totalSpurLength.toLocaleString()} m
-                </p>
-              </div>
-              <div className="text-center p-3 bg-teal-50 rounded-lg">
-                <p className="text-sm text-teal-700">
-                  <span className="font-bold">Cumulative Completed Length: </span>
-                  {spurStats.completedSpurLength.toLocaleString()} m ({spurStats.completionByLength.toFixed(1)}%)
-                </p>
-              </div>
-            </div> */}
-          </>
-        ) : (
-          <div className="text-center py-12 text-gray-500">
-            <p>No chart data available</p>
-          </div>
-        )}
-      </div>
 
-      
-
-
-      <div className="bg-white border border-gray-300 rounded-lg shadow-sm overflow-hidden">
-        <div className="bg-green-600 text-white p-4">
-          <h3 className="text-lg font-bold">Cumulative Progress Summary (Per Spur)</h3>
-          <p className="text-green-100 text-sm">
-            Showing cumulative totals for {cumulativeSpurData.length} unique spurs
-          </p>
-        </div>
-        
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="p-3 text-left border-b">Spur ID</th>
-                <th className="p-3 text-left border-b">Spur Name</th>
-                <th className="p-3 text-left border-b">Spur Location (Km)</th>
-                <th className="p-3 text-left border-b">Spur Length (m)</th>
-                <th className="p-3 text-left border-b">Cumulative Completed (m)</th>
-                <th className="p-3 text-left border-b">Last Date of Entry</th>
-                <th className="p-3 text-left border-b">Cumulative %</th>
-              </tr>
-            </thead>
-            <tbody>
-              {cumulativeSpurData.map((spur, index) => {
-                const completionPercent = spur.spur_length > 0 ? 
-                  (spur.total_completed_km / spur.spur_length) * 100 : 0;
-                
-                let statusColor = 'text-gray-600';
-                let progressBarColor = '#9CA3AF';
-                
-                if (completionPercent >= 100) {
-                  statusColor = 'text-green-600';
-                  progressBarColor = '#10B981';
-                } else if (completionPercent > 0) {
-                  statusColor = 'text-yellow-600';
-                  progressBarColor = '#F59E0B';
-                }
-                
-                return (
-                  <tr key={`cumulative-${spur.spur_id}`} className="hover:bg-gray-50 border-b">
-                    <td className="p-3 font-bold">{spur.spur_id}</td>
-                    <td className="p-3 font-medium">{spur.spur_name}</td>
-                    <td className="p-3">{spur.location_km.toFixed(2)} Km</td>
-                    <td className="p-3 font-semibold text-purple-700">
-                      {spur.spur_length.toLocaleString()} m
-                    </td>
-                    <td className="p-3 font-semibold text-green-700">
-                      {spur.total_completed_km.toLocaleString()} m
-                    </td>
-                    <td className="p-3">
-                      {spur.latest_date ? 
-                        new Date(spur.latest_date).toLocaleDateString('en-IN', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric'
-                        }) : 
-                        '-'
-                      }
-                    </td>
-                    <td className="p-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-32 bg-gray-200 rounded-full h-3">
-                          <div 
-                            className="h-3 rounded-full transition-all duration-300"
-                            style={{
-                              width: `${Math.min(completionPercent, 100)}%`,
-                              backgroundColor: progressBarColor
-                            }}
-                          ></div>
+            {/* History Modal */}
+            {showHistory && selectedSpur && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl">
+                        <div className="bg-blue-600 text-white p-3 flex justify-between items-center rounded-t-lg">
+                            <div>
+                                <h3 className="font-bold">{selectedSpur.spur_name} - History</h3>
+                                <p className="text-xs text-blue-100">
+                                    Location: {formatLocation(selectedSpur.location_km)} Km | 
+                                    Length: {formatLength(selectedSpur.spur_length)} m
+                                </p>
+                            </div>
+                            <button onClick={() => setShowHistory(false)} className="hover:text-gray-200">
+                                <X className="w-5 h-5" />
+                            </button>
                         </div>
-                        <span className={`text-sm font-bold ${statusColor} min-w-[60px]`}>
-                          {completionPercent.toFixed(1)}%
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                        
+                        <div className="p-4 max-h-96 overflow-y-auto">
+                            {spurHistory.length > 0 ? (
+                                <table className="w-full text-sm">
+                                    <thead className="bg-gray-50 sticky top-0">
+                                        <tr>
+                                            <th className="p-2 text-left">Date</th>
+                                            <th className="p-2 text-left">Status</th>
+                                            <th className="p-2 text-left">Updated By</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {spurHistory.map((entry) => (
+                                            <tr key={entry.id} className="border-t">
+                                                <td className="p-2">{entry.formatted_date}</td>
+                                                <td className="p-2">{getStatusBadge(entry.status)}</td>
+                                                <td className="p-2">{entry.created_by || 'System'}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            ) : (
+                                <p className="text-center text-gray-500 py-8">No history available</p>
+                            )}
+                        </div>
+                        
+                        <div className="border-t p-3 flex justify-end">
+                            <button
+                                onClick={() => setShowHistory(false)}
+                                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 text-sm"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
-      </div>
-
-      {/* Detailed Table - Show only spurs with progress (completed_km > 0) */}
-      <div className="bg-white border border-gray-300 rounded-lg shadow-sm overflow-hidden">
-        <div className="bg-blue-600 text-white p-4">
-          <h3 className="text-lg font-bold">Spur Progress Details (Only Spurs with Progress)</h3>
-          <p className="text-blue-100 text-sm">
-            Showing {spursWithProgress.length} entries with progress 
-          </p>
-        </div>
-        
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="p-3 text-left border-b">S.No.</th>
-                <th className="p-3 text-left border-b">Spur Name</th>
-                <th className="p-3 text-left border-b">Spur Location (Km)</th>
-                <th className="p-3 text-left border-b">Spur Length (m)</th>
-                <th className="p-3 text-left border-b">Completed (m)</th>
-                <th className="p-3 text-left border-b">Data Entry Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {spursWithProgress.map((spur, index) => {
-                const totalLength = spur.spur_length || 0;
-                const completedLength = spur.completed_km || 0;
-                
-                return (
-                  <tr key={`${spur.id}-${index}`} className="hover:bg-gray-50 border-b">
-                    <td className="p-3">{index + 1}</td>
-                    <td className="p-3 font-medium">{spur.spur_name}</td>
-                    <td className="p-3 font-bold">{spur.location_km.toFixed(2)} Km</td>
-                    <td className="p-3 font-semibold text-purple-700">
-                      {totalLength.toLocaleString()} m
-                    </td>
-                    <td className="p-3 font-semibold text-green-700">
-                      {completedLength.toLocaleString()} m
-                    </td>
-                    <td className="p-3">
-                      {spur.progress_date ? 
-                        new Date(spur.progress_date).toLocaleDateString('en-IN', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric'
-                        }) : 
-                        '-'
-                      }
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          
-          {spursWithProgress.length === 0 && (
-            <div className="p-8 text-center text-gray-500">
-              <p className="text-lg">No spur progress data available</p>
-              <p className="text-sm mt-2">Start adding progress to spurs to see them here</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Cumulative Summary Table */}
-      
-
-     
-    </div>
-  );
+    );
 };
 
 export default SpurProgressComponent;

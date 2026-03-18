@@ -5,6 +5,7 @@ import DmsPage from "./dms/DmsPage";
 import { Sidebar } from "@/components/shared/sidebar";
 import { UserCreate } from "./usermanagement/userCreate";
 import { UserDetails } from "./usermanagement/userDetails";
+import MEModule from "./meDash";
 import SuperAdminReportPage from "./reports/schmeReport";
 import PIMSuperAdminPage from "./reports/pimReports";
 
@@ -77,6 +78,7 @@ export default function SuperAdminDashboard() {
         {activeTab === "dms" && <DmsPage />}
         {activeTab === "schemes" && <SuperAdminReportPage />}
         {activeTab === "pim" && <PIMSuperAdminPage />}
+        {activeTab === "memodule" && <MEModule />}
 
       </main>
     </div>
