@@ -839,7 +839,7 @@ function DashboardHeader({ userProfile, works }: { userProfile: UserProfile; wor
           </div>
         </div>
         
-        <div className="flex items-center gap-4">
+        {/* <div className="flex items-center gap-4">
           <div className="text-right">
             <p className="text-sm text-slate-600">Welcome</p>
             <p className="font-bold text-slate-900">{userProfile.full_name || userProfile.username}</p>
@@ -848,7 +848,7 @@ function DashboardHeader({ userProfile, works }: { userProfile: UserProfile; wor
           <div className="w-12 h-12 bg-gradient-to-br from-slate-600 to-slate-700 rounded-xl flex items-center justify-center text-white font-bold shadow-lg">
             {(userProfile.full_name || userProfile.username)?.charAt(0).toUpperCase()}
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Stats Cards */}
@@ -1295,15 +1295,7 @@ export default function AssignedWorksDashboard() {
       />
 
       {/* Debug Info (remove in production) */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="fixed bottom-4 right-4 bg-black/80 text-white p-4 rounded-lg text-xs max-w-xs z-40">
-          <div className="font-bold mb-2">Debug Info:</div>
-          <div>Role: {userProfile?.role}</div>
-          <div>Circle: {userProfile?.circle_name}</div>
-          <div>Zone: {userProfile?.zone_name}</div>
-          <div>Works: {filteredWorks.length}</div>
-        </div>
-      )}
+     
     </div>
   );
 }
