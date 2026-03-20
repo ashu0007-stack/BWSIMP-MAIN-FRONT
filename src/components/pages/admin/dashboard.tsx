@@ -161,6 +161,7 @@ export default function SuperAdminDashboard() {
         {activeTab === "dms" && <DmsPage />}
         {activeTab === "schemes" && <SuperAdminReportPage />}
         {activeTab === "pim" && <PIMSuperAdminPage />}
+        {activeTab === "memodule" && <MEModule />}
 
       </main>
     </div>
