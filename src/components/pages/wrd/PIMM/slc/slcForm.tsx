@@ -33,6 +33,7 @@ import axiosInstance from '@/apiInterceptor/axiosInterceptor';
 
 interface ExecutiveMember {
   name: string;
+  gender?: string;
   vlc_represented: string;
   designation: 'Member' | 'Chairman' | 'Vice President' | 'Secretary' | 'Treasurer';
   election_date: string;
@@ -102,6 +103,7 @@ const SLCForm: React.FC<SLCFormProps> = ({ onBackToList, editingSLC, onCancelEdi
     id: string;
     vlc_id: any;
     name: string;
+    gender?: string;
     vlc_represented: string;
     designation: string;
     is_executive: boolean;
@@ -184,6 +186,7 @@ const SLCForm: React.FC<SLCFormProps> = ({ onBackToList, editingSLC, onCancelEdi
             id: `edit_gb_${index}`,
             vlc_id: null,
             name: member.name,
+            gender: member.gender,
             vlc_represented: member.vlc_represented,
             designation: member.designation || 'Member',
             is_executive: Boolean(member.is_executive)
@@ -194,6 +197,7 @@ const SLCForm: React.FC<SLCFormProps> = ({ onBackToList, editingSLC, onCancelEdi
         if (backendData.executiveMembers && backendData.executiveMembers.length > 0) {
           const execMembers = backendData.executiveMembers.map((member: any) => ({
             name: member.name,
+            gender: member.gender,
             vlc_represented: member.vlc_represented,
             designation: member.designation as ExecutiveMember['designation'],
             election_date: member.election_date || backendData.formation_date
@@ -241,7 +245,7 @@ const SLCForm: React.FC<SLCFormProps> = ({ onBackToList, editingSLC, onCancelEdi
     });
   }, [wuaMasterData, selectedWua]);
 
-  // Setup VLC executive members
+  // Setup VLC executive members with gender
   useEffect(() => {
     if (!Array.isArray(actualVlcs)) return;
 
@@ -249,6 +253,7 @@ const SLCForm: React.FC<SLCFormProps> = ({ onBackToList, editingSLC, onCancelEdi
       id: string; 
       vlc_id: any; 
       name: any; 
+      gender?: string;
       vlc_represented: any; 
       designation: any; 
       is_executive: boolean; 
@@ -256,11 +261,12 @@ const SLCForm: React.FC<SLCFormProps> = ({ onBackToList, editingSLC, onCancelEdi
     
     actualVlcs.forEach(vlc => {
       if (Array.isArray(vlc.executive_members)) {
-        vlc.executive_members.forEach((member: { name: any; designation: any; }, idx: number) => {
+        vlc.executive_members.forEach((member: { name: any; gender?: string; designation: any; }, idx: number) => {
           allExecutiveMembers.push({
             id: `${vlc.id}_exec_${idx}`,
             vlc_id: vlc.id,
             name: member.name || `Executive Member ${idx + 1}`,
+            gender: member.gender || '',
             vlc_represented: vlc.vlc_name,
             designation: member.designation || 'Member',
             is_executive: false
@@ -272,6 +278,7 @@ const SLCForm: React.FC<SLCFormProps> = ({ onBackToList, editingSLC, onCancelEdi
             id: `${vlc.id}_chairman`,
             vlc_id: vlc.id,
             name: vlc.chairman_name,
+            gender: vlc.chairman_gender || '', // Assuming field name
             vlc_represented: vlc.vlc_name,
             designation: 'Chairman',
             is_executive: false
@@ -283,6 +290,7 @@ const SLCForm: React.FC<SLCFormProps> = ({ onBackToList, editingSLC, onCancelEdi
             id: `${vlc.id}_secretary`,
             vlc_id: vlc.id,
             name: vlc.secretary_name,
+            gender: vlc.secretary_gender || '', // Assuming field name
             vlc_represented: vlc.vlc_name,
             designation: 'Secretary',
             is_executive: false
@@ -294,8 +302,34 @@ const SLCForm: React.FC<SLCFormProps> = ({ onBackToList, editingSLC, onCancelEdi
             id: `${vlc.id}_treasurer`,
             vlc_id: vlc.id,
             name: vlc.treasurer_name,
+            gender: vlc.treasurer_gender || '', // Assuming field name
             vlc_represented: vlc.vlc_name,
             designation: 'Treasurer',
+            is_executive: false
+          });
+        }
+
+        // Also check for other executive members with gender
+        if (vlc.executive_member_1_name) {
+          allExecutiveMembers.push({
+            id: `${vlc.id}_exec1`,
+            vlc_id: vlc.id,
+            name: vlc.executive_member_1_name,
+            gender: vlc.executive_member_1_gender || '',
+            vlc_represented: vlc.vlc_name,
+            designation: 'Member',
+            is_executive: false
+          });
+        }
+        
+        if (vlc.executive_member_2_name) {
+          allExecutiveMembers.push({
+            id: `${vlc.id}_exec2`,
+            vlc_id: vlc.id,
+            name: vlc.executive_member_2_name,
+            gender: vlc.executive_member_2_gender || '',
+            vlc_represented: vlc.vlc_name,
+            designation: 'Member',
             is_executive: false
           });
         }
@@ -309,6 +343,7 @@ const SLCForm: React.FC<SLCFormProps> = ({ onBackToList, editingSLC, onCancelEdi
             id: `${vlc.id}_chairman`,
             vlc_id: vlc.id,
             name: vlc.chairman_name,
+            gender: vlc.chairman_gender || '',
             vlc_represented: vlc.vlc_name,
             designation: 'Chairman',
             is_executive: false
@@ -320,6 +355,7 @@ const SLCForm: React.FC<SLCFormProps> = ({ onBackToList, editingSLC, onCancelEdi
             id: `${vlc.id}_${designation.toLowerCase().replace(' ', '_')}_${idx}`,
             vlc_id: vlc.id,
             name: `${designation} - ${vlc.vlc_name}`,
+            gender: '',
             vlc_represented: vlc.vlc_name,
             designation: designation,
             is_executive: false
@@ -424,6 +460,7 @@ const SLCForm: React.FC<SLCFormProps> = ({ onBackToList, editingSLC, onCancelEdi
     if (isChecked) {
       const newExecutiveMember: ExecutiveMember = {
         name: selectedMember.name,
+        gender: selectedMember.gender, // Include gender
         vlc_represented: selectedMember.vlc_represented,
         designation: selectedMember.designation as ExecutiveMember['designation'],
         election_date: formData.formation_date || new Date().toISOString().split('T')[0]
@@ -458,6 +495,7 @@ const SLCForm: React.FC<SLCFormProps> = ({ onBackToList, editingSLC, onCancelEdi
 
     const newExecutiveMembers = updatedMembers.map(member => ({
       name: member.name,
+      gender: member.gender, // Include gender
       vlc_represented: member.vlc_represented,
       designation: member.designation as ExecutiveMember['designation'],
       election_date: formData.formation_date || new Date().toISOString().split('T')[0]
@@ -551,12 +589,14 @@ const SLCForm: React.FC<SLCFormProps> = ({ onBackToList, editingSLC, onCancelEdi
       
       slc_general_body_members: vlcExecutiveMembers.map(member => ({
         name: member.name,
+        gender: member.gender || '', // Include gender
         vlc_represented: member.vlc_represented,
         is_executive: member.is_executive || false
       })),
       
       executive_members: executiveMembers.map(member => ({
         name: member.name,
+        gender: member.gender || '', // Include gender
         vlc_represented: member.vlc_represented,
         designation: member.designation,
         election_date: member.election_date
@@ -630,12 +670,14 @@ const SLCForm: React.FC<SLCFormProps> = ({ onBackToList, editingSLC, onCancelEdi
       
       slc_general_body_members: vlcExecutiveMembers.map(member => ({
         name: member.name,
+        gender: member.gender || '', // Include gender
         vlc_represented: member.vlc_represented,
         is_executive: member.is_executive || false
       })),
       
       executive_members: executiveMembers.map(member => ({
         name: member.name,
+        gender: member.gender || '', // Include gender
         vlc_represented: member.vlc_represented,
         designation: member.designation,
         election_date: member.election_date
@@ -930,6 +972,7 @@ const SLCForm: React.FC<SLCFormProps> = ({ onBackToList, editingSLC, onCancelEdi
                                       {vlc.chairman_name && (
                                         <p className="text-sm text-gray-600">
                                           Chairman: <span className="font-medium">{vlc.chairman_name}</span>
+                                          {vlc.chairman_gender && <span className="ml-2 text-xs bg-gray-100 px-2 py-0.5 rounded">({vlc.chairman_gender})</span>}
                                         </p>
                                       )}
                                       {vlc.formation_date && (
@@ -1146,9 +1189,16 @@ const SLCForm: React.FC<SLCFormProps> = ({ onBackToList, editingSLC, onCancelEdi
                                   <span className="text-lg font-semibold text-gray-900 block">
                                     {member.name}
                                   </span>
-                                  <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium mt-1 border border-blue-300">
-                                    {member.designation}
-                                  </span>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium border border-blue-300">
+                                      {member.designation}
+                                    </span>
+                                    {member.gender && (
+                                      <span className="inline-block px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full font-medium border border-purple-300">
+                                        {member.gender}
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
                               </label>
                             ) : (
@@ -1157,9 +1207,16 @@ const SLCForm: React.FC<SLCFormProps> = ({ onBackToList, editingSLC, onCancelEdi
                                   <span className="text-lg font-semibold text-gray-900 block">
                                     {member.name}
                                   </span>
-                                  <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium mt-1 border border-blue-300">
-                                    {member.designation}
-                                  </span>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium border border-blue-300">
+                                      {member.designation}
+                                    </span>
+                                    {member.gender && (
+                                      <span className="inline-block px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full font-medium border border-purple-300">
+                                        {member.gender}
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             )}
@@ -1254,13 +1311,23 @@ const SLCForm: React.FC<SLCFormProps> = ({ onBackToList, editingSLC, onCancelEdi
                 {executiveMembers.length > 0 ? (
                   executiveMembers.map((member, index) => (
                     <div key={index} className="bg-white p-4 rounded-lg border border-green-300">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         {/* READ-ONLY DETAILS */}
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">Member Name</label>
                           <input
                             type="text"
                             value={member.name}
+                            className={`${inputClass} bg-gray-100 text-gray-600`}
+                            readOnly
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                          <input
+                            type="text"
+                            value={member.gender || 'Not Specified'}
                             className={`${inputClass} bg-gray-100 text-gray-600`}
                             readOnly
                           />
@@ -1301,7 +1368,7 @@ const SLCForm: React.FC<SLCFormProps> = ({ onBackToList, editingSLC, onCancelEdi
                     <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-3" />
                     <h3 className="text-lg font-medium text-yellow-800 mb-2">No Executive Members Selected</h3>
                     <p className="text-yellow-700 text-sm">
-                      Select VLC Chairmen from General Body to add them to Executive Body
+                      Select members from General Body to add them to Executive Body
                     </p>
                   </div>
                 )}

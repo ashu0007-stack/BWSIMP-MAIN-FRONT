@@ -3,34 +3,23 @@
 import { useState, useEffect } from "react";
 
 interface Spur {
-  spur_id: number;
   status: string;
-  id: number;
-  spur_name: string;
-  spur_length: number;
-  location_km: number;
-}
-
-interface SpurProgress {
-  remarks: string;
   spur_id: number;
   spur_name: string;
-  spur_length: number;
   location_km: number;
-  completed_km: number;
-  completion_percentage: number;
-  status: string;
-  progress_date: string;
+  spur_length?: number;
+  current_status?: string;
 }
 
 interface AddSpurProgressFormProps {
   showModal: boolean;
   onAddProgress: (data: any) => void;
-  selectedSpur: Spur | any;
-  editingEntry: SpurProgress | null;
+  selectedSpur: Spur | null;
+  editingEntry: any;
   onClose: () => void;
   spurs: Spur[];
-  totalSpurs: number;
+  totalSpurs?: number;
+  packageNumber: string;
 }
 
 export default function AddSpurProgressForm({
@@ -40,111 +29,52 @@ export default function AddSpurProgressForm({
   editingEntry,
   onClose,
   spurs,
-  totalSpurs,
+  packageNumber,
 }: AddSpurProgressFormProps) {
   const [selectedSpurId, setSelectedSpurId] = useState<number>(0);
-  const [completedMtr, setCompletedMtr] = useState<number>(0);
+  const [selectedSpurName, setSelectedSpurName] = useState<string>("");
+  const [locationKm, setLocationKm] = useState<number>(0);
+  const [spurLength, setSpurLength] = useState<number>(0);
+  const [status, setStatus] = useState<string>("not-started");
   const [progressDate, setProgressDate] = useState<string>("");
   const [remarks, setRemarks] = useState<string>("");
   const [errors, setErrors] = useState<string[]>([]);
-
-  // Get unique spurs (remove duplicates based on spur_id)
-  const uniqueSpurs = spurs.reduce((acc: Spur[], current: Spur) => {
-    const exists = acc.find(item => item.spur_id === current.spur_id);
-    if (!exists) {
-      return acc.concat([current]);
-    }
-    return acc;
-  }, []);
-
-  // Calculate cumulative completed km for each spur
-  const spurCumulativeData = spurs.reduce((acc: {[key: number]: number}, current: Spur) => {
-    const spurProgress = current as any;
-    const completed = spurProgress.completed_km || 0;
-    if (!acc[current.spur_id]) {
-      acc[current.spur_id] = completed;
-    } else {
-      acc[current.spur_id] += completed;
-    }
-    return acc;
-  }, {});
-
-  // Filter spurs for dropdown:
-  // 1. Remove duplicates
-  // 2. Exclude fully completed spurs (100% or more)
-  const availableSpurs = uniqueSpurs.filter(spur => {
-    const totalLength = spur.spur_length || 0;
-    const completedLength = spurCumulativeData[spur.spur_id] || 0;
-    const isFullyCompleted = totalLength > 0 && completedLength >= totalLength;
-    
-    // If editing, include the spur being edited even if completed
-    if (editingEntry && editingEntry.spur_id === spur.spur_id) {
-      return true;
-    }
-    
-    // Otherwise, exclude fully completed spurs
-    return !isFullyCompleted;
-  });
-
-  // Get current selected spur details
-  const currentSpur = uniqueSpurs.find(spur => spur.spur_id === selectedSpurId);
-
-  // Get cumulative completed for current spur
-  const currentSpurCumulativeCompleted = spurCumulativeData[selectedSpurId] || 0;
+  
+  // Store the current status of selected spur
+  const [currentSpurStatus, setCurrentSpurStatus] = useState<string>("");
 
   useEffect(() => {
     const today = new Date().toISOString().split("T")[0];
     
     if (selectedSpur?.spur_id) {
       setSelectedSpurId(selectedSpur.spur_id);
+      setSelectedSpurName(selectedSpur.spur_name);
+      setLocationKm(selectedSpur.location_km || 0);
+      setSpurLength(selectedSpur.spur_length || 0);
+      
+      // Get current status from selected spur
+      const spurCurrentStatus = selectedSpur.status || "not-started";
+      setCurrentSpurStatus(spurCurrentStatus);
+      setStatus(spurCurrentStatus); // Set initial status to current status
+    } else {
+      setSelectedSpurId(0);
+      setSelectedSpurName("");
+      setLocationKm(0);
+      setSpurLength(0);
+      setCurrentSpurStatus("");
+      setStatus("not-started");
     }
     
-    if (editingEntry) {
-      setSelectedSpurId(editingEntry.spur_id);
-      setCompletedMtr(editingEntry.completed_km || 0);
-      setProgressDate(editingEntry.progress_date || today);
-      setRemarks(editingEntry.remarks || "");
-    } else {
-      setCompletedMtr(0);
-      setProgressDate(today);
-      setRemarks("");
-    }
+    setProgressDate(today);
+    setRemarks("");
     setErrors([]);
-  }, [editingEntry, selectedSpur]);
-
-  // Calculate completion percentage including cumulative
-  const calculatePercentage = () => {
-    if (!currentSpur || currentSpur.spur_length === 0) return 0;
-    const totalCompleted = currentSpurCumulativeCompleted + completedMtr;
-    return (totalCompleted / currentSpur.spur_length) * 100;
-  };
-
-  // Get status based on completion
-  const getAutoStatus = (completionPercent: number): string => {
-    if (completionPercent >= 100) return "completed";
-    if (completionPercent > 0 && completionPercent < 100) return "in-progress";
-    return "not-started";
-  };
+  }, [selectedSpur, editingEntry]);
 
   const validateForm = (): boolean => {
     const newErrors: string[] = [];
 
     if (selectedSpurId === 0) {
       newErrors.push("Please select a spur");
-    }
-
-    if (completedMtr < 0) {
-      newErrors.push("Completed cannot be negative");
-    }
-
-    if (currentSpur) {
-      const totalAfterAdding = currentSpurCumulativeCompleted + completedMtr;
-      if (totalAfterAdding > currentSpur.spur_length) {
-        newErrors.push(
-          `Total completed (${currentSpurCumulativeCompleted}m + ${completedMtr}m = ${totalAfterAdding}m) ` +
-          `cannot exceed spur length (${currentSpur.spur_length}m)`
-        );
-      }
     }
 
     if (!progressDate) {
@@ -160,53 +90,83 @@ export default function AddSpurProgressForm({
       return;
     }
 
-    if (!currentSpur) return;
-
-    const completionPercent = calculatePercentage();
-    const finalStatus = getAutoStatus(completionPercent);
-
     // Get user info
     const storedProfile = sessionStorage.getItem("userdetail");
     const profile = storedProfile ? JSON.parse(storedProfile) : {};
 
-    // ✅ Prepare payload with CORRECT field names
     const payload = {
+      packageNumber: packageNumber,
       spur_id: selectedSpurId,
-      spur_name: currentSpur.spur_name,
-      spur_length_km: currentSpur.spur_length,
-      location_km: currentSpur.location_km,
-      completed_km: completedMtr,
-      completion_percentage: completionPercent,
-      status: finalStatus,
+      spur_name: selectedSpurName,
+      spur_length: spurLength,
+      location_km: locationKm,
+      status: status,
       progress_date: progressDate,
       remarks: remarks,
       created_by: profile.user_name || "System",
       created_email: profile.email || "system@example.com"
     };
     
-    // Call parent function
+    console.log("Submitting payload:", payload);
     onAddProgress(payload);
     onClose();
   };
 
-  const completionPercentage = calculatePercentage();
+  // Filter spurs to show only those that are NOT completed
+  const availableSpurs = spurs.filter(spur => spur.status !== 'completed');
+
+  // Get available status options based on current spur status
+  const getAvailableStatusOptions = () => {
+    // Agar spur completed hai to koi option nahi dikhana (spur select hi nahi hoga)
+    if (currentSpurStatus === 'completed') {
+      return [];
+    }
+    
+    // Agar spur in-progress hai to sirf in-progress aur completed dikhana hai
+    if (currentSpurStatus === 'in-progress') {
+      return ['in-progress', 'completed'];
+    }
+    
+    // Agar spur not-started hai to teeno options dikhana hai
+    return ['not-started', 'in-progress', 'completed'];
+  };
+
+  const availableStatuses = getAvailableStatusOptions();
+
+  const getStatusBadge = (status: string) => {
+    switch(status) {
+      case 'completed':
+        return <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium">Completed</span>;
+      case 'in-progress':
+        return <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-medium">In Progress</span>;
+      default:
+        return <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded text-xs font-medium">Not Started</span>;
+    }
+  };
 
   if (!showModal) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-hidden">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl"> {/* Increased width to max-w-4xl for horizontal layout */}
         {/* Header */}
-        <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white p-4">
+        <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white p-4 rounded-t-lg">
           <h2 className="text-xl font-bold">
-            {editingEntry ? "Edit Spur Progress" : "Add Spur Progress"}
+            {editingEntry ? "Edit Spur Status" : "Update Spur Status"}
           </h2>
           <p className="text-green-100 text-sm">
-            {availableSpurs.length} available spurs (excluding fully completed)
+            Package: {packageNumber}
           </p>
         </div>
 
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+        <div className="p-6">
+          {/* Info Message - Show why some spurs are not visible */}
+          {spurs.length > availableSpurs.length && (
+            <div className="mb-4 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
+              ℹ️ Completed spurs are hidden as they cannot be updated further.
+            </div>
+          )}
+
           {/* Error Messages */}
           {errors.length > 0 && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded">
@@ -216,217 +176,210 @@ export default function AddSpurProgressForm({
             </div>
           )}
 
-          {/* Spur Selection - Simple Dropdown */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Select Spur *
-            </label>
-            <select
-              value={selectedSpurId}
-              onChange={(e) => setSelectedSpurId(parseInt(e.target.value))}
-              className="w-full border px-3 py-2 rounded"
-            >
-              <option value="0">-- Select a Spur --</option>
-              {availableSpurs.map((spur) => {
-                const cumulativeCompleted = spurCumulativeData[spur.spur_id] || 0;
-                const totalLength = spur.spur_length || 0;
-                const existingProgressPercent = totalLength > 0 ? 
-                  (cumulativeCompleted / totalLength) * 100 : 0;
-                
-                return (
-                  <option key={spur.spur_id} value={spur.spur_id}>
-                    {spur.spur_name} 
-                    {` (Loc: ${spur.location_km}km, Length: ${spur.spur_length}m`}
-                    {cumulativeCompleted > 0 && 
-                      `, Existing: ${cumulativeCompleted}m (${existingProgressPercent.toFixed(1)}%)`}
-                    {`)`}
-                  </option>
-                );
-              })}
-            </select>
-          </div>
-
-          {/* Progress Details */}
-          {selectedSpurId > 0 && currentSpur && (
-            <>
-              <div className="mb-4 p-3 bg-gray-50 rounded border">
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <div className="text-gray-600">Spur Name:</div>
-                    <div className="font-semibold">{currentSpur.spur_name}</div>
+          {/* HORIZONTAL LAYOUT - TWO COLUMNS */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* LEFT COLUMN - Spur Selection and Info */}
+            <div className="space-y-4">
+              {/* Spur Selection - Only show non-completed spurs */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Spur *
+                </label>
+                {availableSpurs.length === 0 ? (
+                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-700">
+                    ⚠️ All spurs are completed. No spurs available for update.
                   </div>
-                  <div>
-                    <div className="text-gray-600">Location:</div>
-                    <div className="font-semibold">{currentSpur.location_km} km</div>
-                  </div>
-                  <div>
-                    <div className="text-gray-600">Total Length:</div>
-                    <div className="font-semibold">{currentSpur.spur_length} m</div>
-                  </div>
-                  <div>
-                    <div className="text-gray-600">Existing Completed:</div>
-                    <div className="font-semibold">
-                      {currentSpurCumulativeCompleted} m
-                      {currentSpur.spur_length > 0 && 
-                        ` (${((currentSpurCumulativeCompleted / currentSpur.spur_length) * 100).toFixed(1)}%)`}
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Cumulative Progress Bar */}
-                {currentSpurCumulativeCompleted > 0 && (
-                  <div className="mt-3">
-                    <div className="flex justify-between text-xs mb-1">
-                      <span>Existing Progress</span>
-                      <span className="font-bold">
-                        {((currentSpurCumulativeCompleted / currentSpur.spur_length) * 100).toFixed(1)}%
-                      </span>
-                    </div>
-                    <div className="h-2 bg-gray-300 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-blue-400"
-                        style={{ 
-                          width: `${Math.min(100, 
-                            (currentSpurCumulativeCompleted / currentSpur.spur_length) * 100
-                          )}%` 
-                        }}
-                      ></div>
-                    </div>
-                  </div>
+                ) : (
+                  <select
+                    value={selectedSpurId}
+                    onChange={(e) => {
+                      const id = parseInt(e.target.value);
+                      setSelectedSpurId(id);
+                      const spur = spurs.find(s => s.spur_id === id);
+                      if (spur) {
+                        setSelectedSpurName(spur.spur_name);
+                        setLocationKm(spur.location_km || 0);
+                        setSpurLength(spur.spur_length || 0);
+                        const spurStatus = spur.status || "not-started";
+                        setCurrentSpurStatus(spurStatus);
+                        setStatus(spurStatus);
+                      }
+                      setErrors([]);
+                    }}
+                    className="w-full border px-3 py-2 rounded focus:ring-2 focus:ring-green-500"
+                  >
+                    <option value="0">-- Select a Spur --</option>
+                    {availableSpurs.map((spur) => (
+                      <option key={spur.spur_id} value={spur.spur_id}>
+                        {spur.spur_name} {spur.location_km ? `(${spur.location_km} Km)` : ''} - {spur.spur_length || 0}m
+                        {spur.status && ` (${spur.status})`}
+                      </option>
+                    ))}
+                  </select>
                 )}
               </div>
 
-              {/* New Completed Input */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Add New Progress (meters) *
-                </label>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="number"
-                    value={completedMtr}
-                    onChange={(e) => setCompletedMtr(parseFloat(e.target.value) || 0)}
-                    className="border px-3 py-2 rounded w-32 text-center"
-                    min="0"
-                    max={currentSpur.spur_length - currentSpurCumulativeCompleted}
-                    step="0.1"
-                  />
-                  <span className="text-sm">
-                    max {currentSpur.spur_length - currentSpurCumulativeCompleted}m available
-                  </span>
-                </div>
-                <div className="mt-2">
-                  <input
-                    type="range"
-                    min="0"
-                    max={currentSpur.spur_length - currentSpurCumulativeCompleted}
-                    step="0.1"
-                    value={completedMtr}
-                    onChange={(e) => setCompletedMtr(parseFloat(e.target.value))}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-
-              {/* Total Progress After Adding */}
-              <div className="mb-4">
-                <div className="flex justify-between text-sm mb-1">
-                  <span>Total Progress After Adding</span>
-                  <span className="font-bold">{completionPercentage.toFixed(1)}%</span>
-                </div>
-                <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-green-500 transition-all duration-300"
-                    style={{ width: `${Math.min(100, completionPercentage)}%` }}
-                  ></div>
-                </div>
-                <div className="text-xs text-gray-600 mt-1">
-                  {currentSpurCumulativeCompleted}m (existing) + {completedMtr}m (new) = {currentSpurCumulativeCompleted + completedMtr}m
-                </div>
-              </div>
-
-              {/* Auto Status Display */}
-              <div className="mb-4 p-3 bg-blue-50 rounded border">
-                <div className="text-sm">
-                  <span className="text-gray-600">Will be marked as:</span>
-                  <span className={`ml-2 font-semibold ${
-                    completionPercentage >= 100 ? 'text-green-600' :
-                    completionPercentage > 0 ? 'text-yellow-600' :
-                    'text-red-600'
-                  }`}>
-                    {getAutoStatus(completionPercentage).toUpperCase()}
-                  </span>
-                  {completionPercentage >= 100 && (
-                    <div className="mt-1 text-xs text-green-700">
-                      Note: This spur will be removed from dropdown after saving
+              {/* Selected Spur Info Card */}
+              {selectedSpurId > 0 && (
+                <div className="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border border-gray-200">
+                  <h3 className="font-medium text-gray-700 mb-3 flex items-center">
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Spur Details
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="bg-white p-2 rounded border">
+                      <span className="text-gray-500 text-xs">Spur Name</span>
+                      <p className="font-semibold">{selectedSpurName}</p>
                     </div>
-                  )}
+                    {locationKm > 0 && (
+                      <div className="bg-white p-2 rounded border">
+                        <span className="text-gray-500 text-xs">Location</span>
+                        <p className="font-semibold">{locationKm} Km</p>
+                      </div>
+                    )}
+                    {spurLength > 0 && (
+                      <div className="bg-white p-2 rounded border col-span-2">
+                        <span className="text-gray-500 text-xs">Length</span>
+                        <p className="font-semibold text-purple-700">{spurLength} m</p>
+                      </div>
+                    )}
+                    <div className="col-span-2 bg-white p-2 rounded border">
+                      <span className="text-gray-500 text-xs">Current Status</span>
+                      <div className="mt-1">{getStatusBadge(currentSpurStatus)}</div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-
-              {/* Progress Date */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Progress Date *
-                </label>
-                <input
-                  type="date"
-                  value={progressDate}
-                  onChange={(e) => setProgressDate(e.target.value)}
-                  className="w-full border px-3 py-2 rounded"
-                  max={new Date().toISOString().split('T')[0]}
-                />
-              </div>
-
-              {/* Remarks */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Remarks (Optional)
-                </label>
-                <textarea
-                  value={remarks}
-                  onChange={(e) => setRemarks(e.target.value)}
-                  className="w-full border px-3 py-2 rounded"
-                  rows={2}
-                  placeholder="Add any notes or comments..."
-                />
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Footer Buttons */}
-        <div className="border-t px-6 py-4 bg-gray-50">
-          <div className="flex justify-between items-center">
-            <div className="text-sm text-gray-600">
-              {selectedSpurId > 0 && currentSpur ? (
-                <div>
-                  {editingEntry ? 'Editing:' : 'Adding to:'} 
-                  <span className="font-semibold"> {currentSpur.spur_name}</span>
-                </div>
-              ) : (
-                "Select a spur to continue"
               )}
             </div>
-            <div className="flex gap-3">
-              <button
-                onClick={onClose}
-                className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={selectedSpurId === 0}
-                className={`px-4 py-2 rounded text-white ${
-                  selectedSpurId === 0
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700'
-                }`}
-              >
-                {editingEntry ? 'Update Progress' : 'Save Progress'}
-              </button>
+
+            {/* RIGHT COLUMN - Status, Date and Remarks */}
+            <div className="space-y-4">
+              {/* Status Selection - Dynamic based on current status */}
+              {selectedSpurId > 0 && availableStatuses.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Update Work Status *
+                  </label>
+                  
+                  {/* Show rule info */}
+                  <div className="mb-2 text-xs text-gray-500 bg-blue-50 p-2 rounded">
+                    {currentSpurStatus === 'not-started' && '→ Can change to In Progress or Completed'}
+                    {currentSpurStatus === 'in-progress' && '→ Can only change to Completed (cannot go back to Not Started)'}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    {/* Not Started Option - Only show if available */}
+                    {availableStatuses.includes('not-started') && (
+                      <label className="flex items-center p-3 border rounded cursor-pointer hover:bg-gray-50">
+                        <input
+                          type="radio"
+                          name="status"
+                          value="not-started"
+                          checked={status === "not-started"}
+                          onChange={(e) => setStatus(e.target.value)}
+                          className="mr-3"
+                        />
+                        <div>
+                          <span className="font-medium text-gray-600">Not Started</span>
+                          <p className="text-xs text-gray-500">Work has not begun on this spur</p>
+                        </div>
+                      </label>
+                    )}
+                    
+                    {/* In Progress Option - Only show if available */}
+                    {availableStatuses.includes('in-progress') && (
+                      <label className="flex items-center p-3 border rounded cursor-pointer hover:bg-gray-50">
+                        <input
+                          type="radio"
+                          name="status"
+                          value="in-progress"
+                          checked={status === "in-progress"}
+                          onChange={(e) => setStatus(e.target.value)}
+                          className="mr-3"
+                        />
+                        <div>
+                          <span className="font-medium text-yellow-600">In Progress</span>
+                          <p className="text-xs text-gray-500">Work is currently ongoing</p>
+                        </div>
+                      </label>
+                    )}
+                    
+                    {/* Completed Option - Only show if available */}
+                    {availableStatuses.includes('completed') && (
+                      <label className="flex items-center p-3 border rounded cursor-pointer hover:bg-gray-50">
+                        <input
+                          type="radio"
+                          name="status"
+                          value="completed"
+                          checked={status === "completed"}
+                          onChange={(e) => setStatus(e.target.value)}
+                          className="mr-3"
+                        />
+                        <div>
+                          <span className="font-medium text-green-600">Completed</span>
+                          <p className="text-xs text-gray-500">Work has been finished</p>
+                        </div>
+                      </label>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Progress Date */}
+              {selectedSpurId > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Progress Date *
+                  </label>
+                  <input
+                    type="date"
+                    value={progressDate}
+                    onChange={(e) => setProgressDate(e.target.value)}
+                    className="w-full border px-3 py-2 rounded focus:ring-2 focus:ring-green-500"
+                    max={new Date().toISOString().split('T')[0]}
+                  />
+                </div>
+              )}
+
+              {/* Remarks */}
+              {selectedSpurId > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Remarks (Optional)
+                  </label>
+                  <textarea
+                    value={remarks}
+                    onChange={(e) => setRemarks(e.target.value)}
+                    className="w-full border px-3 py-2 rounded focus:ring-2 focus:ring-green-500"
+                    rows={3}
+                    placeholder="Add any notes or comments..."
+                  />
+                </div>
+              )}
             </div>
+          </div>
+
+          {/* Footer Buttons */}
+          <div className="flex justify-end gap-3 mt-6 border-t pt-4">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={selectedSpurId === 0 || availableSpurs.length === 0}
+              className={`px-6 py-2 rounded text-white transition-colors ${
+                selectedSpurId === 0 || availableSpurs.length === 0
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700'
+              }`}
+            >
+              {editingEntry ? 'Update Status' : 'Save Status'}
+            </button>   
           </div>
         </div>
       </div>

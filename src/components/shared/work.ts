@@ -80,6 +80,7 @@ export interface Work {
   villages?: Village[];
   components?: WorkComponent[];
   has_spurs?: number;
+  has_embankment?: number; // Add this field
 }
 
 export interface Village {
@@ -100,6 +101,16 @@ export interface SpurData {
   is_new: "new" | "old" | "";
 }
 
+// =============================
+// ✅ NEW: EmbankmentData interface
+// =============================
+// Simplified EmbankmentData type - without location and type
+export interface EmbankmentData {
+  embankment_name: string;
+  embankment_length: string;
+  // location_km aur embankment_type hata diya
+}
+
 export interface WorkComponent {
   num_of_milestones: string;
   total_qty: string | number | readonly string[] | undefined;
@@ -114,7 +125,6 @@ export interface WorkComponent {
   milestone2_qty: string;
   milestone3_qty: string;
   milestonedetails: string;
-
 }
 
 export interface Beneficiaries {
@@ -149,4 +159,5 @@ export interface WorkFormData {
   Area_Under_improved_Irrigation: string;
   award_status: string;
   has_spurs?: number;
+  has_embankment?: number; // Add this field
 }

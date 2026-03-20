@@ -26,7 +26,9 @@ import {
   Award,
   CheckSquare,
   Square,
-  Eye
+  Eye,
+  Mountain,
+  Edit3 // New icon for manual input
 } from "lucide-react";
 
 import {
@@ -36,6 +38,7 @@ import {
   useAddComponentsAndMilestones,
   useWorks,
   useAddSpurs,
+  useAddEmbankments,
 } from "@/hooks/wrdHooks/useWorks";
 
 import { useZones } from "@/hooks/location/useZone";
@@ -57,7 +60,8 @@ import {
   SubComponent,
   SubworkComponent,
   Work,
-  SpurData 
+  SpurData,
+  EmbankmentData
 } from "@/components/shared/work";
 
 interface CreateWorkPageProps {
@@ -66,7 +70,6 @@ interface CreateWorkPageProps {
 }
 
 const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) => {
-  // All your existing state variables remain the same
   const [formData, setFormData] = useState<WorkFormData>({
     zone_id: "",
     circle_id: "",
@@ -86,7 +89,8 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
     district: "",
     Area_Under_improved_Irrigation: "",
     award_status: "",
-    has_spurs: 0
+    has_spurs: 0,
+    has_embankment: 0
   });
 
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
@@ -126,6 +130,8 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
     },
   ]);
   const [componentsErrors, setComponentsErrors] = useState<ValidationErrors[]>([]);
+  
+  // Spurs state
   const [hasSpurs, setHasSpurs] = useState<boolean>(false);
   const [spursData, setSpursData] = useState<SpurData[]>([
     {
@@ -136,11 +142,24 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
     }
   ]);
   const [spursErrors, setSpursErrors] = useState<ValidationErrors[]>([]);
+  
+  // Simplified Embankment state
+  const [hasEmbankment, setHasEmbankment] = useState<boolean>(false);
+  const [embankmentData, setEmbankmentData] = useState<EmbankmentData>({
+    embankment_name: "Embankment",
+    embankment_length: ""
+  });
+  const [embankmentErrors, setEmbankmentErrors] = useState<ValidationErrors>({});
+
+  // New state for manual work name input
+  const [isManualWorkInput, setIsManualWorkInput] = useState<boolean>(false);
+  const [manualWorkName, setManualWorkName] = useState<string>("");
+
   const [message, setMessage] = useState("");
   const [showMilestoneFields, setShowMilestoneFields] = useState(false);
   const [selectedZoneId, setSelectedZoneId] = useState<string>("");
   const [selectedCircleId, setSelectedCircleId] = useState<string>("");
-  const [activeTab, setActiveTab] = useState<'basic' | 'beneficiaries' | 'villages' | 'components' | 'spurs'>('basic');
+  const [activeTab, setActiveTab] = useState<'basic' | 'beneficiaries' | 'villages' | 'components' | 'spurs' | 'embankment'>('basic');
   const [showValidationSummary, setShowValidationSummary] = useState(false);
 
   // All your existing React Query hooks remain the same
@@ -162,6 +181,18 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
   const addVillagesMutation = useAddVillages();
   const addComponentsMutation = useAddComponentsAndMilestones();
   const addSpursMutation = useAddSpurs();
+  const addEmbankmentsMutation = useAddEmbankments();
+
+  // Reset manual input when subcomponent changes
+  useEffect(() => {
+    setIsManualWorkInput(false);
+    setManualWorkName("");
+    
+    // Agar filteredSubworkcomponents empty hai to manual input enable karo
+    if (filteredSubworkcomponents.length === 0 && formData.subcomponent_id) {
+      setIsManualWorkInput(true);
+    }
+  }, [formData.subcomponent_id, filteredSubworkcomponents]);
 
   // All your existing useEffect hooks remain the same
   useEffect(() => {
@@ -178,12 +209,17 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
     }
   }, [user]);
 
+  // Check if Component 6 is selected
+  const isComponent6Selected = (): boolean => {
+    return formData.component_id === "6";
+  };
+
   // All your existing validation functions remain exactly the same
   const validateText = (value: string, fieldName: string): string => {
     if (!value.trim()) return `${fieldName} is required`;
     if (!/^[A-Za-z\s]+$/.test(value)) return `${fieldName} should contain only alphabets`;
     if (value.length < 2) return `${fieldName} should be at least 2 characters`;
-    if (value.length > 100) return `${fieldName} should not exceed 100 characters`;
+    if (value.length > 255) return `${fieldName} should not exceed 255 characters`;
     return "";
   };
 
@@ -230,7 +266,34 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
     return "";
   };
 
-  // Main Validation Function for Form - EXACTLY THE SAME
+  // Simplified Embankment validation
+  const validateEmbankment = (): ValidationErrors => {
+    const errors: ValidationErrors = {};
+
+    if (!embankmentData.embankment_name.trim()) {
+      errors.embankment_name = "Embankment name is required";
+    } else if (embankmentData.embankment_name.length > 50) {
+      errors.embankment_name = "Embankment name should not exceed 50 characters";
+    }
+
+    if (!embankmentData.embankment_length.trim()) {
+      errors.embankment_length = "Embankment length is required";
+    } else if (!/^\d+(\.\d{1,2})?$/.test(embankmentData.embankment_length)) {
+      errors.embankment_length = "Length should be a valid number (max 2 decimals)";
+    } else {
+      const length = parseFloat(embankmentData.embankment_length);
+      if (length <= 0) {
+        errors.embankment_length = "Length must be greater than 0";
+      }
+      if (length > 9999.99) {
+        errors.embankment_length = "Length should not exceed 9999.99 Mtr";
+      }
+    }
+
+    return errors;
+  };
+
+  // Main Validation Function for Form
   const validateForm = (): boolean => {
     const errors: ValidationErrors = {};
     let isValid = true;
@@ -252,9 +315,24 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
       errors.component_id = "Component is required";
       isValid = false;
     }
-    if (!formData.workcomponentId) {
-      errors.workcomponentId = "Work name is required";
-      isValid = false;
+    
+    // Work name validation - either from dropdown or manual input
+    if (isManualWorkInput) {
+      if (!manualWorkName.trim()) {
+        errors.workcomponentId = "Work name is required";
+        isValid = false;
+      } else {
+        const nameError = validateText(manualWorkName, "Work name");
+        if (nameError) {
+          errors.workcomponentId = nameError;
+          isValid = false;
+        }
+      }
+    } else {
+      if (!formData.workcomponentId) {
+        errors.workcomponentId = "Work name is required";
+        isValid = false;
+      }
     }
 
     const workCostError = validateWorkCost(formData.work_cost);
@@ -450,51 +528,59 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
       compErrorsList.push(compErrors);
     });
     setComponentsErrors(compErrorsList);
+
+    // Validate Spurs
     if (hasSpurs) {
-    const spurErrorsList: ValidationErrors[] = [];
-    
-    spursData.forEach((spur, index) => {
-      const spurErrors: ValidationErrors = {};
+      const spurErrorsList: ValidationErrors[] = [];
       
-      // Spur name validation
-      if (!spur.spur_name.trim()) {
-        spurErrors.spur_name = "Spur name is required";
-        isValid = false;
-      } else if (spur.spur_name.length > 50) {
-        spurErrors.spur_name = "Spur name should not exceed 50 characters";
-        isValid = false;
-      }
-
-      // Location validation
-      if (!spur.location_km.trim()) {
-        spurErrors.location_km = "Location is required";
-        isValid = false;
-      } else if (!/^\d+(\.\d{1,2})?$/.test(spur.location_km)) {
-        spurErrors.location_km = "Location should be a valid number (max 2 decimals)";
-        isValid = false;
-      } else {
-        const location = parseFloat(spur.location_km);
-        if (location < 0) {
-          spurErrors.location_km = "Location cannot be negative";
+      spursData.forEach((spur, index) => {
+        const spurErrors: ValidationErrors = {};
+        
+        if (!spur.spur_name.trim()) {
+          spurErrors.spur_name = "Spur name is required";
+          isValid = false;
+        } else if (spur.spur_name.length > 50) {
+          spurErrors.spur_name = "Spur name should not exceed 50 characters";
           isValid = false;
         }
-        if (location > 999.99) {
-          spurErrors.location_km = "Location should not exceed 999.99 KM";
+
+        if (!spur.location_km.trim()) {
+          spurErrors.location_km = "Location is required";
+          isValid = false;
+        } else if (!/^\d+(\.\d{1,2})?$/.test(spur.location_km)) {
+          spurErrors.location_km = "Location should be a valid number (max 2 decimals)";
+          isValid = false;
+        } else {
+          const location = parseFloat(spur.location_km);
+          if (location < 0) {
+            spurErrors.location_km = "Location cannot be negative";
+            isValid = false;
+          }
+          if (location > 999.99) {
+            spurErrors.location_km = "Location should not exceed 999.99 KM";
+            isValid = false;
+          }
+        }
+
+        if (!spur.is_new) {
+          spurErrors.is_new = "Spur type is required";
           isValid = false;
         }
-      }
 
-      // Spur type validation
-      if (!spur.is_new) {
-        spurErrors.is_new = "Spur type is required";
+        spurErrorsList.push(spurErrors);
+      });
+
+      setSpursErrors(spurErrorsList);
+    }
+
+    // Validate Embankment
+    if (hasEmbankment && isComponent6Selected()) {
+      const embErrors = validateEmbankment();
+      if (Object.keys(embErrors).length > 0) {
+        setEmbankmentErrors(embErrors);
         isValid = false;
       }
-
-      spurErrorsList.push(spurErrors);
-    });
-
-    setSpursErrors(spurErrorsList);
-  }
+    }
 
     setValidationErrors(errors);
     return isValid;
@@ -611,7 +697,7 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
     };
   };
 
-  // All your existing handler functions remain exactly the same
+  // Updated handler to handle manual work name
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -671,6 +757,15 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
         work_name: "",
         work_package_name: "",
       }));
+      
+      // Reset manual input when component changes
+      setIsManualWorkInput(false);
+      setManualWorkName("");
+      
+      // Reset embankment if not component 6
+      if (!isComponent6Selected()) {
+        setHasEmbankment(false);
+      }
     } else if (name === "subcomponent_id") {
       setFormData(prev => ({
         ...prev,
@@ -681,6 +776,10 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
         work_name: "",
         work_package_name: "",
       }));
+      
+      // Reset manual input state
+      setIsManualWorkInput(false);
+      setManualWorkName("");
     } else if (name === "work_cost") {
       const decimalRegex = /^\d*\.?\d*$/;
       if (value === "" || decimalRegex.test(value)) {
@@ -767,6 +866,40 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
       } else {
         setShowMilestoneFields(false);
       }
+    }
+  };
+
+  // Handler for manual work name input
+  const handleManualWorkNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setManualWorkName(value);
+    
+    // Update formData with the manual work name
+    setFormData(prev => ({
+      ...prev,
+      work_name: value,
+      work_package_name: value,
+    }));
+    
+    // Clear validation error
+    setValidationErrors(prev => ({ ...prev, workcomponentId: "" }));
+  };
+
+  // Toggle manual input mode
+  const toggleManualInput = () => {
+    setIsManualWorkInput(!isManualWorkInput);
+    if (!isManualWorkInput) {
+      // Switching to manual mode - clear dropdown selection
+      setFormData(prev => ({
+        ...prev,
+        workcomponentId: "",
+        work_name: "",
+        work_package_name: "",
+      }));
+      setManualWorkName("");
+    } else {
+      // Switching to dropdown mode - clear manual input
+      setManualWorkName("");
     }
   };
 
@@ -1045,6 +1178,23 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
     }
   };
 
+  // Simplified embankment handler
+  const handleEmbankmentChange = (field: keyof EmbankmentData, value: string) => {
+    setEmbankmentErrors(prev => ({ ...prev, [field]: "" }));
+    
+    if (field === "embankment_length") {
+      if (value && !/^\d*\.?\d*$/.test(value)) {
+        setEmbankmentErrors(prev => ({
+          ...prev,
+          [field]: "Please enter a valid number"
+        }));
+        return;
+      }
+    }
+
+    setEmbankmentData(prev => ({ ...prev, [field]: value }));
+  };
+
   const addComponentField = () => {
     const months = parseInt(formData.work_period_months) || 0;
     let numMilestones = 0;
@@ -1130,6 +1280,7 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
       Area_Under_improved_Irrigation: "",
       award_status: "",
       has_spurs: 0,
+      has_embankment: 0,
     });
 
     setBeneficiaries({
@@ -1174,6 +1325,16 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
     }]);
     setSpursErrors([]);
 
+    setHasEmbankment(false);
+    setEmbankmentData({
+      embankment_name: "Embankment",
+      embankment_length: ""
+    });
+    setEmbankmentErrors({});
+
+    setIsManualWorkInput(false);
+    setManualWorkName("");
+
     setMessage("");
     setShowMilestoneFields(false);
 
@@ -1191,7 +1352,10 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
       return;
     }
 
-    if (checkForDuplicateWorkName(formData.work_name)) {
+    // For manual input, use the manual work name for duplicate check
+    const workNameToCheck = isManualWorkInput ? manualWorkName : formData.work_name;
+    
+    if (checkForDuplicateWorkName(workNameToCheck)) {
       setMessage("❌ This work name already exists in the list. Please use a different name.");
       return;
     }
@@ -1206,7 +1370,11 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
 
       const workRequestData = {
         ...formData,
-         has_spurs: hasSpurs ? 1 : 0,
+        has_spurs: hasSpurs ? 1 : 0,
+        has_embankment: hasEmbankment ? 1 : 0,
+        // If manual input, use the manual work name
+        work_name: isManualWorkInput ? manualWorkName : formData.work_name,
+        work_package_name: isManualWorkInput ? manualWorkName : formData.work_package_name,
         user_data: getUserDataForAPI()
       };
 
@@ -1268,6 +1436,17 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
         });
       }
 
+      if (hasEmbankment && embankmentData.embankment_name) {
+        const embankmentRequestData = {
+          embankments: [embankmentData],
+          user_data: getUserDataForAPI()
+        };
+        await addEmbankmentsMutation.mutateAsync({
+          workId,
+          data: embankmentRequestData
+        });
+      }
+
       setMessage(`✅ Complete work package created successfully by ${user.username}! Work ID: ${workId}.`);
 
       refetchWorks();
@@ -1298,7 +1477,6 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
     }
   };
 
-  // ONLY THE RENDER/UI PART IS CHANGED BELOW
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       {/* Government Header */}
@@ -1425,11 +1603,24 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                 <MapPin className="w-4 h-4" />
                 Spurs ({spursData.length})
               </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('embankment')}
+                className={`flex items-center gap-2 px-6 py-4 font-medium ${
+                  activeTab === 'embankment'
+                    ? 'border-b-2 border-[#003087] text-[#003087] bg-blue-50'
+                    : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                } ${!isComponent6Selected() ? 'opacity-50 cursor-not-allowed' : ''}`}
+                disabled={!isComponent6Selected()}
+              >
+                <Mountain className="w-4 h-4" />
+                Embankment
+              </button>
             </div>
           </div>
 
           {/* Form Content */}
-        <form className="p-6 space-y-8"onSubmit={(e) => {e.preventDefault(); handleSubmitAll();}}>
+          <form className="p-6 space-y-8" onSubmit={(e) => {e.preventDefault(); handleSubmitAll();}}>
             {/* Validation Summary */}
             {showValidationSummary && Object.keys(validationErrors).length > 0 && (
               <div className="p-4 bg-red-50 border border-red-300 rounded">
@@ -1505,40 +1696,81 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                       </select>
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-700">Name of Work *</label>
-                      <select
-                        name="workcomponentId"
-                        value={formData.workcomponentId}
-                        onChange={handleChange}
-                        disabled={!formData.subcomponent_id || filteredSubworkcomponentsLoading}
-                        className={`w-full px-4 py-3 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
-                          validationErrors.workcomponentId ? 'border-red-500' : 'border-gray-400'
-                        }`}
-                      >
-                        <option value="">
-                          {!formData.subcomponent_id
-                            ? "Select sub component first"
-                            : filteredSubworkcomponentsLoading
-                              ? "Loading work packages..."
-                              : "Select Work Package"
-                          }
-                        </option>
-                        {filteredSubworkcomponents.map((s: SubworkComponent) => (
-                          <option key={s.id} value={s.id}>
-                            {s.work_package_name}
+                    {/* Work Name Field - Conditional rendering based on manual input mode */}
+                    <div className="space-y-2 md:col-span-2">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Name of Work *
+                        </label>
+                        {formData.subcomponent_id && (
+                          <button
+                            type="button"
+                            onClick={toggleManualInput}
+                            className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                            {isManualWorkInput ? 'Switch to Dropdown' : 'Enter Manually'}
+                          </button>
+                        )}
+                      </div>
+                      
+                      {isManualWorkInput ? (
+                        // Manual Input Mode
+                        <input
+                          type="text"
+                          value={manualWorkName}
+                          onChange={handleManualWorkNameChange}
+                          placeholder="Enter work name manually"
+                          className={`w-full px-4 py-3 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                            validationErrors.workcomponentId ? 'border-red-500' : 'border-gray-400'
+                          }`}
+                        />
+                      ) : (
+                        // Dropdown Mode
+                        <select
+                          name="workcomponentId"
+                          value={formData.workcomponentId}
+                          onChange={handleChange}
+                          disabled={!formData.subcomponent_id || filteredSubworkcomponentsLoading}
+                          className={`w-full px-4 py-3 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                            validationErrors.workcomponentId ? 'border-red-500' : 'border-gray-400'
+                          }`}
+                        >
+                          <option value="">
+                            {!formData.subcomponent_id
+                              ? "Select sub component first"
+                              : filteredSubworkcomponentsLoading
+                                ? "Loading work packages..."
+                                : filteredSubworkcomponents.length === 0
+                                  ? "No work packages found - Click 'Enter Manually' to add"
+                                  : "Select Work Package"
+                            }
                           </option>
-                        ))}
-                      </select>
+                          {filteredSubworkcomponents.map((s: SubworkComponent) => (
+                            <option key={s.id} value={s.id}>
+                              {s.work_package_name}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                      
                       {validationErrors.workcomponentId && (
                         <div className="flex items-center gap-1 mt-2 text-red-600 text-sm">
                           <AlertCircle className="w-4 h-4" />
                           {validationErrors.workcomponentId}
                         </div>
                       )}
+                      
+                      {filteredSubworkcomponents.length === 0 && formData.subcomponent_id && !isManualWorkInput && (
+                        <div className="mt-2 p-3 bg-yellow-50 border border-yellow-300 rounded text-yellow-800 text-sm">
+                          <p className="flex items-center gap-2">
+                            <AlertCircle className="w-4 h-4" />
+                            No work packages found for this subcomponent. Click "Enter Manually" to add a new work name.
+                          </p>
+                        </div>
+                      )}
                     </div>
 
-                    
                     <div className="space-y-2">
                       <label className="block text-sm font-medium text-gray-700">Zone *</label>
                       <select
@@ -1623,7 +1855,7 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                       )}
                     </div>
 
-                     <div className="space-y-2">
+                    <div className="space-y-2">
                       <label className="text-sm font-medium text-gray-700 flex items-center">
                         <Ruler className="w-4 h-4 mr-2 text-gray-500" />
                         Work Start Range (KM) *
@@ -1645,7 +1877,7 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                       )}
                     </div>
 
-                     <div className="space-y-2">
+                    <div className="space-y-2">
                       <label className="text-sm font-medium text-gray-700 flex items-center">
                         <Ruler className="w-4 h-4 mr-2 text-gray-500" />
                         Work End Range (KM) *
@@ -1676,7 +1908,7 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                         type="text"
                         name="target_km"
                         value={formData.target_km}
-                        readOnly
+                     
                         onChange={handleChange}
                         className={`w-full px-4 py-3 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
                           validationErrors.target_km ? 'border-red-500' : 'border-gray-400'
@@ -1727,7 +1959,7 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                         type="text"
                         name="package_number"
                         value={formData.package_number}
-                        readOnly
+                    
                         onChange={handleChange}
                         className={`w-full px-4 py-3 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
                           validationErrors.package_number ? 'border-red-500' : 'border-gray-400'
@@ -1795,16 +2027,6 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                   <Users className="w-5 h-5 text-[#003087]" />
                   <h2 className="text-lg font-semibold text-gray-800">Beneficiaries Information</h2>
                 </div>
-
-                {/* <div className="bg-blue-50 border border-blue-300 rounded p-4 mb-6">
-                  <h4 className="font-semibold text-blue-800 mb-2">Auto-calculation Rules:</h4>
-                  <ul className="text-sm text-blue-700 space-y-1">
-                    <li>• Enter Total Population to auto-calculate other fields</li>
-                    <li>• Female: 49% of total population (rounded)</li>
-                    <li>• Male: Remaining population after female calculation</li>
-                    <li>• Youth (15-28 years): 29% of total population (rounded)</li>
-                  </ul>
-                </div> */}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
@@ -1919,12 +2141,6 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
                     Add Village
                   </button>
                 </div>
-
-                {/* <div className="bg-yellow-50 border border-yellow-300 rounded p-3 mb-4">
-                  <p className="text-yellow-700 text-sm">
-                    <strong>Auto-calculation:</strong> Enter total population to auto-calculate male/female populations (49% female, remaining male)
-                  </p>
-                </div> */}
 
                 <div className="space-y-6">
                   {villages.map((village, i) => (
@@ -2530,6 +2746,125 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
               </section>
             )}
 
+            {/* Simplified Embankment Tab - Only one embankment */}
+            {activeTab === 'embankment' && isComponent6Selected() && (
+              <section className="bg-gray-50 border border-gray-300 rounded p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <Mountain className="w-5 h-5 text-[#003087]" />
+                  <h2 className="text-lg font-semibold text-gray-800">Embankment Information</h2>
+                </div>
+
+                <div className="mb-6">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={hasEmbankment}
+                      onChange={(e) => {
+                        setHasEmbankment(e.target.checked);
+                        if (!e.target.checked) {
+                          // Reset embankment data when unchecked
+                          setEmbankmentData({
+                            embankment_name: "Embankment",
+                            embankment_length: ""
+                          });
+                          setEmbankmentErrors({});
+                        }
+                      }}
+                      className="h-5 w-5 text-[#003087] border-gray-400 rounded focus:ring-[#003087]"
+                    />
+                    <span className="ml-3 text-lg font-medium text-gray-900">
+                      This work package has embankment
+                    </span>
+                  </label>
+                  <p className="text-gray-600 text-sm mt-2 ml-8">
+                    Embankment is a raised structure along the canal.
+                  </p>
+                </div>
+
+                {hasEmbankment && (
+                  <div className="bg-white border border-gray-300 rounded p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Embankment Name *
+                        </label>
+                        <input
+                          type="text"
+                          value={embankmentData.embankment_name}
+                          onChange={(e) => handleEmbankmentChange("embankment_name", e.target.value)}
+                          placeholder="Enter embankment name"
+                          className={`w-full px-4 py-3 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                            embankmentErrors.embankment_name ? 'border-red-500' : 'border-gray-400'
+                          }`}
+                        />
+                        {embankmentErrors.embankment_name && (
+                          <div className="flex items-center gap-1 mt-1 text-red-600 text-sm">
+                            <AlertCircle className="w-4 h-4" />
+                            {embankmentErrors.embankment_name}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium text-gray-700">
+                          Length of Embankment (Mtr) *
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={embankmentData.embankment_length}
+                            onChange={(e) => handleEmbankmentChange("embankment_length", e.target.value)}
+                            placeholder="Enter length in meters"
+                            className={`w-full px-4 py-3 border rounded focus:outline-none focus:border-[#003087] focus:ring-1 focus:ring-[#003087] ${
+                              embankmentErrors.embankment_length ? 'border-red-500' : 'border-gray-400'
+                            }`}
+                          />
+                          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <span className="text-gray-500">Mtr</span>
+                          </div>
+                        </div>
+                        {embankmentErrors.embankment_length && (
+                          <div className="flex items-center gap-1 mt-1 text-red-600 text-sm">
+                            <AlertCircle className="w-4 h-4" />
+                            {embankmentErrors.embankment_length}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </section>
+            )}
+            
+            {/* If Component 6 is not selected but user tries to view Embankment tab */}
+            {activeTab === 'embankment' && !isComponent6Selected() && (
+              <section className="bg-gray-50 border border-gray-300 rounded p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <Mountain className="w-5 h-5 text-[#003087]" />
+                  <h2 className="text-lg font-semibold text-gray-800">Embankment Information</h2>
+                </div>
+                <div className="bg-yellow-50 border border-yellow-300 rounded p-8 text-center">
+                  <Mountain className="w-16 h-16 mx-auto text-yellow-500 mb-4" />
+                  <h3 className="text-xl font-semibold text-yellow-800 mb-2">
+                    Embankment Option Not Available
+                  </h3>
+                  <p className="text-yellow-700 text-lg mb-4">
+                    Embankment work is only available for Component 6.
+                  </p>
+                  <p className="text-yellow-600">
+                    Please select Component 6 in the Basic Information tab to access embankment details.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('basic')}
+                    className="mt-6 px-6 py-3 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors"
+                  >
+                    Go to Basic Information
+                  </button>
+                </div>
+              </section>
+            )}
+
             {/* Form Actions */}
             <div className="flex justify-between items-center pt-6 border-t border-gray-300">
               <div className="flex gap-3">
@@ -2553,7 +2888,15 @@ const CreateWorkPage: React.FC<CreateWorkPageProps> = ({ user, onBackToList }) =
               <div className="flex gap-3">
                 <button
                   type="button"
-                  onClick={() => validateForm()}
+                  onClick={() => {
+                    const isValid = validateForm();
+                    setShowValidationSummary(!isValid);
+                    if (isValid) {
+                      setMessage("✅ Form validation passed!");
+                    } else {
+                      setMessage("⚠️ Please fix the validation errors.");
+                    }
+                  }}
                   className="px-6 py-3 border border-blue-400 text-blue-700 rounded hover:bg-blue-50 transition-colors"
                 >
                   Validate Form
