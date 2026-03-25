@@ -329,8 +329,8 @@ export const Sidebar: FC<any> = ({ setActiveTab, activeTab }) => {
   // SIDEBAR UI
   // ----------------------------------------
   return (
-   <aside
-  className={`h-screen overflow-y-auto hidden md:flex flex-col bg-[#102253] text-white 
+<aside
+  className={`sticky top-[100px] h-[calc(100vh-100px)] overflow-y-auto hidden md:flex flex-col bg-[#102253] text-white 
   transition-all duration-500 ${collapsed ? "w-16" : "w-64"}`}
 >
       {/* Header */}

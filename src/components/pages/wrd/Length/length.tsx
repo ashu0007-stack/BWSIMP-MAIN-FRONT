@@ -1241,8 +1241,7 @@ export default function LengthProgressPage({
             onClose={() => setShowEmbankmentForm(false)}
             targetKm={targetKm}
             totalEmbankment={totalEmbankment}
-            progressEntries={embankmentProgress}
-          />
+            progressEntries={embankmentProgress} totalPitching={0}          />
         )}
 
         {showSpurForm && selectedPackage && hasSpurs && (
